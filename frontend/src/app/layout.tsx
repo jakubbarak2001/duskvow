@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Cinzel, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const cinzel = Cinzel({
-  variable: "--font-cinzel",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "900"],
+const inter = localFont({
+  src: "./fonts/inter-latin-wght-normal.woff2",
+  variable: "--font-inter",
+  display: "swap",
 });
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+const cinzel = localFont({
+  src: "./fonts/cinzel-latin-wght-normal.woff2",
+  variable: "--font-cinzel",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
