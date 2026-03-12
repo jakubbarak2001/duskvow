@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd C:/Users/USER/Duskvow && npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes 2>&1)",
+      "Bash(cd C:/Users/USER/Duskvow/frontend && npm install @xyflow/react @supabase/supabase-js @supabase/ssr @supabase/auth-ui-react @supabase/auth-ui-shared zustand 2>&1)",
+      "Bash(cd C:/Users/USER/Duskvow && python -m venv backend/.venv 2>&1 && echo \"venv created\")",
+      "Bash(cd C:/Users/USER/Duskvow/frontend && npm install --save-dev prettier eslint-config-prettier prettier-plugin-tailwindcss 2>&1)",
+      "Bash(C:/Users/USER/Duskvow/backend/.venv/Scripts/pip install:*)",
+      "Bash(cd C:/Users/USER/Duskvow/frontend && npx tsc --noEmit 2>&1)",
+      "Bash(cd C:/Users/USER/Duskvow/frontend && npm run build 2>&1 | tail -20)",
+      "Bash(cd C:/Users/USER/Duskvow/backend && .venv/Scripts/pytest tests/test_health.py -v 2>&1)",
+      "Read(//c/Users/USER/Duskvow/%USERPROFILE%//**)",
+      "Read(//c/Users/USER/Duskvow/%USERPROFILE%/duskvow//**)"
+    ]
+  }
+}

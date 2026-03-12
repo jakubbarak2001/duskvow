@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+/* ============================================================
+   DARK FANTASY DESIGN TOKENS
+   ============================================================ */
+
+:root {
+  /* Surface layers — midnight-tinted, NOT pure black */
+  --bg-abyss: #0A0A12;
+  --bg-shadow: #12121A;
+  --bg-surface: #1A1A24;
+  --bg-elevated: #242430;
+  --bg-highlight: #2E2E3A;
+
+  /* Text — warm parchment tones, NOT pure white */
+  --text-primary: #E0D8C8;
+  --text-secondary: #A09888;
+  --text-muted: #6B6358;
+
+  /* Accent colors */
+  --accent-ember: #C84B11;
+  --accent-gold: #FFD700;
+  --accent-blood: #8B0000;
+
+  /* Rarity progression (for node tiers) */
+  --rarity-common: #808080;
+  --rarity-uncommon: #4CAF50;
+  --rarity-rare: #4BB2F9;
+  --rarity-epic: #9C27B0;
+  --rarity-legendary: #FF8C00;
+  --rarity-mythic: #FFD700;
+
+  /* Node state colors */
+  --state-locked: rgba(128, 128, 128, 0.4);
+  --state-available: #4BB2F9;
+  --state-progress: #FF8C00;
+  --state-complete: #FFD700;
+
+  /* Border */
+  --border-default: rgba(224, 216, 200, 0.1);
+  --border-muted: rgba(224, 216, 200, 0.05);
+}
+
+/* ============================================================
+   TAILWIND v4 THEME EXTENSION
+   ============================================================ */
+
+@theme inline {
+  /* Background colors */
+  --color-bg-abyss: var(--bg-abyss);
+  --color-bg-shadow: var(--bg-shadow);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-highlight: var(--bg-highlight);
+
+  /* Text colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  /* Accent colors */
+  --color-accent-ember: var(--accent-ember);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-blood: var(--accent-blood);
+
+  /* Rarity colors */
+  --color-rarity-common: var(--rarity-common);
+  --color-rarity-uncommon: var(--rarity-uncommon);
+  --color-rarity-rare: var(--rarity-rare);
+  --color-rarity-epic: var(--rarity-epic);
+  --color-rarity-legendary: var(--rarity-legendary);
+  --color-rarity-mythic: var(--rarity-mythic);
+
+  /* State colors */
+  --color-state-locked: var(--state-locked);
+  --color-state-available: var(--state-available);
+  --color-state-progress: var(--state-progress);
+  --color-state-complete: var(--state-complete);
+
+  /* Fonts */
+  --font-heading: var(--font-cinzel), "Cinzel", serif;
+  --font-body: var(--font-inter), "Inter", sans-serif;
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
+html {
+  background-color: var(--bg-abyss);
+  color: var(--text-primary);
+}
+
+body {
+  background-color: var(--bg-abyss);
+  color: var(--text-primary);
+  font-family: var(--font-body), "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), "Cinzel", serif;
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   SKILL NODE ANIMATIONS
+   ============================================================ */
+
+@keyframes pulse-available {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(75, 178, 249, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(75, 178, 249, 0);
+  }
+}
+
+@keyframes spin-progress {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes particle-burst {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2); }
+}
+
+@keyframes tree-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.node-available {
+  animation: pulse-available 2.5s ease-in-out infinite;
+}
+
+.tree-reveal {
+  animation: tree-reveal 0.5s ease-out forwards;
+}
