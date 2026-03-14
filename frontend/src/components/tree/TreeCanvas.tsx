@@ -1,5 +1,6 @@
 "use client";
 
+import dagre from "@dagrejs/dagre";
 import {
   ReactFlow,
   Background,
@@ -15,28 +16,56 @@ import { SkillNodeComponent } from "@/components/tree/SkillNodeComponent";
 import { SkillEdgeComponent } from "@/components/tree/SkillEdgeComponent";
 import type { SkillNode } from "@/types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const nodeTypes: NodeTypes = { skillNode: SkillNodeComponent as any };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const edgeTypes: EdgeTypes = { skillEdge: SkillEdgeComponent as any };
+const nodeTypes: NodeTypes = { skillNode: SkillNodeComponent as never };
+const edgeTypes: EdgeTypes = { skillEdge: SkillEdgeComponent as never };
 
-/** Convert our SkillNode array into React Flow Node array. */
-function toFlowNodes(nodes: SkillNode[]): Node[] {
-  return nodes.map((n) => ({
-    id: n.id,
-    type: "skillNode",
-    position: { x: n.position_x, y: n.position_y },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: n as any,
-    draggable: false,
-  }));
+const NODE_WIDTH = 160;
+const NODE_HEIGHT = 80;
+
+/** Compute clean positions using Dagre top-down layout. */
+function applyDagreLayout(nodes: SkillNode[]): Map<string, { x: number; y: number }> {
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: "TB", nodesep: 60, ranksep: 100, marginx: 40, marginy: 40 });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  for (const node of nodes) {
+    g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
+  }
+  for (const node of nodes) {
+    for (const prereqId of node.prerequisites) {
+      if (g.hasNode(prereqId)) {
+        g.setEdge(prereqId, node.id);
+      }
+    }
+  }
+
+  dagre.layout(g);
+
+  const positions = new Map<string, { x: number; y: number }>();
+  for (const node of nodes) {
+    const { x, y } = g.node(node.id);
+    positions.set(node.id, { x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 });
+  }
+  return positions;
 }
 
-/** Derive React Flow edges from prerequisites. Mark completed if source is done. */
+function toFlowNodes(nodes: SkillNode[]): Node[] {
+  const positions = applyDagreLayout(nodes);
+  return nodes.map((n) => {
+    const pos = positions.get(n.id) ?? { x: 0, y: 0 };
+    return {
+      id: n.id,
+      type: "skillNode",
+      position: pos,
+      data: n as never,
+      draggable: false,
+    };
+  });
+}
+
 function toFlowEdges(nodes: SkillNode[]): Edge[] {
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   const edges: Edge[] = [];
-
   for (const node of nodes) {
     for (const prereqId of node.prerequisites) {
       const source = nodeMap.get(prereqId);
@@ -58,11 +87,7 @@ interface TreeCanvasProps {
   selectedNodeId?: string | null;
 }
 
-export function TreeCanvas({
-  nodes,
-  onNodeClick,
-  selectedNodeId,
-}: TreeCanvasProps) {
+export function TreeCanvas({ nodes, onNodeClick, selectedNodeId }: TreeCanvasProps) {
   const flowNodes = toFlowNodes(nodes).map((n) => ({
     ...n,
     selected: n.id === selectedNodeId,
@@ -83,11 +108,7 @@ export function TreeCanvas({
       style={{ background: "var(--bg-abyss)" }}
       proOptions={{ hideAttribution: true }}
     >
-      <Background
-        color="rgba(224, 216, 200, 0.04)"
-        gap={32}
-        size={1}
-      />
+      <Background color="rgba(224, 216, 200, 0.04)" gap={32} size={1} />
       <Controls
         style={{
           backgroundColor: "var(--bg-elevated)",

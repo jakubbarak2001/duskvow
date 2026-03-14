@@ -11,6 +11,7 @@ import { NodeDetailPanel } from "@/components/tree/NodeDetailPanel";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { api } from "@/lib/api";
 import type { SkillNode, TalentTree } from "@/types";
+// api import kept for tree fetch on mount
 
 export default function TreeViewPage() {
   const params = useParams<{ id: string }>();
@@ -56,18 +57,31 @@ export default function TreeViewPage() {
   const handleNodeUpdate = useCallback(
     (nodeId: string, newState: SkillNode["state"]) => {
       updateNodeState(nodeId, newState);
-      // Update selected node panel to reflect the new state
+
       if (selectedNode?.id === nodeId) {
         setSelectedNode({ ...selectedNode, state: newState });
       }
-      // Re-fetch tree on completion to reveal newly unlocked nodes
-      if (newState === "completed" && session?.access_token) {
-        api.getTree(treeId, session.access_token).then((res) => {
-          if (res.data) setActiveTree(res.data);
-        });
+
+      // On completion, unlock dependent nodes locally — no re-fetch needed
+      if (newState === "completed" && activeTree) {
+        const updatedNodes = activeTree.nodes.map((n) =>
+          n.id === nodeId ? { ...n, state: "completed" as const } : n
+        );
+        const completedIds = new Set(
+          updatedNodes.filter((n) => n.state === "completed").map((n) => n.id)
+        );
+        for (const n of updatedNodes) {
+          if (
+            n.state === "locked" &&
+            n.prerequisites.length > 0 &&
+            n.prerequisites.every((p) => completedIds.has(p))
+          ) {
+            updateNodeState(n.id, "available");
+          }
+        }
       }
     },
-    [updateNodeState, setSelectedNode, selectedNode, treeId, session, setActiveTree],
+    [updateNodeState, setSelectedNode, selectedNode, activeTree],
   );
 
   const handleXpEarned = useCallback((_xp: number, newTotal: number) => {
