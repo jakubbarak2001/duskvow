@@ -149,7 +149,7 @@ export function SkillNodeComponent({ data, selected }: NodeProps) {
     <>
       <Handle
         type="target"
-        position={Position.Top}
+        position={Position.Left}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
 
@@ -214,7 +214,7 @@ export function SkillNodeComponent({ data, selected }: NodeProps) {
 
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         style={{ opacity: 0, pointerEvents: "none" }}
       />
     </>
