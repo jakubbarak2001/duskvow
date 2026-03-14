@@ -19,13 +19,13 @@ import type { SkillNode } from "@/types";
 const nodeTypes: NodeTypes = { skillNode: SkillNodeComponent as never };
 const edgeTypes: EdgeTypes = { skillEdge: SkillEdgeComponent as never };
 
-const NODE_WIDTH = 160;
-const NODE_HEIGHT = 80;
+const NODE_WIDTH = 140;
+const NODE_HEIGHT = 140;
 
 /** Compute clean positions using Dagre top-down layout. */
 function applyDagreLayout(nodes: SkillNode[]): Map<string, { x: number; y: number }> {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: "TB", nodesep: 60, ranksep: 100, marginx: 40, marginy: 40 });
+  g.setGraph({ rankdir: "TB", nodesep: 80, ranksep: 120, marginx: 60, marginy: 60 });
   g.setDefaultEdgeLabel(() => ({}));
 
   for (const node of nodes) {

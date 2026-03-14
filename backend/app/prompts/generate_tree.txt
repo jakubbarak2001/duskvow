@@ -7,7 +7,7 @@ User Context:
 - {{ question_id }}: {{ answer }}
 {% endfor %}
 
-Create a talent tree with 20-30 nodes. Return ONLY valid JSON matching this exact structure:
+Create a talent tree with 15-20 nodes. Return ONLY valid JSON matching this exact structure:
 
 {
   "title": "Short evocative tree title (e.g. 'Python Mastery', 'Iron Body')",
@@ -15,7 +15,7 @@ Create a talent tree with 20-30 nodes. Return ONLY valid JSON matching this exac
   "nodes": [
     {
       "id": "node_1",
-      "title": "Short action title",
+      "title": "Short action title (3-4 words max)",
       "description": "Clear, specific description of what the user does to complete this node.",
       "type": "action|habit|choice|keystone",
       "tier": "common|uncommon|rare|epic|legendary|mythic",
@@ -23,7 +23,7 @@ Create a talent tree with 20-30 nodes. Return ONLY valid JSON matching this exac
       "optional": false,
       "xp_reward": 10,
       "estimated_time": "30 minutes",
-      "position": { "x": 400, "y": 50 }
+      "position": { "x": 0, "y": 0 }
     }
   ],
   "edges": [
@@ -31,12 +31,27 @@ Create a talent tree with 20-30 nodes. Return ONLY valid JSON matching this exac
   ]
 }
 
-RULES:
-- First 3-5 nodes: tier = common
+TREE STRUCTURE RULES (critical — follow exactly):
+- The tree must form a clean DAG (directed acyclic graph) that flows top-to-bottom
+- Start with exactly 1 root node (no prerequisites)
+- Each node lists ONLY its DIRECT parent node in prerequisites — never skip levels or list grandparents
+- Maximum 2 prerequisites per node
+- Maximum 3 nodes branching FROM a single parent
+- Branches should MERGE back together at choice/milestone nodes before diverging again
+- The final capstone keystone node should have exactly 1-2 prerequisites (the final merge point)
+
+TIER + TYPE RULES:
+- First 3-4 nodes: tier = common
 - Middle nodes: tier = uncommon or rare
 - Later nodes: tier = epic or legendary
-- Final capstone node: tier = mythic, type = keystone
+- Final capstone: tier = mythic, type = keystone
 - Mix types: ~40% action, ~30% habit, ~20% choice, ~10% keystone
-- Layout: root node at top (y=50), branches spread downward
-- Prerequisites must reference valid node IDs
-- XP rewards scale with tier: common=10, uncommon=20, rare=35, epic=50, legendary=75, mythic=100
+- XP rewards: common=10, uncommon=20, rare=35, epic=50, legendary=75, mythic=100
+
+EXAMPLE of clean structure (for a "learn guitar" goal):
+node_1 (root) → node_2 → node_3 (choice: branch A or B)
+node_3 → node_4a, node_3 → node_4b  (two branches)
+node_4a → node_5, node_4b → node_5  (branches merge)
+node_5 → node_6 (keystone)
+
+Position values are ignored — set them all to {"x": 0, "y": 0}.
