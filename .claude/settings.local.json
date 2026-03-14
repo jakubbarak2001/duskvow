@@ -10,7 +10,12 @@
       "Bash(cd C:/Users/USER/Duskvow/frontend && npm run build 2>&1 | tail -20)",
       "Bash(cd C:/Users/USER/Duskvow/backend && .venv/Scripts/pytest tests/test_health.py -v 2>&1)",
       "Read(//c/Users/USER/Duskvow/%USERPROFILE%//**)",
-      "Read(//c/Users/USER/Duskvow/%USERPROFILE%/duskvow//**)"
+      "Read(//c/Users/USER/Duskvow/%USERPROFILE%/duskvow//**)",
+      "Bash(netstat -ano | grep \":8000\" | grep LISTENING)",
+      "Bash(taskkill /PID 1288 /F)",
+      "Bash(cmd /c \"taskkill /PID 1288 /F\")",
+      "Bash(netstat -ano | grep \":8000\")",
+      "Bash(cmd /c \"taskkill /F /PID 1288 & taskkill /F /PID 3168\")"
     ]
   }
 }

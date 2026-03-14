@@ -1,8 +1,11 @@
 """Profile API routes."""
 
-from fastapi import APIRouter, Depends
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import get_current_user_id
+from app.core import supabase as supa
 
 router = APIRouter()
 
@@ -10,24 +13,24 @@ router = APIRouter()
 @router.get("", response_model=dict)
 async def get_profile(
     user_id: str = Depends(get_current_user_id),
-) -> dict:
+) -> dict[str, Any]:
     """Get the authenticated user's profile and stats.
 
     Args:
-        user_id: Authenticated user's UUID.
+        user_id: Authenticated user's UUID, injected by the auth dependency.
 
     Returns:
-        User profile with XP, streak, and progress stats.
+        Envelope with user profile data including XP and streak stats.
+
+    Raises:
+        HTTPException: 404 if no profile row exists for this user.
     """
-    # TODO (Task 2): Fetch from Supabase profiles table
-    return {
-        "data": {
-            "id": user_id,
-            "display_name": None,
-            "total_xp": 0,
-            "current_streak": 0,
-            "longest_streak": 0,
-            "last_activity_date": None,
-        },
-        "error": None,
-    }
+    profile = await supa.get_profile(user_id)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found — the auth trigger may not have fired yet.",
+        )
+
+    return {"data": profile, "error": None}

@@ -1,14 +1,142 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
+import { Navbar } from "@/components/layout/Navbar";
+import { GoalInputStep } from "@/components/tree-wizard/GoalInputStep";
+import { FollowUpQuestionsStep } from "@/components/tree-wizard/FollowUpQuestionsStep";
+import { GeneratingStep } from "@/components/tree-wizard/GeneratingStep";
+import { api } from "@/lib/api";
+import type { FollowUpQuestion } from "@/types";
+
+type WizardStep = "goal" | "followup" | "generating";
+
 export default function TreeNewPage() {
-  return (
-    <main className="min-h-screen" style={{ backgroundColor: "var(--bg-abyss)", color: "var(--text-primary)" }}>
-      <div className="max-w-2xl mx-auto px-4 py-16">
-        <h1 className="text-4xl font-bold mb-8" style={{ fontFamily: "var(--font-heading)", color: "var(--accent-gold)" }}>
-          Make Your Vow
-        </h1>
-        <p style={{ color: "var(--text-muted)" }}>
-          Tree creation wizard — placeholder (Task 5)
-        </p>
+  const { user, session, loading } = useUser();
+  const router = useRouter();
+
+  const [step, setStep] = useState<WizardStep>("goal");
+  const [sessionId, setSessionId] = useState<string>("");
+  const [questions, setQuestions] = useState<FollowUpQuestion[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && !user) router.replace("/auth");
+  }, [user, loading, router]);
+
+  const handleGoalSubmit = async (goal: string) => {
+    if (!session?.access_token) return;
+    setSubmitting(true);
+    setError(null);
+
+    const res = await api.generateTree(goal, session.access_token);
+    setSubmitting(false);
+
+    if (res.error || !res.data) {
+      setError(res.error?.message ?? "Failed to generate questions. Please try again.");
+      return;
+    }
+
+    setSessionId(res.data.session_id);
+    setQuestions(res.data.questions);
+    setStep("followup");
+  };
+
+  const handleFollowUpSubmit = async (answers: Record<string, string>) => {
+    if (!session?.access_token) return;
+    setSubmitting(true);
+    setError(null);
+    setStep("generating");
+
+    const res = await api.submitFollowUp(sessionId, answers, session.access_token);
+    setSubmitting(false);
+
+    if (res.error || !res.data) {
+      setError(res.error?.message ?? "Generation failed. Please try again.");
+      setStep("followup");
+      return;
+    }
+
+    router.push(`/tree/${res.data.id}`);
+  };
+
+  if (loading || !user) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--bg-abyss)" }}
+      >
+        <p style={{ color: "var(--text-muted)" }}>Loading…</p>
       </div>
-    </main>
+    );
+  }
+
+  return (
+    <div style={{ backgroundColor: "var(--bg-abyss)", minHeight: "100vh" }}>
+      <Navbar />
+
+      <main className="max-w-3xl mx-auto px-4 py-16">
+        {/* Step indicator */}
+        <div className="flex items-center gap-3 mb-12">
+          {(["goal", "followup", "generating"] as const).map((s, i) => {
+            const active = s === step;
+            const done =
+              (step === "followup" && i === 0) ||
+              (step === "generating" && i <= 1);
+            return (
+              <div key={s} className="flex items-center gap-3">
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{
+                    backgroundColor: done
+                      ? "var(--accent-gold)"
+                      : active
+                        ? "var(--accent-ember)"
+                        : "var(--bg-elevated)",
+                    color: done || active ? "var(--bg-abyss)" : "var(--text-muted)",
+                    border: active ? "2px solid var(--accent-ember)" : "none",
+                  }}
+                >
+                  {done ? "✓" : i + 1}
+                </div>
+                {i < 2 && (
+                  <div
+                    className="w-8 h-px"
+                    style={{ backgroundColor: "var(--border-default)" }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {error && (
+          <div
+            className="mb-6 p-4 rounded-lg text-sm"
+            style={{
+              backgroundColor: "rgba(139, 0, 0, 0.2)",
+              border: "1px solid var(--accent-blood)",
+              color: "var(--text-primary)",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {step === "goal" && (
+          <GoalInputStep onSubmit={handleGoalSubmit} loading={submitting} />
+        )}
+        {step === "followup" && (
+          <FollowUpQuestionsStep
+            questions={questions}
+            onSubmit={handleFollowUpSubmit}
+            loading={submitting}
+          />
+        )}
+        {step === "generating" && <GeneratingStep />}
+      </main>
+    </div>
   );
 }

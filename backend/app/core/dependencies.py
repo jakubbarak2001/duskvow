@@ -3,13 +3,15 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.core.auth import verify_supabase_jwt
+
 security = HTTPBearer()
 
 
 async def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
-    """Extract and validate the Supabase JWT, returning the user's UUID.
+    """Extract and verify the Supabase JWT, returning the user's UUID.
 
     Args:
         credentials: Bearer token from Authorization header.
@@ -18,14 +20,13 @@ async def get_current_user_id(
         The authenticated user's UUID string.
 
     Raises:
-        HTTPException: 401 if token is invalid or missing.
+        HTTPException: 401 if token is invalid, expired, or missing.
     """
-    # TODO (Task 2): Verify JWT against Supabase JWT secret
     token = credentials.credentials
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    # Placeholder — real verification in Task 2
-    return "placeholder-user-id"
+    return verify_supabase_jwt(token)

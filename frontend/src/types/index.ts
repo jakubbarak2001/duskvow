@@ -1,40 +1,40 @@
 // ============================================================
-// Core Domain Types
+// Core Domain Types — mirrors the Python Pydantic schemas
 // ============================================================
 
 export interface SkillNode {
   id: string;
+  tree_id?: string;
   title: string;
   description: string;
-  type: "habit" | "action" | "choice" | "keystone";
+  node_type: "habit" | "action" | "choice" | "keystone";
   tier: "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic";
   state: "locked" | "available" | "in_progress" | "completed";
-  position: { x: number; y: number };
+  /** Canvas X coordinate (pixels) */
+  position_x: number;
+  /** Canvas Y coordinate (pixels) */
+  position_y: number;
   prerequisites: string[];
-  optional: boolean;
+  is_optional: boolean;
   xp_reward: number;
   estimated_time?: string;
-}
-
-export interface SkillEdge {
-  from: string;
-  to: string;
+  sort_order?: number;
+  completed_at?: string | null;
 }
 
 export interface TalentTree {
   id: string;
   user_id: string;
   title: string;
-  description: string;
+  description: string | null;
   goal_prompt: string;
-  ai_context?: Record<string, unknown>;
+  ai_context?: Record<string, unknown> | null;
   total_nodes: number;
   completed_nodes: number;
   total_xp: number;
   earned_xp: number;
   status: "active" | "completed" | "abandoned";
   nodes: SkillNode[];
-  edges: SkillEdge[];
   created_at: string;
   updated_at: string;
 }
@@ -61,6 +61,7 @@ export interface FollowUpQuestion {
 }
 
 export interface FollowUpQuestionsResponse {
+  session_id: string;
   questions: FollowUpQuestion[];
 }
 
