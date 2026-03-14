@@ -29,4 +29,4 @@ async def get_current_user_id(
             detail="Missing authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return verify_supabase_jwt(token)
+    return await verify_supabase_jwt(token)

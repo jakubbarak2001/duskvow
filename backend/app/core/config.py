@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # Google Gemini
     gemini_api_key: str = ""
     gemini_model_fast: str = "gemini-2.0-flash"
-    gemini_model_quality: str = "gemini-2.5-pro"
+    gemini_model_quality: str = "gemini-2.0-flash"
 
     # CORS
     cors_origins: list[str] = [
