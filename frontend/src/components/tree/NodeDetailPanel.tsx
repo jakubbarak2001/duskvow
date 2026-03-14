@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+// loading state removed — all actions are optimistic (instant UI, background API)
 import type { SkillNode } from "@/types";
 import { api } from "@/lib/api";
 
@@ -28,52 +29,43 @@ export function NodeDetailPanel({
   onXpEarned,
   onClose,
 }: NodeDetailPanelProps) {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!node) return null;
 
-  const canStart =
-    node.state === "available" && !loading;
-  const canComplete =
-    (node.state === "available" || node.state === "in_progress") && !loading;
-  const canReset =
-    (node.state === "in_progress" || node.state === "completed") && !loading;
+  const canStart = node.state === "available";
+  const canComplete = node.state === "available" || node.state === "in_progress";
+  const canReset = node.state === "in_progress" || node.state === "completed";
 
   const handleStart = async () => {
-    setLoading(true);
     setError(null);
+    onNodeUpdate(node.id, "in_progress");
     const res = await api.startNode(node.id, token);
-    setLoading(false);
     if (res.error) {
+      onNodeUpdate(node.id, "available");
       setError(res.error.message);
-    } else {
-      onNodeUpdate(node.id, "in_progress");
     }
   };
 
   const handleComplete = async () => {
-    setLoading(true);
     setError(null);
+    onNodeUpdate(node.id, "completed");
     const res = await api.completeNode(node.id, token);
-    setLoading(false);
     if (res.error) {
+      onNodeUpdate(node.id, node.state);
       setError(res.error.message);
     } else if (res.data) {
-      onNodeUpdate(node.id, "completed");
       onXpEarned(res.data.xp_earned, res.data.total_xp);
     }
   };
 
   const handleReset = async () => {
-    setLoading(true);
     setError(null);
+    onNodeUpdate(node.id, "available");
     const res = await api.resetNode(node.id, token);
-    setLoading(false);
     if (res.error) {
+      onNodeUpdate(node.id, node.state);
       setError(res.error.message);
-    } else {
-      onNodeUpdate(node.id, "available");
     }
   };
 
@@ -204,7 +196,7 @@ export function NodeDetailPanel({
         {canStart && (
           <button
             onClick={handleStart}
-            disabled={loading}
+            disabled={false}
             className="w-full py-2 rounded text-sm font-medium"
             style={{
               backgroundColor: "var(--bg-elevated)",
@@ -219,21 +211,21 @@ export function NodeDetailPanel({
         {canComplete && (
           <button
             onClick={handleComplete}
-            disabled={loading}
+            disabled={false}
             className="w-full py-2 rounded text-sm font-medium"
             style={{
               backgroundColor: "var(--accent-ember)",
               color: "var(--text-primary)",
             }}
           >
-            {loading ? "Marking Complete…" : `Complete (+${node.xp_reward} XP)`}
+            {`Complete (+${node.xp_reward} XP)`}
           </button>
         )}
 
         {canReset && (
           <button
             onClick={handleReset}
-            disabled={loading}
+            disabled={false}
             className="w-full py-2 rounded text-sm"
             style={{
               backgroundColor: "transparent",
