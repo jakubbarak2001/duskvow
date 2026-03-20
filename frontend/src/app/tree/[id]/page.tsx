@@ -1,8 +1,12 @@
-import { TreeViewPage } from "@/components/tree/TreeViewPage";
+import dynamic from "next/dynamic";
 
-// Required for static export — tree IDs are user-generated UUIDs that
-// can't be pre-generated. The _redirects file handles SPA routing so
-// direct URL access still works via client-side navigation.
+// Load the tree view client-side only — React Flow uses browser globals
+// that crash Node.js during static export's server evaluation pass.
+const TreeViewPage = dynamic(
+  () => import("@/components/tree/TreeViewPage").then((m) => ({ default: m.TreeViewPage })),
+  { ssr: false },
+);
+
 export function generateStaticParams() {
   return [];
 }
