@@ -228,11 +228,109 @@ async def record_daily_activity(
 
 
 # ---------------------------------------------------------------------------
+# Generation limits and active tree cap
+# ---------------------------------------------------------------------------
+
+DAILY_GENERATION_LIMIT = 3
+ACTIVE_TREE_CAP = 5
+
+
+async def get_daily_generation_count(user_id: str) -> int:
+    """Return how many trees the user has generated today (UTC date).
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Integer count (0 if no row exists yet).
+    """
+    today = date.today().isoformat()
+    rows = await _get(
+        "daily_tree_generations",
+        {"user_id": f"eq.{user_id}", "generation_date": f"eq.{today}", "select": "*"},
+    )
+    return rows[0]["count"] if rows else 0
+
+
+async def increment_daily_generation(user_id: str) -> int:
+    """Increment today's generation count, upserting the row if needed.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        New count after increment.
+    """
+    today = date.today().isoformat()
+    rows = await _get(
+        "daily_tree_generations",
+        {"user_id": f"eq.{user_id}", "generation_date": f"eq.{today}", "select": "*"},
+    )
+    if rows:
+        existing = rows[0]
+        new_count = existing["count"] + 1
+        await _patch(
+            "daily_tree_generations",
+            {"id": f"eq.{existing['id']}"},
+            {"count": new_count},
+        )
+        return new_count
+    else:
+        await _insert_one(
+            "daily_tree_generations",
+            {"user_id": user_id, "generation_date": today, "count": 1},
+        )
+        return 1
+
+
+async def count_active_trees(user_id: str) -> int:
+    """Count how many non-deleted, active trees the user has.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Integer count.
+    """
+    rows = await _get(
+        "talent_trees",
+        {
+            "user_id": f"eq.{user_id}",
+            "status": "eq.active",
+            "deleted_at": "is.null",
+            "select": "id",
+        },
+    )
+    return len(rows)
+
+
+async def get_generation_status(user_id: str) -> dict[str, Any]:
+    """Return the user's current generation limits and active tree count.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Dict with generations_used, generations_remaining, generations_limit,
+        active_trees, and active_tree_cap.
+    """
+    daily_count = await get_daily_generation_count(user_id)
+    active_count = await count_active_trees(user_id)
+    return {
+        "generations_used": daily_count,
+        "generations_remaining": max(0, DAILY_GENERATION_LIMIT - daily_count),
+        "generations_limit": DAILY_GENERATION_LIMIT,
+        "active_trees": active_count,
+        "active_tree_cap": ACTIVE_TREE_CAP,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Talent trees
 # ---------------------------------------------------------------------------
 
 async def list_trees(user_id: str) -> list[dict[str, Any]]:
-    """List all talent trees for a user (without nodes).
+    """List all non-deleted talent trees for a user (without nodes).
 
     Args:
         user_id: Authenticated user's UUID.
@@ -240,11 +338,14 @@ async def list_trees(user_id: str) -> list[dict[str, Any]]:
     Returns:
         List of tree dicts.
     """
-    return await _get("talent_trees", {"user_id": f"eq.{user_id}", "select": "*"})
+    return await _get(
+        "talent_trees",
+        {"user_id": f"eq.{user_id}", "deleted_at": "is.null", "select": "*"},
+    )
 
 
 async def get_tree_by_id(tree_id: str) -> dict[str, Any] | None:
-    """Fetch a single tree row (without nodes).
+    """Fetch a single non-deleted tree row (without nodes).
 
     Args:
         tree_id: Tree UUID.
@@ -252,7 +353,10 @@ async def get_tree_by_id(tree_id: str) -> dict[str, Any] | None:
     Returns:
         Tree dict or None.
     """
-    rows = await _get("talent_trees", {"id": f"eq.{tree_id}", "select": "*"})
+    rows = await _get(
+        "talent_trees",
+        {"id": f"eq.{tree_id}", "deleted_at": "is.null", "select": "*"},
+    )
     return rows[0] if rows else None
 
 
@@ -347,19 +451,26 @@ async def save_generated_tree(
 
 
 async def delete_tree(tree_id: str, user_id: str) -> bool:
-    """Delete a tree (cascades to nodes), verifying ownership.
+    """Soft-delete a tree by setting deleted_at, verifying ownership.
+
+    The row is preserved for analytics — it simply becomes invisible to
+    all list/get queries which filter on deleted_at IS NULL.
 
     Args:
         tree_id: Tree UUID.
         user_id: Expected owner UUID.
 
     Returns:
-        True if deleted, False if not found / not owned.
+        True if soft-deleted, False if not found / not owned.
     """
     tree = await get_tree_by_id(tree_id)
     if not tree or tree["user_id"] != user_id:
         return False
-    await _delete("talent_trees", {"id": f"eq.{tree_id}"})
+    await _patch(
+        "talent_trees",
+        {"id": f"eq.{tree_id}"},
+        {"deleted_at": datetime.now(timezone.utc).isoformat()},
+    )
     return True
 
 

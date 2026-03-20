@@ -62,29 +62,33 @@ async def complete_node(
     """
     node, tree = await _get_node_with_ownership(node_id, user_id)
 
-    if node["state"] == "locked":
+    if tree["status"] == "completed":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Node is locked — complete its prerequisites first.",
+            detail="This tree is finished and can no longer be modified.",
         )
+
     if node["state"] == "completed":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Node is already completed.",
         )
 
-    # Verify prerequisites explicitly
+    # Always verify prerequisites against live DB state.
+    # We intentionally do NOT gate on node["state"] == "locked" here:
+    # the frontend may optimistically unlock a node before the backend's
+    # prior completion write commits, so a "locked" DB state is not a
+    # reliable signal when completions arrive in quick succession.
     prereqs: list[str] = node.get("prerequisites") or []
-    if prereqs:
-        all_nodes = await supa.get_all_tree_nodes(node["tree_id"])
-        node_map = {n["id"]: n for n in all_nodes}
-        for prereq_id in prereqs:
-            prereq = node_map.get(prereq_id)
-            if prereq and prereq["state"] != "completed":
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Prerequisite '{prereq['title']}' must be completed first.",
-                )
+    all_nodes = await supa.get_all_tree_nodes(node["tree_id"])
+    node_map = {n["id"]: n for n in all_nodes}
+    for prereq_id in prereqs:
+        prereq = node_map.get(prereq_id)
+        if prereq and prereq["state"] != "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Prerequisite '{prereq['title']}' must be completed first.",
+            )
 
     # Mark this node completed
     await supa.update_node(
@@ -95,7 +99,7 @@ async def complete_node(
         },
     )
 
-    # Re-fetch all nodes (state is now updated in DB)
+    # Re-fetch all nodes so counts and unlock checks reflect the write above
     all_nodes = await supa.get_all_tree_nodes(node["tree_id"])
     node_map = {n["id"]: n for n in all_nodes}
 
@@ -109,11 +113,13 @@ async def complete_node(
             if all_prereqs_done:
                 await supa.update_node(n["id"], {"state": "available"})
 
-    # Update tree counters
+    # Recompute counters from live node data — avoids the stale-read race where
+    # two concurrent completions each read the same old tree["earned_xp"] and
+    # the second write silently discards the first's XP increment.
     completed_count = sum(1 for n in all_nodes if n["state"] == "completed")
-    new_earned_xp = tree["earned_xp"] + node["xp_reward"]
+    earned_xp = sum(n["xp_reward"] for n in all_nodes if n["state"] == "completed")
     new_status = "completed" if completed_count >= tree["total_nodes"] else "active"
-    await supa.update_tree_progress(node["tree_id"], completed_count, new_earned_xp, new_status)
+    await supa.update_tree_progress(node["tree_id"], completed_count, earned_xp, new_status)
 
     # Award XP and update streak
     new_total_xp = await supa.add_xp_to_profile(user_id, node["xp_reward"])
@@ -145,7 +151,13 @@ async def start_node(
     Returns:
         Envelope with node_id and new_state.
     """
-    node, _ = await _get_node_with_ownership(node_id, user_id)
+    node, tree = await _get_node_with_ownership(node_id, user_id)
+
+    if tree["status"] == "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This tree is finished and can no longer be modified.",
+        )
 
     if node["state"] == "locked":
         raise HTTPException(
@@ -187,7 +199,13 @@ async def reset_node(
     Returns:
         Envelope with node_id and new_state.
     """
-    node, _ = await _get_node_with_ownership(node_id, user_id)
+    node, tree = await _get_node_with_ownership(node_id, user_id)
+
+    if tree["status"] == "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This tree is finished and can no longer be modified.",
+        )
 
     if node["state"] == "locked":
         raise HTTPException(

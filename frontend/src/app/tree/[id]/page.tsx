@@ -20,11 +20,14 @@ export default function TreeViewPage() {
   const { user, session, loading: authLoading } = useUser();
   const router = useRouter();
 
-  const { activeTree, selectedNode, setActiveTree, setSelectedNode, updateNodeState } =
-    useTreeStore();
+  const {
+    activeTree, selectedNode,
+    setActiveTree, setSelectedNode,
+    updateNodeState, incrementCompleted, decrementCompleted,
+  } = useTreeStore();
 
   const [loadingTree, setLoadingTree] = useState(true);
-  const [totalXp, setTotalXp] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   // Auth guard
@@ -32,15 +35,26 @@ export default function TreeViewPage() {
     if (!authLoading && !user) router.replace("/auth");
   }, [user, authLoading, router]);
 
-  // Fetch tree
+  // Fetch tree + profile (for streak)
   useEffect(() => {
     if (!session?.access_token || !treeId) return;
+    const token = session.access_token;
 
-    api.getTree(treeId, session.access_token).then((res) => {
-      if (res.data) {
-        setActiveTree(res.data);
+    Promise.allSettled([
+      api.getTree(treeId, token),
+      api.getProfile(token),
+    ]).then(([treeResult, profileResult]) => {
+      if (treeResult.status === "fulfilled" && treeResult.value.data) {
+        setActiveTree(treeResult.value.data);
       } else {
-        setError(res.error?.message ?? "Tree not found.");
+        setError(
+          treeResult.status === "fulfilled"
+            ? (treeResult.value.error?.message ?? "Tree not found.")
+            : "Failed to load tree.",
+        );
+      }
+      if (profileResult.status === "fulfilled" && profileResult.value.data) {
+        setCurrentStreak(profileResult.value.data.current_streak);
       }
       setLoadingTree(false);
     });
@@ -56,14 +70,26 @@ export default function TreeViewPage() {
 
   const handleNodeUpdate = useCallback(
     (nodeId: string, newState: SkillNode["state"]) => {
+      const prevNode = activeTree?.nodes.find((n) => n.id === nodeId);
+      const wasCompleted = prevNode?.state === "completed";
+
       updateNodeState(nodeId, newState);
 
       if (selectedNode?.id === nodeId) {
         setSelectedNode({ ...selectedNode, state: newState });
       }
 
-      // On completion, unlock dependent nodes locally — no re-fetch needed
       if (newState === "completed" && activeTree) {
+        // Optimistically update completed_nodes + earned_xp immediately
+        const node = activeTree.nodes.find((n) => n.id === nodeId);
+        incrementCompleted(node?.xp_reward ?? 0);
+      } else if (wasCompleted && newState !== "completed" && activeTree) {
+        // Revert optimistic increment when API call fails
+        decrementCompleted(prevNode?.xp_reward ?? 0);
+      }
+
+      if (newState === "completed" && activeTree) {
+        // Unlock dependent nodes locally — no re-fetch needed
         const updatedNodes = activeTree.nodes.map((n) =>
           n.id === nodeId ? { ...n, state: "completed" as const } : n
         );
@@ -81,12 +107,8 @@ export default function TreeViewPage() {
         }
       }
     },
-    [updateNodeState, setSelectedNode, selectedNode, activeTree],
+    [updateNodeState, setSelectedNode, selectedNode, activeTree, incrementCompleted, decrementCompleted],
   );
-
-  const handleXpEarned = useCallback((_xp: number, newTotal: number) => {
-    setTotalXp(newTotal);
-  }, []);
 
   if (authLoading || (!user && authLoading)) {
     return (
@@ -141,8 +163,8 @@ export default function TreeViewPage() {
 
         {tree && (
           <StatsBar
-            totalXp={totalXp || tree.earned_xp}
-            currentStreak={0}
+            totalXp={tree.earned_xp}
+            currentStreak={currentStreak}
             nodesCompleted={tree.completed_nodes}
             totalNodes={tree.total_nodes}
           />
@@ -178,7 +200,7 @@ export default function TreeViewPage() {
                 node={selectedNode}
                 token={session.access_token}
                 onNodeUpdate={handleNodeUpdate}
-                onXpEarned={handleXpEarned}
+                onXpEarned={() => {}}
                 onClose={() => setSelectedNode(null)}
               />
             )}

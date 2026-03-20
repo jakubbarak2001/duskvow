@@ -1,45 +1,61 @@
 "use client";
 
-const RUNES = ["᛭", "ᚱ", "ᚷ", "ᚾ", "ᛏ", "ᛚ", "ᛗ", "ᚠ", "ᚢ", "ᚦ"];
-
 export function GeneratingStep() {
   return (
     <div className="max-w-2xl mx-auto text-center py-16">
-      {/* Animated rune ring */}
-      <div className="relative inline-flex items-center justify-center mb-8">
+
+      {/* Breathing glow rings */}
+      <div className="relative inline-flex items-center justify-center mb-10">
+
+        {/* Outer ring — trails the pulse */}
         <div
-          className="w-24 h-24 rounded-full"
           style={{
-            border: "2px solid var(--accent-ember)",
-            animation: "spin-progress 3s linear infinite",
+            position:     "absolute",
+            width:        156,
+            height:       156,
+            borderRadius: "50%",
+            border:       "1px solid rgba(200,75,17,0.2)",
+            animation:    "glow-breathe 3s ease-in-out infinite 0.8s",
           }}
         />
-        <span
-          className="absolute text-3xl"
-          style={{ color: "var(--accent-gold)" }}
-        >
-          ᛟ
-        </span>
 
-        {/* Orbiting rune characters */}
+        {/* Mid ring — slight lag */}
         <div
-          className="absolute w-32 h-32 rounded-full"
-          style={{ animation: "spin-progress 6s linear infinite reverse" }}
+          style={{
+            position:     "absolute",
+            width:        118,
+            height:       118,
+            borderRadius: "50%",
+            border:       "1px solid rgba(200,75,17,0.35)",
+            animation:    "glow-breathe 3s ease-in-out infinite 0.4s",
+          }}
+        />
+
+        {/* Inner ring — leads the pulse */}
+        <div
+          style={{
+            position:        "relative",
+            width:           86,
+            height:          86,
+            borderRadius:    "50%",
+            border:          "2px solid rgba(200,75,17,0.6)",
+            animation:       "glow-breathe 3s ease-in-out infinite 0s",
+            display:         "flex",
+            alignItems:      "center",
+            justifyContent:  "center",
+          }}
         >
-          {RUNES.slice(0, 6).map((rune, i) => (
-            <span
-              key={i}
-              className="absolute text-xs"
-              style={{
-                color: "var(--text-muted)",
-                top: "50%",
-                left: "50%",
-                transform: `rotate(${i * 60}deg) translateY(-64px) rotate(-${i * 60}deg)`,
-              }}
-            >
-              {rune}
-            </span>
-          ))}
+          <span
+            style={{
+              fontSize:  "2rem",
+              lineHeight: 1,
+              color:     "var(--accent-gold)",
+              animation: "rune-breathe 3s ease-in-out infinite 0s",
+              userSelect: "none",
+            }}
+          >
+            ᛟ
+          </span>
         </div>
       </div>
 
@@ -50,7 +66,7 @@ export function GeneratingStep() {
         Weaving Your Fate
       </h2>
       <p style={{ color: "var(--text-muted)" }}>
-        The AI oracle is crafting your personal talent tree…
+        The Oracle is crafting your personal talent tree…
       </p>
       <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
         This may take up to 30 seconds

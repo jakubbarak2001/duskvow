@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-// loading state removed — all actions are optimistic (instant UI, background API)
 import type { SkillNode } from "@/types";
 import { api } from "@/lib/api";
+import { useTreeStore } from "@/stores/treeStore";
 
 const TIER_COLOR: Record<string, string> = {
   common: "var(--rarity-common)",
@@ -30,6 +30,7 @@ export function NodeDetailPanel({
   onClose,
 }: NodeDetailPanelProps) {
   const [error, setError] = useState<string | null>(null);
+  const { completionPending, setCompletionPending } = useTreeStore();
 
   if (!node) return null;
 
@@ -48,9 +49,12 @@ export function NodeDetailPanel({
   };
 
   const handleComplete = async () => {
+    if (completionPending) return;
     setError(null);
+    setCompletionPending(true);
     onNodeUpdate(node.id, "completed");
     const res = await api.completeNode(node.id, token);
+    setCompletionPending(false);
     if (res.error) {
       onNodeUpdate(node.id, node.state);
       setError(res.error.message);
@@ -211,14 +215,16 @@ export function NodeDetailPanel({
         {canComplete && (
           <button
             onClick={handleComplete}
-            disabled={false}
-            className="w-full py-2 rounded text-sm font-medium"
+            disabled={completionPending}
+            className="w-full py-2 rounded text-sm font-medium transition-opacity"
             style={{
               backgroundColor: "var(--accent-ember)",
               color: "var(--text-primary)",
+              opacity: completionPending ? 0.5 : 1,
+              cursor: completionPending ? "not-allowed" : "pointer",
             }}
           >
-            {`Complete (+${node.xp_reward} XP)`}
+            {completionPending ? "Saving…" : `Complete (+${node.xp_reward} XP)`}
           </button>
         )}
 

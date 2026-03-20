@@ -3,6 +3,8 @@ import type {
   TalentTree,
   UserProfile,
   FollowUpQuestionsResponse,
+  TreeGenerationResult,
+  GenerationStatus,
 } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -19,6 +21,20 @@ async function request<T>(
     },
   });
   const json = await res.json();
+  // FastAPI error responses use {"detail":"..."} — map them to ApiResponse shape
+  // so callers can rely on res.error being set on any non-2xx status.
+  if (!res.ok) {
+    return {
+      data: null,
+      error: {
+        message:
+          typeof json?.detail === "string"
+            ? json.detail
+            : json?.message ?? "An unexpected error occurred.",
+        code: String(res.status),
+      },
+    };
+  }
   return json as ApiResponse<T>;
 }
 
@@ -56,14 +72,19 @@ export const api = {
     answers: Record<string, string>,
     token: string,
   ) =>
-    request<TalentTree>("/api/v1/trees/followup", {
+    request<TreeGenerationResult>("/api/v1/trees/followup", {
       method: "POST",
       headers: authHeader(token),
       body: JSON.stringify({ session_id: sessionId, answers }),
     }),
 
+  getGenerationStatus: (token: string) =>
+    request<GenerationStatus>("/api/v1/trees/generation-status", {
+      headers: authHeader(token),
+    }),
+
   deleteTree: (treeId: string, token: string) =>
-    request<null>(`/api/v1/trees/${treeId}`, {
+    request<{ deleted: boolean; tree_id: string }>(`/api/v1/trees/${treeId}`, {
       method: "DELETE",
       headers: authHeader(token),
     }),

@@ -1,14 +1,30 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/lib/supabase";
 
 /**
  * Supabase Auth UI form with dark fantasy appearance overrides.
- * Supports email/password login and Google OAuth.
+ * Supports email/password login. Google OAuth must be enabled in Supabase
+ * dashboard (Auth → Providers → Google) before adding it back to providers[].
  */
 export function AuthForm() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        router.push("/dashboard");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [router]);
+
   const redirectTo =
     typeof window !== "undefined"
       ? `${window.location.origin}/dashboard`
@@ -56,7 +72,7 @@ export function AuthForm() {
           },
         },
       }}
-      providers={["google"]}
+      providers={[]}
       redirectTo={redirectTo}
       theme="default"
     />

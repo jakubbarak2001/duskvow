@@ -74,6 +74,20 @@ export interface FollowUpRequest {
   answers: Record<string, string>;
 }
 
+export interface TreeGenerationResult {
+  tree: TalentTree;
+  generations_remaining: number;
+  generations_used: number;
+}
+
+export interface GenerationStatus {
+  generations_used: number;
+  generations_remaining: number;
+  generations_limit: number;
+  active_trees: number;
+  active_tree_cap: number;
+}
+
 // ============================================================
 // API Response Types
 // ============================================================
