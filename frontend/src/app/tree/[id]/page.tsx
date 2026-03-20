@@ -1,7 +1,7 @@
 import { TreeViewPageWrapper } from "@/components/tree/TreeViewPageWrapper";
 
-export function generateStaticParams() {
-  return [];
+export async function generateStaticParams() {
+  return [{ id: "placeholder" }];
 }
 
 export default function Page() {
