@@ -14,8 +14,6 @@ const cinzel = localFont({
   display: "swap",
 });
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "Duskvow — Forge Your Path",
   description: "AI-powered RPG skill trees for real-world self-improvement. Turn your goals into epic talent trees.",

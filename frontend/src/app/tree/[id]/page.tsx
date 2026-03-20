@@ -1,5 +1,11 @@
 "use client";
 
+// Required for Next.js static export — tree IDs are dynamic UUIDs
+// handled client-side via SPA routing after the static shell loads.
+export function generateStaticParams() {
+  return [];
+}
+
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { Node } from "@xyflow/react";
