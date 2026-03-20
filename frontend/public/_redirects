@@ -1,3 +1,2 @@
-/tree/:id/ /tree/placeholder/index.html 200
-/tree/:id /tree/placeholder/index.html 200
-/* /index.html 200
+/tree/:id/ /tree/placeholder/ 200
+/tree/:id /tree/placeholder/ 200
