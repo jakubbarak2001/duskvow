@@ -7,6 +7,19 @@
  */
 import { writeFileSync } from "node:fs";
 
+// Dump ALL env vars whose name contains "SUPABASE" or "NEXT_PUBLIC" for debugging
+console.log("[write-env] === All NEXT_PUBLIC / SUPABASE env vars ===");
+for (const [key, value] of Object.entries(process.env)) {
+  if (key.includes("NEXT_PUBLIC") || key.includes("SUPABASE")) {
+    // Show the key with char codes to detect invisible characters
+    const charCodes = [...key].map((c) => c.charCodeAt(0));
+    console.log(
+      `[write-env]   "${key}" (${key.length} chars, codes: ${charCodes.join(",")}) = ${value ? value.substring(0, 20) + "..." : "(empty)"}`,
+    );
+  }
+}
+console.log("[write-env] === End env var dump ===");
+
 const vars = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
