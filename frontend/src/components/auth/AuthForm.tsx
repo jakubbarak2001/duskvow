@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
 /**
  * Supabase Auth UI form with dark fantasy appearance overrides.
@@ -13,8 +13,11 @@ import { getSupabase } from "@/lib/supabase";
  */
 export function AuthForm() {
   const router = useRouter();
+  const configured = isSupabaseConfigured();
 
   useEffect(() => {
+    if (!configured) return;
+
     const {
       data: { subscription },
     } = getSupabase().auth.onAuthStateChange((event: string) => {
@@ -23,7 +26,29 @@ export function AuthForm() {
       }
     });
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, configured]);
+
+  if (!configured) {
+    return (
+      <div
+        className="p-4 rounded text-center text-sm"
+        style={{
+          backgroundColor: "var(--bg-elevated)",
+          color: "var(--text-secondary)",
+          border: "1px solid rgba(200, 75, 17, 0.4)",
+        }}
+      >
+        <p className="font-bold mb-2" style={{ color: "var(--accent-ember)" }}>
+          Authentication Unavailable
+        </p>
+        <p>
+          Supabase environment variables were not found in this build.
+          Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+          are set in the deployment platform.
+        </p>
+      </div>
+    );
+  }
 
   const redirectTo =
     typeof window !== "undefined"
