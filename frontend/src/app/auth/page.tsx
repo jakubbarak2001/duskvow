@@ -1,4 +1,11 @@
-import { AuthForm } from "@/components/auth/AuthForm";
+"use client";
+
+import dynamic from "next/dynamic";
+
+const AuthForm = dynamic(
+  () => import("@/components/auth/AuthForm").then((m) => ({ default: m.AuthForm })),
+  { ssr: false },
+);
 
 export default function AuthPage() {
   return (
