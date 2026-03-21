@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface UseUserReturn {
   user: User | null;
@@ -20,11 +20,18 @@ export function useUser(): UseUserReturn {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSupabase().auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
+    if (!isSupabaseConfigured()) {
       setLoading(false);
-    });
+      return;
+    }
+
+    getSupabase()
+      .auth.getSession()
+      .then(({ data }) => {
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      });
 
     const {
       data: { subscription },
