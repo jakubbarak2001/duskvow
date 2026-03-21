@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 /**
  * Supabase Auth UI form with dark fantasy appearance overrides.
@@ -17,7 +17,7 @@ export function AuthForm() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = getSupabase().auth.onAuthStateChange((event: string) => {
       if (event === "SIGNED_IN") {
         router.push("/dashboard");
       }
@@ -32,7 +32,7 @@ export function AuthForm() {
 
   return (
     <Auth
-      supabaseClient={supabase}
+      supabaseClient={getSupabase()}
       appearance={{
         theme: ThemeSupa,
         variables: {
