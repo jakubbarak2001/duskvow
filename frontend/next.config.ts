@@ -10,8 +10,7 @@ const SUPABASE_ANON_KEY_DEFAULT =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwdHdhZXRseWRxZnpjdmxnbmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzMjMzMzMsImV4cCI6MjA1Nzg5OTMzM30.G_d_rqyTU3sjcSUJBrYKYUe1wmTNXTPFRIpy97KjseA";
 
 const nextConfig: NextConfig = {
-  output: "export",
-  trailingSlash: true,
+trailingSlash: true,
   env: {
     NEXT_PUBLIC_SUPABASE_URL:
       process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL_DEFAULT,
