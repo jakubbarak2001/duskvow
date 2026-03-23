@@ -14,10 +14,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware — allow frontend dev server
+# CORS middleware — allow frontend origins + all Vercel preview deploys
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    allow_origin_regex=r"https://duskvow(-[a-z0-9]+)*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

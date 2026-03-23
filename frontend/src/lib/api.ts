@@ -13,14 +13,39 @@ async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
-  const json = await res.json();
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  } catch {
+    return {
+      data: null,
+      error: {
+        message:
+          "Unable to reach the server. Please check your connection and try again.",
+        code: "NETWORK_ERROR",
+      },
+    };
+  }
+
+  let json: Record<string, unknown>;
+  try {
+    json = await res.json();
+  } catch {
+    return {
+      data: null,
+      error: {
+        message: "Server returned an invalid response.",
+        code: String(res.status),
+      },
+    };
+  }
+
   // FastAPI error responses use {"detail":"..."} — map them to ApiResponse shape
   // so callers can rely on res.error being set on any non-2xx status.
   if (!res.ok) {
@@ -30,12 +55,12 @@ async function request<T>(
         message:
           typeof json?.detail === "string"
             ? json.detail
-            : json?.message ?? "An unexpected error occurred.",
+            : (json?.message as string) ?? "An unexpected error occurred.",
         code: String(res.status),
       },
     };
   }
-  return json as ApiResponse<T>;
+  return json as unknown as ApiResponse<T>;
 }
 
 function authHeader(token: string): Record<string, string> {
