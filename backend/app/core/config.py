@@ -30,7 +30,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://duskvow.vercel.app",
+        "https://duskvow-production.vercel.app",
     ]
+    cors_allow_all_vercel_previews: bool = True
 
     # Rate limiting
     free_tier_daily_generations: int = 2
