@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     free_tier_daily_generations: int = 2
 
     # AI
-    ai_timeout_seconds: int = 30
+    ai_timeout_seconds: int = 60
 
 
 settings = Settings()
