@@ -60,7 +60,7 @@ async function request<T>(
       },
     };
   }
-  return json as ApiResponse<T>;
+  return json as unknown as ApiResponse<T>;
 }
 
 function authHeader(token: string): Record<string, string> {
