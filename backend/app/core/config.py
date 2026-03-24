@@ -32,6 +32,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "https://duskvow.vercel.app",
         "https://duskvow-production.vercel.app",
+                "https://duskvow.com",
+                "https://www.duskvow.com",
     ]
     cors_allow_all_vercel_previews: bool = True
 
