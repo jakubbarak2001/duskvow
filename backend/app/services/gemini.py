@@ -91,6 +91,11 @@ class GeminiService:
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 detail="AI generation timed out — please try again.",
             )
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="AI service is temporarily unavailable — please try again.",
+            )
         return _parse_json(response.text)
 
     async def generate_followup_questions(self, goal_prompt: str) -> dict:

@@ -27,7 +27,12 @@ class FollowUpQuestionsResponse(BaseModel):
 class FollowUpRequest(BaseModel):
     """Request body for POST /api/v1/trees/followup."""
 
-    session_id: str
+    session_id: str = Field(
+        ...,
+        min_length=36,
+        max_length=36,
+        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    )
     answers: dict[str, str] = Field(..., description="Map of question_id to selected option")
 
 

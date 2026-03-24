@@ -7,18 +7,14 @@
  */
 import { writeFileSync } from "node:fs";
 
-// Dump ALL env vars whose name contains "SUPABASE" or "NEXT_PUBLIC" for debugging
-console.log("[write-env] === All NEXT_PUBLIC / SUPABASE env vars ===");
-for (const [key, value] of Object.entries(process.env)) {
+// Log which NEXT_PUBLIC / SUPABASE env vars are set (values redacted)
+console.log("[write-env] === Env var presence check ===");
+for (const [key] of Object.entries(process.env)) {
   if (key.includes("NEXT_PUBLIC") || key.includes("SUPABASE")) {
-    // Show the key with char codes to detect invisible characters
-    const charCodes = [...key].map((c) => c.charCodeAt(0));
-    console.log(
-      `[write-env]   "${key}" (${key.length} chars, codes: ${charCodes.join(",")}) = ${value ? value.substring(0, 20) + "..." : "(empty)"}`,
-    );
+    console.log(`[write-env]   ${key}: ${process.env[key] ? "SET" : "NOT SET"}`);
   }
 }
-console.log("[write-env] === End env var dump ===");
+console.log("[write-env] === End env var check ===");
 
 const vars = [
   "NEXT_PUBLIC_SUPABASE_URL",
@@ -32,7 +28,7 @@ for (const name of vars) {
   const value = process.env[name];
   if (value) {
     lines.push(`${name}=${value}`);
-    console.log(`[write-env] ✓ ${name} is set (${value.length} chars)`);
+    console.log(`[write-env] ✓ ${name} is set`);
   } else {
     console.warn(`[write-env] ✗ ${name} is NOT set`);
   }

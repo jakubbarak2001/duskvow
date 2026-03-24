@@ -8,9 +8,14 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
+import logging
+
 import httpx
+from fastapi import HTTPException, status
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 _SERVICE_HEADERS: dict[str, str] = {
     "apikey": settings.supabase_service_role_key,
@@ -29,11 +34,23 @@ def _url(table: str) -> str:
 # Generic helpers
 # ---------------------------------------------------------------------------
 
+def _handle_db_error(exc: httpx.HTTPStatusError, operation: str) -> None:
+    """Log the real error and raise a safe HTTPException."""
+    logger.error("Database %s failed: %s %s", operation, exc.response.status_code, exc.response.text)
+    raise HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail="Database operation failed.",
+    )
+
+
 async def _get(table: str, params: dict[str, str]) -> list[dict[str, Any]]:
     """SELECT rows matching params."""
     async with httpx.AsyncClient() as client:
         res = await client.get(_url(table), headers=_SERVICE_HEADERS, params=params)
-        res.raise_for_status()
+        try:
+            res.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            _handle_db_error(exc, "SELECT")
         return res.json()
 
 
@@ -41,7 +58,10 @@ async def _insert_one(table: str, data: dict[str, Any]) -> dict[str, Any]:
     """INSERT one row, returning it."""
     async with httpx.AsyncClient() as client:
         res = await client.post(_url(table), headers=_SERVICE_HEADERS, json=data)
-        res.raise_for_status()
+        try:
+            res.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            _handle_db_error(exc, "INSERT")
         return res.json()[0]
 
 
@@ -49,7 +69,10 @@ async def _bulk_insert(table: str, rows: list[dict[str, Any]]) -> list[dict[str,
     """INSERT multiple rows, returning them all."""
     async with httpx.AsyncClient() as client:
         res = await client.post(_url(table), headers=_SERVICE_HEADERS, json=rows)
-        res.raise_for_status()
+        try:
+            res.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            _handle_db_error(exc, "BULK INSERT")
         return res.json()
 
 
@@ -66,7 +89,10 @@ async def _patch(
             params=params,
             json=data,
         )
-        res.raise_for_status()
+        try:
+            res.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            _handle_db_error(exc, "UPDATE")
         return res.json()
 
 
@@ -78,7 +104,10 @@ async def _delete(table: str, params: dict[str, str]) -> None:
             headers={**_SERVICE_HEADERS, "Prefer": "return=minimal"},
             params=params,
         )
-        res.raise_for_status()
+        try:
+            res.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            _handle_db_error(exc, "DELETE")
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +147,10 @@ async def upsert_profile(user_id: str, data: dict[str, Any]) -> dict[str, Any]:
             },
             json=payload,
         )
-        res.raise_for_status()
+        try:
+            res.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            _handle_db_error(exc, "UPSERT")
         return res.json()[0]
 
 
