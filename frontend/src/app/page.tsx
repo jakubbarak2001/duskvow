@@ -732,6 +732,7 @@ const landingStyles = `
   @media (max-width: 768px) {
     .lp-nav { padding: 1rem 1.5rem; }
     .lp-hero { padding: 6rem 1.5rem 4rem; }
+    .lp-hero-dagger { font-size: 0.6rem; letter-spacing: 0.15em; }
     .lp-step { grid-template-columns: 50px 1fr; gap: 1rem; }
     .lp-step-num { font-size: 2rem; }
     .lp-anti,
