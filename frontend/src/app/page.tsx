@@ -18,6 +18,18 @@ export default function LandingPage() {
           <div className="lp-ember" />
           <div className="lp-ember" />
           <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
+          <div className="lp-ember" />
         </div>
 
         {/* Navigation */}
@@ -50,9 +62,6 @@ export default function LandingPage() {
               </Link>
               <p className="lp-hero-note">No credit card. No pixel penguins. Just purpose.</p>
             </div>
-          </div>
-          <div className="lp-scroll-hint" aria-hidden="true">
-            <span />
           </div>
         </section>
 
@@ -206,30 +215,97 @@ const landingStyles = `
   /* === FLOATING EMBER PARTICLES === */
   .lp-embers {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     pointer-events: none;
-    z-index: 0;
+    z-index: 10;
     overflow: hidden;
   }
 
   .lp-ember {
     position: absolute;
-    width: 2px;
-    height: 2px;
-    background: var(--ember);
     border-radius: 50%;
     opacity: 0;
-    animation: lp-float-up linear infinite;
   }
 
-  .lp-ember:nth-child(1) { left: 15%; animation-duration:  8s; animation-delay:  0s;   }
-  .lp-ember:nth-child(2) { left: 35%; animation-duration: 12s; animation-delay:  2s;   }
-  .lp-ember:nth-child(3) { left: 55%; animation-duration: 10s; animation-delay:  4s;   }
-  .lp-ember:nth-child(4) { left: 75%; animation-duration:  9s; animation-delay:  1s;   }
-  .lp-ember:nth-child(5) { left: 90%; animation-duration: 11s; animation-delay:  3s;   }
-  .lp-ember:nth-child(6) { left: 25%; animation-duration: 14s; animation-delay:  5s;   }
-  .lp-ember:nth-child(7) { left: 65%; animation-duration:  7s; animation-delay:  6s;   }
-  .lp-ember:nth-child(8) { left: 45%; animation-duration: 13s; animation-delay:  1.5s; }
+  /* --- Size & color groups --- */
+  /* 2px small — ember red, faint glow */
+  .lp-ember:nth-child(2),
+  .lp-ember:nth-child(4),
+  .lp-ember:nth-child(11),
+  .lp-ember:nth-child(14),
+  .lp-ember:nth-child(18) {
+    width: 2px; height: 2px;
+    background: var(--ember-bright);
+    box-shadow: 0 0 5px 1px rgba(232, 101, 63, 0.5);
+  }
+
+  /* 3px medium — ember red */
+  .lp-ember:nth-child(1),
+  .lp-ember:nth-child(7),
+  .lp-ember:nth-child(9),
+  .lp-ember:nth-child(13),
+  .lp-ember:nth-child(16),
+  .lp-ember:nth-child(19) {
+    width: 3px; height: 3px;
+    background: var(--ember-bright);
+    box-shadow: 0 0 6px 2px rgba(232, 101, 63, 0.6);
+  }
+
+  /* 4px larger — alternating ember/gold */
+  .lp-ember:nth-child(3),
+  .lp-ember:nth-child(12),
+  .lp-ember:nth-child(17) {
+    width: 4px; height: 4px;
+    background: var(--ember-bright);
+    box-shadow: 0 0 7px 2px rgba(232, 101, 63, 0.65);
+  }
+  .lp-ember:nth-child(6),
+  .lp-ember:nth-child(20) {
+    width: 4px; height: 4px;
+    background: var(--gold);
+    box-shadow: 0 0 7px 2px rgba(201, 168, 76, 0.65);
+  }
+
+  /* 6px large — close/bright, mix ember and gold */
+  .lp-ember:nth-child(5),
+  .lp-ember:nth-child(8),
+  .lp-ember:nth-child(10) {
+    width: 6px; height: 6px;
+    background: var(--ember-bright);
+    box-shadow: 0 0 10px 3px rgba(232, 101, 63, 0.75);
+  }
+  .lp-ember:nth-child(15) {
+    width: 6px; height: 6px;
+    background: var(--gold);
+    box-shadow: 0 0 10px 3px rgba(201, 168, 76, 0.75);
+  }
+
+  /* --- Position, speed, delay, sway variant --- */
+  /* lp-float-a: sways right-left-right, peaks opacity 0.9 */
+  /* lp-float-b: sways left-right, peaks opacity 0.75       */
+  /* lp-float-c: gentle sway, peaks opacity 0.6             */
+
+  .lp-ember:nth-child(1)  { left:  8%; animation: lp-float-a  8s linear 0s    infinite; }
+  .lp-ember:nth-child(2)  { left: 18%; animation: lp-float-c 14s linear 1.5s  infinite; }
+  .lp-ember:nth-child(3)  { left: 28%; animation: lp-float-b 10s linear 3s    infinite; }
+  .lp-ember:nth-child(4)  { left: 37%; animation: lp-float-c  7s linear 0.5s  infinite; }
+  .lp-ember:nth-child(5)  { left: 45%; animation: lp-float-a 16s linear 5s    infinite; }
+  .lp-ember:nth-child(6)  { left: 53%; animation: lp-float-b  9s linear 2s    infinite; }
+  .lp-ember:nth-child(7)  { left: 62%; animation: lp-float-c 12s linear 4s    infinite; }
+  .lp-ember:nth-child(8)  { left: 71%; animation: lp-float-a  6s linear 1s    infinite; }
+  .lp-ember:nth-child(9)  { left: 80%; animation: lp-float-b 11s linear 3.5s  infinite; }
+  .lp-ember:nth-child(10) { left: 88%; animation: lp-float-a 18s linear 0s    infinite; }
+  .lp-ember:nth-child(11) { left:  5%; animation: lp-float-c 15s linear 6s    infinite; }
+  .lp-ember:nth-child(12) { left: 22%; animation: lp-float-b  8s linear 2.5s  infinite; }
+  .lp-ember:nth-child(13) { left: 33%; animation: lp-float-a 13s linear 1s    infinite; }
+  .lp-ember:nth-child(14) { left: 48%; animation: lp-float-c  7s linear 4.5s  infinite; }
+  .lp-ember:nth-child(15) { left: 57%; animation: lp-float-a 17s linear 0.5s  infinite; }
+  .lp-ember:nth-child(16) { left: 67%; animation: lp-float-b  9s linear 3s    infinite; }
+  .lp-ember:nth-child(17) { left: 76%; animation: lp-float-a 11s linear 7s    infinite; }
+  .lp-ember:nth-child(18) { left: 84%; animation: lp-float-c  6s linear 2s    infinite; }
+  .lp-ember:nth-child(19) { left: 12%; animation: lp-float-b 14s linear 5.5s  infinite; }
+  .lp-ember:nth-child(20) { left: 93%; animation: lp-float-b 10s linear 1.5s  infinite; }
 
   /* === NAVIGATION === */
   .lp-nav {
@@ -448,30 +524,16 @@ const landingStyles = `
     font-style: italic;
   }
 
-  .lp-scroll-hint {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
-    opacity: 0;
-    animation: lp-fadeUp 1s ease 1.2s forwards;
-  }
-
-  .lp-scroll-hint span {
-    display: block;
-    width: 1px;
-    height: 40px;
-    background: linear-gradient(to bottom, var(--gold-dim), transparent);
-    margin: 0 auto;
-    animation: lp-scrollPulse 2s ease-in-out infinite;
-  }
-
   /* === ANTI-SECTION === */
   .lp-anti {
-    padding: 8rem 2rem;
+    padding: 4.5rem 2rem 8rem;
     text-align: center;
     position: relative;
+    background-image:
+      linear-gradient(rgba(10, 10, 12, 0.85), rgba(10, 10, 12, 0.85)),
+      url('/images/anti-section-bg.webp');
+    background-size: cover;
+    background-position: center 70%;
   }
 
   .lp-gold-line {
@@ -729,16 +791,36 @@ const landingStyles = `
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes lp-scrollPulse {
-    0%, 100% { opacity: 0.3; transform: scaleY(1); }
-    50%       { opacity: 0.8; transform: scaleY(1.2); }
+
+  /* Sway right-left-right, high peak opacity (large/close particles) */
+  @keyframes lp-float-a {
+    0%   { bottom: -5%;  opacity: 0;    transform: translateX(0px);   }
+    12%  {               opacity: 0.9;                                }
+    30%  {                              transform: translateX(20px);   }
+    55%  {                              transform: translateX(-14px);  }
+    78%  {                              transform: translateX(22px);   }
+    88%  {               opacity: 0.3;                                }
+    100% { bottom: 105%; opacity: 0;    transform: translateX(-6px);  }
   }
 
-  @keyframes lp-float-up {
-    0%   { bottom: -5%;  opacity: 0;   transform: translateX(0);   }
-    10%  {               opacity: 0.6;                              }
-    90%  {               opacity: 0.2;                              }
-    100% { bottom: 105%; opacity: 0;   transform: translateX(30px); }
+  /* Sway left-right, medium peak opacity */
+  @keyframes lp-float-b {
+    0%   { bottom: -5%;  opacity: 0;    transform: translateX(0px);   }
+    12%  {               opacity: 0.75;                               }
+    35%  {                              transform: translateX(-22px);  }
+    60%  {                              transform: translateX(16px);   }
+    82%  {               opacity: 0.25;                               }
+    100% { bottom: 105%; opacity: 0;    transform: translateX(-10px); }
+  }
+
+  /* Gentle sway, lower peak opacity (small/distant particles) */
+  @keyframes lp-float-c {
+    0%   { bottom: -5%;  opacity: 0;    transform: translateX(0px);   }
+    12%  {               opacity: 0.6;                                }
+    40%  {                              transform: translateX(12px);   }
+    65%  {                              transform: translateX(-18px);  }
+    85%  {               opacity: 0.2;                                }
+    100% { bottom: 105%; opacity: 0;    transform: translateX(8px);   }
   }
 
   /* === RESPONSIVE === */
