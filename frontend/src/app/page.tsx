@@ -91,55 +91,25 @@ export default function LandingPage() {
               <div className="lp-step-num">I</div>
               <div>
                 <h3>Speak Your Goal</h3>
-                <p>
-                  Enter any ambition — from &quot;run a marathon&quot; to &quot;learn
-                  Rust&quot; to &quot;build a business.&quot; The AI listens.
-                </p>
-                <div className="lp-step-example">
-                  &quot;I want to become a full-stack developer in 6 months.&quot;
-                </div>
+                <p>Enter any ambition. The AI listens.</p>
               </div>
             </div>
             <div className="lp-step">
               <div className="lp-step-num">II</div>
               <div>
                 <h3>Receive Your Tree</h3>
-                <p>
-                  The AI forges a talent tree: interconnected nodes with prerequisites,
-                  XP values, and a path from novice to mastery. Every tree is unique to
-                  your goal.
-                </p>
+                <p>A branching talent tree, forged from your goal.</p>
               </div>
             </div>
             <div className="lp-step">
               <div className="lp-step-num">III</div>
               <div>
                 <h3>Walk the Path</h3>
-                <p>
-                  Complete nodes. Earn XP. Unlock branches. Watch the tree illuminate as
-                  you progress — proof, rendered in dark fire, that you are becoming who
-                  you set out to be.
-                </p>
+                <p>Complete nodes. Earn XP. Watch your tree ignite.</p>
               </div>
             </div>
           </div>
         </section>
-
-        {/* Screenshot Placeholder */}
-        <section className="lp-showcase">
-          <div className="lp-showcase-frame">
-            <div className="lp-showcase-overlay" aria-hidden="true" />
-            <p className="lp-showcase-placeholder">
-              [ Your most stunning talent tree screenshot goes here ]
-            </p>
-          </div>
-          <p className="lp-showcase-caption">
-            A real talent tree, generated for &quot;Run a Marathon in 6 Months&quot;
-          </p>
-        </section>
-
-        {/* Ornament divider */}
-        <div className="lp-ornament" aria-hidden="true">· · ·</div>
 
         {/* Final CTA */}
         <section className="lp-vow" id="vow">
@@ -150,19 +120,16 @@ export default function LandingPage() {
             <span>Make Your Vow — Free</span>
           </Link>
           <p className="lp-vow-terms">
-            Free forever for up to 5 active trees. Built by a solo developer who quit
-            his day job to build this.
+            Free forever. No tricks. No trials. Just the path.
           </p>
         </section>
 
         {/* Footer */}
         <footer className="lp-footer">
           <p className="lp-footer-brand">
-            <Link href="/">Duskvow</Link>
+            <Link href="https://duskvow.com">Duskvow</Link>
             {" "}&nbsp;·&nbsp;{" "}
-            <a href="https://x.com/duskvow" target="_blank" rel="noopener noreferrer">X</a>
-            {" "}&nbsp;·&nbsp;{" "}
-            <a href="#">Discord</a>
+            <a href="https://x.com/jacobduskvow" target="_blank" rel="noopener noreferrer">X</a>
           </p>
           <p className="lp-footer-tagline">Forged in solitude. Tempered by ambition.</p>
         </footer>
@@ -589,7 +556,7 @@ const landingStyles = `
 
   /* === HOW IT WORKS === */
   .lp-how {
-    padding: 6rem 2rem 8rem;
+    padding: 6rem 2rem 3rem;
     position: relative;
   }
 
@@ -616,7 +583,7 @@ const landingStyles = `
     font-family: var(--font-cinzel), 'Cinzel', serif;
     font-size: 3rem;
     font-weight: 900;
-    color: var(--ash);
+    color: rgba(196, 85, 58, 0.3);
     line-height: 1;
     padding-top: 0.2rem;
   }
@@ -637,72 +604,10 @@ const landingStyles = `
     max-width: 500px;
   }
 
-  .lp-step-example {
-    margin-top: 1rem;
-    padding: 1rem 1.5rem;
-    background: var(--deep);
-    border-left: 2px solid var(--ember);
-    font-style: italic;
-    font-size: 0.95rem;
-    color: var(--gold);
-  }
-
-  /* === SCREENSHOT PLACEHOLDER === */
-  .lp-showcase {
-    padding: 2rem 2rem 8rem;
-    text-align: center;
-  }
-
-  .lp-showcase-frame {
-    max-width: 1000px;
-    margin: 0 auto;
-    aspect-ratio: 16 / 9;
-    background: var(--deep);
-    border: 1px solid var(--smoke);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .lp-showcase-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background:
-      radial-gradient(circle at 30% 40%, rgba(196, 85, 58, 0.05), transparent 50%),
-      radial-gradient(circle at 70% 60%, rgba(138, 115, 64, 0.05), transparent 50%);
-  }
-
-  .lp-showcase-placeholder {
-    font-family: var(--font-cinzel), 'Cinzel', serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--ghost);
-    position: relative;
-    z-index: 1;
-  }
-
-  .lp-showcase-caption {
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
-    font-style: italic;
-    color: var(--text-dim);
-  }
-
   /* === ORNAMENT === */
-  .lp-ornament {
-    text-align: center;
-    padding: 2rem 0;
-    color: var(--smoke);
-    font-size: 1.5rem;
-    letter-spacing: 0.5em;
-  }
-
   /* === FINAL CTA (VOW) === */
   .lp-vow {
-    padding: 8rem 2rem;
+    padding: 3rem 2rem 8rem;
     text-align: center;
     position: relative;
     background: linear-gradient(to bottom, var(--void), var(--deep), var(--void));
@@ -831,7 +736,6 @@ const landingStyles = `
     .lp-step-num { font-size: 2rem; }
     .lp-anti,
     .lp-how,
-    .lp-showcase,
     .lp-vow { padding-left: 1.5rem; padding-right: 1.5rem; }
   }
 `;
