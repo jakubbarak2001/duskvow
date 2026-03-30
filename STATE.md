@@ -142,6 +142,11 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-03-31 (TASK 2A-1 — Auth Page Visual Refactor)**
+- `auth/page.tsx` — Full atmospheric redesign: noise overlay (fixed), ember/gold radial glows (fixed), 11 floating ember particles (reusing wiz-float-a/b/c animations); auth card uses `--bg-shadow` with ember border glow + deep box-shadow; Duskvow logo linking to `/` at top; gold gradient divider; Cinzel heading at `clamp(1.75rem, 4vw, 2.3rem)` with gold text-shadow; Cinzel uppercase subtitle; "Return to the Gates" back link at bottom
+- `AuthForm.tsx` — Pushed `appearance.variables` further: `fonts` object added (Cinzel for buttons/labels, Inter for inputs/body); tighter `brandAccent`, deeper `inputBackground` (`--bg-abyss`), wider button/input spacing; added `appearance.className` with `auth-submit-btn` (ember gradient button), `auth-label` (Cinzel uppercase), `auth-input` (deep focus glow)
+- `globals.css` — Added AUTH PAGE STYLES section: `.auth-submit-btn` (ember gradient, Cinzel uppercase, hover glow), `.auth-label` (Cinzel 0.25em letter-spacing), `.auth-input` (abyss bg, gold focus ring)
+
 **Session: 2026-03-31 (TASK 2A-2 — Tree Wizard Visual Refactor)**
 - `globals.css` — Added `.wiz-btn-primary` (ember gradient CTA), `.wiz-textarea` (dark fantasy focus glow), `.wiz-option-card` / `.wiz-option-selected` (hover/selected glow), `@keyframes wiz-drift` / `wiz-float-a/b/c` (wizard atmosphere)
 - `tree/new/page.tsx` — Added noise overlay (fixed), ember particles (fixed), radial glow (absolute); replaced generic dot step indicators with ornamental Roman numeral indicators (I/II/III with labels); added gold gradient divider between step indicator and content

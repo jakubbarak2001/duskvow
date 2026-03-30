@@ -152,3 +152,87 @@ Validate passes. Here's a summary of what was done for TASK 2A-2:
 --- End Output ---
 [2026-03-30T22:20:18.982Z] Running validation...
 [2026-03-30T22:20:31.380Z] ✅ Validation PASSED
+[2026-03-30T22:20:31.536Z] Committed: feat: TASK 2A-2 — Tree Wizard Visual Refactor
+[2026-03-30T22:20:31.538Z] ✅ TASK 2A-2 COMPLETED
+[2026-03-30T22:20:31.538Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:20:31.538Z] 
+[2026-03-30T22:20:31.539Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:20:31.539Z] DONE: 1/1 tasks completed.
+[2026-03-30T22:20:31.539Z] All tasks succeeded.
+[2026-03-30T22:20:31.539Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:27:28.623Z] ╔══════════════════════════════════════════════╗
+[2026-03-30T22:27:28.627Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-03-30T22:27:28.628Z] ╚══════════════════════════════════════════════╝
+[2026-03-30T22:27:28.671Z] Current branch: feature/wizard-visual-refactor
+[2026-03-30T22:27:28.852Z] Found 8 total tasks, 4 queued.
+[2026-03-30T22:27:28.852Z] Running baseline validation...
+[2026-03-30T22:27:41.727Z] ✅ Baseline clean — codebase passes validation.
+[2026-03-30T22:27:41.728Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:27:41.728Z] STARTING: TASK 2A-1 — Auth Page Visual Refactor
+[2026-03-30T22:27:41.729Z] Branch: feature/auth-visual-refactor
+[2026-03-30T22:27:41.729Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:27:41.901Z] ERROR: Branch checkout failed: Command failed: git checkout -b feature/auth-visual-refactor
+fatal: a branch named 'feature/auth-visual-refactor' already exists
+
+[2026-03-30T22:27:41.903Z] 
+[2026-03-30T22:27:41.906Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:27:41.907Z] DONE: 0/4 tasks completed.
+[2026-03-30T22:27:41.908Z] Some tasks remaining. Check runner.log.
+[2026-03-30T22:27:41.909Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:28:20.960Z] ╔══════════════════════════════════════════════╗
+[2026-03-30T22:28:20.964Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-03-30T22:28:20.965Z] ╚══════════════════════════════════════════════╝
+[2026-03-30T22:28:21.010Z] Current branch: feature/wizard-visual-refactor
+[2026-03-30T22:28:21.160Z] Found 8 total tasks, 3 queued.
+[2026-03-30T22:28:21.161Z] Running baseline validation...
+[2026-03-30T22:28:51.161Z] ╔══════════════════════════════════════════════╗
+[2026-03-30T22:28:51.166Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-03-30T22:28:51.167Z] ╚══════════════════════════════════════════════╝
+[2026-03-30T22:28:51.211Z] Current branch: feature/wizard-visual-refactor
+[2026-03-30T22:28:51.369Z] Found 8 total tasks, 3 queued.
+[2026-03-30T22:28:51.370Z] Running baseline validation...
+[2026-03-30T22:29:05.207Z] ╔══════════════════════════════════════════════╗
+[2026-03-30T22:29:05.210Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-03-30T22:29:05.211Z] ╚══════════════════════════════════════════════╝
+[2026-03-30T22:29:05.258Z] Current branch: feature/wizard-visual-refactor
+[2026-03-30T22:29:05.402Z] Found 8 total tasks, 4 queued.
+[2026-03-30T22:29:05.402Z] Running baseline validation...
+[2026-03-30T22:29:18.341Z] ✅ Baseline clean — codebase passes validation.
+[2026-03-30T22:29:18.342Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:29:18.342Z] STARTING: TASK 2A-1 — Auth Page Visual Refactor
+[2026-03-30T22:29:18.343Z] Branch: feature/auth-visual-refactor
+[2026-03-30T22:29:18.343Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:29:18.448Z] Created and checked out new branch: feature/auth-visual-refactor
+[2026-03-30T22:29:18.449Z] Invoking Claude Code...
+[2026-03-30T22:29:18.449Z] Prompt length: 3454 chars
+[2026-03-30T22:32:39.780Z] Claude Code finished in 3m 21s (exit: OK)
+
+--- Claude Output for TASK 2A-1 ---
+TASK 2A-1 complete. All 3 validation checks pass.
+
+**What was done:**
+
+- **`auth/page.tsx`** — Full atmospheric redesign matching landing page quality:
+  - Fixed noise overlay (reusing the same SVG turbulence pattern)
+  - Dual radial glows (ember from bottom, faint gold from top)
+  - 11 floating ember particles reusing the `wiz-float-a/b/c` animations from globals.css
+  - Auth card: `--bg-shadow` background with ember border glow + deep box-shadow
+  - Duskvow logo at top linking to `/`
+  - Gold gradient divider line
+  - Cinzel heading `clamp(1.75rem, 4vw, 2.3rem)` with gold text-shadow glow
+  - Cinzel uppercase subtitle with wide letter-spacing
+  - "← Return to the Gates" back link at bottom
+
+- **`AuthForm.tsx`** — Pushed Supabase Auth UI appearance further:
+  - Added `fonts` object — Cinzel for buttons & labels, Inter for inputs
+  - Deeper `inputBackground` (`--bg-abyss`), tighter `brandAccent`
+  - Added `className` overrides: `auth-submit-btn`, `auth-label`, `auth-input`
+
+- **`globals.css`** — New AUTH PAGE STYLES section:
+  - `.auth-submit-btn` — ember gradient (`#C84B11 → #a03a28`), Cinzel uppercase, hover glow lift
+  - `.auth-label` — Cinzel 0.65rem, 0.25em letter-spacing, uppercase
+  - `.auth-input` — abyss background, gold focus ring glow
+
+--- End Output ---
+[2026-03-30T22:32:39.781Z] Running validation...
+[2026-03-30T22:32:52.111Z] ✅ Validation PASSED
