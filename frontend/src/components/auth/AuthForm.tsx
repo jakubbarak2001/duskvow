@@ -112,7 +112,7 @@ export function AuthForm() {
           input: "auth-input",
         },
       }}
-      providers={[]}
+      providers={["google"]}
       redirectTo={redirectTo}
       theme="default"
     />

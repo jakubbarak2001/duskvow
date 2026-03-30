@@ -15,12 +15,50 @@ export function FollowUpQuestionsStep({
   loading,
 }: FollowUpQuestionsStepProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [freetextOpen, setFreetextOpen] = useState<Record<string, boolean>>({});
+  const [freetextValues, setFreetextValues] = useState<Record<string, string>>({});
 
-  const allAnswered = questions.every((q) => answers[q.id]);
+  const allAnswered = questions.every((q) => {
+    if (freetextOpen[q.id]) {
+      return (freetextValues[q.id] ?? "").trim().length >= 3;
+    }
+    return !!answers[q.id];
+  });
+
+  const handleSelectOption = (qId: string, option: string) => {
+    setFreetextOpen((prev) => ({ ...prev, [qId]: false }));
+    setAnswers((prev) => ({ ...prev, [qId]: option }));
+  };
+
+  const handleToggleFreetext = (qId: string) => {
+    const opening = !freetextOpen[qId];
+    setFreetextOpen((prev) => ({ ...prev, [qId]: opening }));
+    if (opening) {
+      // Clear predefined selection for this question
+      setAnswers((prev) => {
+        const next = { ...prev };
+        delete next[qId];
+        return next;
+      });
+    }
+  };
+
+  const handleFreetextChange = (qId: string, value: string) => {
+    setFreetextValues((prev) => ({ ...prev, [qId]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (allAnswered) onSubmit(answers);
+    if (!allAnswered) return;
+
+    // Merge freetext answers into answers record
+    const finalAnswers: Record<string, string> = { ...answers };
+    for (const q of questions) {
+      if (freetextOpen[q.id]) {
+        finalAnswers[q.id] = (freetextValues[q.id] ?? "").trim();
+      }
+    }
+    onSubmit(finalAnswers);
   };
 
   return (
@@ -64,36 +102,94 @@ export function FollowUpQuestionsStep({
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-10">
-        {questions.map((q, idx) => (
-          <div key={q.id}>
-            <p
-              style={{
-                fontFamily: "var(--font-heading), 'Cinzel', serif",
-                fontSize: "0.9rem",
-                letterSpacing: "0.04em",
-                color: "var(--text-primary)",
-                marginBottom: "1rem",
-              }}
-            >
-              {idx + 1}. {q.text}
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {q.options.map((option) => {
-                const selected = answers[q.id] === option;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: option }))}
-                    className={`wiz-option-card p-4 rounded-lg text-sm${selected ? " wiz-option-selected" : ""}`}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
+        {questions.map((q, idx) => {
+          const isFreetextOpen = !!freetextOpen[q.id];
+          const freetextVal = freetextValues[q.id] ?? "";
+          const freetextValid = freetextVal.trim().length >= 3;
+
+          return (
+            <div key={q.id}>
+              <p
+                style={{
+                  fontFamily: "var(--font-heading), 'Cinzel', serif",
+                  fontSize: "0.9rem",
+                  letterSpacing: "0.04em",
+                  color: "var(--text-primary)",
+                  marginBottom: "1rem",
+                }}
+              >
+                {idx + 1}. {q.text}
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {q.options.map((option) => {
+                  const selected = !isFreetextOpen && answers[q.id] === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => handleSelectOption(q.id, option)}
+                      className={`wiz-option-card p-4 rounded-lg text-sm${selected ? " wiz-option-selected" : ""}`}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+
+                {/* Something else button */}
+                <button
+                  type="button"
+                  onClick={() => handleToggleFreetext(q.id)}
+                  className={`wiz-option-card p-4 rounded-lg text-sm${isFreetextOpen ? " wiz-option-selected" : ""}`}
+                  style={{
+                    borderStyle: "dashed",
+                    color: isFreetextOpen ? "var(--text-primary)" : "var(--text-muted)",
+                  }}
+                >
+                  Something else…
+                </button>
+              </div>
+
+              {/* Freetext input — expands when "Something else" is selected */}
+              {isFreetextOpen && (
+                <div style={{ marginTop: "0.75rem" }}>
+                  <input
+                    type="text"
+                    value={freetextVal}
+                    onChange={(e) => handleFreetextChange(q.id, e.target.value)}
+                    placeholder="Describe your answer…"
+                    maxLength={200}
+                    autoFocus
+                    className="wiz-freetext-input"
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem 1rem",
+                      borderRadius: "0.5rem",
+                      background: "var(--bg-shadow)",
+                      color: "var(--text-primary)",
+                      border: `1px solid ${freetextValid ? "var(--accent-ember)" : "var(--border-default)"}`,
+                      outline: "none",
+                      fontSize: "0.9rem",
+                      fontFamily: "Inter, sans-serif",
+                      transition: "border-color 0.2s",
+                    }}
+                  />
+                  {freetextVal.length > 0 && !freetextValid && (
+                    <p
+                      style={{
+                        marginTop: "0.4rem",
+                        fontSize: "0.75rem",
+                        color: "var(--text-muted)",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      At least 3 characters required.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div className="flex justify-end mt-2">
           <button

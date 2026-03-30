@@ -110,7 +110,7 @@ Redesign the tree creation wizard (`/tree/new`) to feel atmospheric and ceremoni
 
 ### TASK 2A-3: Dashboard Visual Refactor
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-visual-refactor`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/components/ui/StatsBar.tsx`, `frontend/src/app/globals.css` (if new animations needed)
 
@@ -163,7 +163,7 @@ Redesign the dashboard (`/dashboard`) from a functional list into an atmospheric
 
 ### TASK 2A-4: Follow-Up "Something Else" Freetext Option
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/followup-freetext`
 **Files to modify**: `frontend/src/components/tree-wizard/FollowUpQuestionsStep.tsx`, `frontend/src/types/index.ts` (if type changes needed)
 
@@ -201,7 +201,7 @@ Add a "Something else…" option to every follow-up question that expands into a
 
 ### TASK 2B-1: Google OAuth Implementation
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/google-oauth`
 **Files to modify**: `frontend/src/components/auth/AuthForm.tsx`, possibly `frontend/src/app/auth/page.tsx`
 

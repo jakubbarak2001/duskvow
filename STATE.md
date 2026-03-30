@@ -142,6 +142,14 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-03-31 (TASK 2B-1 — Google OAuth Implementation)**
+- `AuthForm.tsx` — Added `"google"` to `providers` array; existing `defaultButtonBackground`/`defaultButtonText` variables already dark-themed; `redirectTo` uses `window.location.origin + /dashboard` which works for OAuth callback
+- `globals.css` — Added `.auth-submit-btn:has(svg)` overrides so Google button renders as dark surface (`--bg-elevated` background, muted border) instead of inheriting ember gradient from `auth-submit-btn`; hover shows subtle ember border glow matching the rest of the form
+
+**Session: 2026-03-31 (TASK 2A-4 — Follow-Up "Something Else" Freetext Option)**
+- `FollowUpQuestionsStep.tsx` — Added "Something else…" button (dashed border, muted text) after predefined options for every question; clicking opens a freetext `<input>` with `--bg-shadow` background and ember border-on-focus; freetext value used as answer (not the literal string); selecting a predefined option collapses freetext; 3-char minimum enforced with inline hint; `allAnswered` logic accounts for freetext mode per question
+- `globals.css` — Added `.wiz-freetext-input:focus` (ember glow matching `.wiz-textarea:focus`) and `.wiz-freetext-input::placeholder` (muted italic)
+
 **Session: 2026-03-31 (TASK 2A-1 — Auth Page Visual Refactor)**
 - `auth/page.tsx` — Full atmospheric redesign: noise overlay (fixed), ember/gold radial glows (fixed), 11 floating ember particles (reusing wiz-float-a/b/c animations); auth card uses `--bg-shadow` with ember border glow + deep box-shadow; Duskvow logo linking to `/` at top; gold gradient divider; Cinzel heading at `clamp(1.75rem, 4vw, 2.3rem)` with gold text-shadow; Cinzel uppercase subtitle; "Return to the Gates" back link at bottom
 - `AuthForm.tsx` — Pushed `appearance.variables` further: `fonts` object added (Cinzel for buttons/labels, Inter for inputs/body); tighter `brandAccent`, deeper `inputBackground` (`--bg-abyss`), wider button/input spacing; added `appearance.className` with `auth-submit-btn` (ember gradient button), `auth-label` (Cinzel uppercase), `auth-input` (deep focus glow)

@@ -269,3 +269,57 @@ TASK 2A-3 complete. Here's a summary of what was changed:
 --- End Output ---
 [2026-03-30T22:36:28.109Z] Running validation...
 [2026-03-30T22:36:40.613Z] ✅ Validation PASSED
+[2026-03-30T22:36:40.766Z] Committed: feat: TASK 2A-3 — Dashboard Visual Refactor
+[2026-03-30T22:36:40.768Z] ✅ TASK 2A-3 COMPLETED
+[2026-03-30T22:36:40.768Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:36:40.768Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:36:40.768Z] STARTING: TASK 2A-4 — Follow-Up "Something Else" Freetext Option
+[2026-03-30T22:36:40.769Z] Branch: feature/followup-freetext
+[2026-03-30T22:36:40.769Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:36:40.865Z] Created and checked out new branch: feature/followup-freetext
+[2026-03-30T22:36:40.866Z] Invoking Claude Code...
+[2026-03-30T22:36:40.867Z] Prompt length: 2944 chars
+[2026-03-30T22:38:06.961Z] Claude Code finished in 1m 26s (exit: OK)
+
+--- Claude Output for TASK 2A-4 ---
+TASK 2A-4 complete. Here's what was done:
+
+**`FollowUpQuestionsStep.tsx`**
+- Added `freetextOpen` and `freetextValues` state records (keyed by question ID)
+- Each question gets a "Something else…" button after the predefined options — dashed border, `--text-muted` color when inactive, switches to selected style when open
+- Clicking it clears the predefined selection and shows a text `<input>` below the option grid
+- Clicking any predefined option collapses freetext and deselects it for that question
+- `allAnswered` check respects freetext mode: requires ≥3 chars in the input
+- On submit, freetext values are merged into the `finalAnswers` record (the typed string, not "Something else")
+- Inline hint shown if user starts typing but hasn't hit 3 chars yet
+
+**`globals.css`**
+- Added `.wiz-freetext-input:focus` (ember glow matching the existing `.wiz-textarea`) and `::placeholder` (muted italic)
+
+--- End Output ---
+[2026-03-30T22:38:06.962Z] Running validation...
+[2026-03-30T22:38:19.541Z] ✅ Validation PASSED
+[2026-03-30T22:38:19.643Z] Nothing to commit or commit failed.
+[2026-03-30T22:38:19.644Z] ✅ TASK 2A-4 COMPLETED
+[2026-03-30T22:38:19.645Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:38:19.645Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:38:19.645Z] STARTING: TASK 2B-1 — Google OAuth Implementation
+[2026-03-30T22:38:19.646Z] Branch: feature/google-oauth
+[2026-03-30T22:38:19.646Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:38:19.741Z] Created and checked out new branch: feature/google-oauth
+[2026-03-30T22:38:19.742Z] Invoking Claude Code...
+[2026-03-30T22:38:19.742Z] Prompt length: 2942 chars
+[2026-03-30T22:40:03.879Z] Claude Code finished in 1m 44s (exit: OK)
+
+--- Claude Output for TASK 2B-1 ---
+Done. Here's what changed:
+
+**`AuthForm.tsx`** — Changed `providers={[]}` to `providers={["google"]}`. The `redirectTo` already uses `window.location.origin + /dashboard` which handles OAuth callbacks correctly. The `onAuthStateChange` listener fires on `SIGNED_IN` for all providers uniformly.
+
+**`globals.css`** — Added `.auth-submit-btn:has(svg)` override. Since `className.button` applies to all buttons (including OAuth), this targets social buttons specifically (they contain an SVG logo) and applies the dark `--bg-elevated` surface style instead of the ember gradient — matching the dark fantasy aesthetic without a jarring white Google button.
+
+**Note on prerequisites**: Google OAuth will only show if enabled in the Supabase dashboard (Auth → Providers → Google). If not configured, Supabase Auth UI will simply not render the Google button — no error, no crash. The task can be marked complete once Jacob configures the provider credentials.
+
+--- End Output ---
+[2026-03-30T22:40:03.880Z] Running validation...
+[2026-03-30T22:40:17.184Z] ✅ Validation PASSED
