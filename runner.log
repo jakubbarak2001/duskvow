@@ -236,3 +236,36 @@ TASK 2A-1 complete. All 3 validation checks pass.
 --- End Output ---
 [2026-03-30T22:32:39.781Z] Running validation...
 [2026-03-30T22:32:52.111Z] ✅ Validation PASSED
+[2026-03-30T22:32:52.264Z] Committed: feat: TASK 2A-1 — Auth Page Visual Refactor
+[2026-03-30T22:32:52.265Z] ✅ TASK 2A-1 COMPLETED
+[2026-03-30T22:32:52.265Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:32:52.265Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:32:52.266Z] STARTING: TASK 2A-3 — Dashboard Visual Refactor
+[2026-03-30T22:32:52.266Z] Branch: feature/dashboard-visual-refactor
+[2026-03-30T22:32:52.266Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:32:52.361Z] Created and checked out new branch: feature/dashboard-visual-refactor
+[2026-03-30T22:32:52.362Z] Invoking Claude Code...
+[2026-03-30T22:32:52.363Z] Prompt length: 3525 chars
+[2026-03-30T22:36:28.108Z] Claude Code finished in 3m 36s (exit: OK)
+
+--- Claude Output for TASK 2A-3 ---
+TASK 2A-3 complete. Here's a summary of what was changed:
+
+**`StatsBar.tsx`** — Redesigned as a full-width HUD:
+- 5xl Cinzel numbers spanning the full bar width with vertical separators
+- Gold glow on XP, ember glow on Streak, gold/complete glow on Nodes
+- Mini XP milestone progress bar (fills every 500 XP) with "X XP to milestone" label
+
+**`dashboard/page.tsx`** — War-room atmosphere:
+- Noise overlay + ember radial glow + 6 floating ember particles (fixed, fewer than landing)
+- "Your Vow Board" at `clamp(2.4rem, 5vw, 3.4rem)` with gold text-shadow glow
+- `wiz-btn-primary` ember gradient CTA on "New Vow" button
+- New `SectionHeader` component: `◆ Active Vows ◆` in small Cinzel caps with gold gradient divider lines on each side
+- `TreeCard`: 3px left border accent in status color, hover elevation, h-2 progress bar with glow
+- Empty state: inner radial glow, Cinzel eyebrow label, italic atmospheric copy, ember CTA
+
+**`globals.css`** — Added DASHBOARD PAGE STYLES block with stat glow classes, card hover, and progress fill glow.
+
+--- End Output ---
+[2026-03-30T22:36:28.109Z] Running validation...
+[2026-03-30T22:36:40.613Z] ✅ Validation PASSED

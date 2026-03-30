@@ -19,7 +19,7 @@
 
 ### TASK 2A-1: Auth Page Visual Refactor
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/auth-visual-refactor`
 **Files to modify**: `frontend/src/app/auth/page.tsx`, `frontend/src/components/auth/AuthForm.tsx`, `frontend/src/app/globals.css` (if new animations needed)
 
@@ -110,7 +110,7 @@ Redesign the tree creation wizard (`/tree/new`) to feel atmospheric and ceremoni
 
 ### TASK 2A-3: Dashboard Visual Refactor
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/dashboard-visual-refactor`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/components/ui/StatsBar.tsx`, `frontend/src/app/globals.css` (if new animations needed)
 
