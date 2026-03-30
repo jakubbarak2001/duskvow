@@ -101,3 +101,54 @@ C:\Users\USER\Duskvow\frontend\src\hooks\useUser.ts:24:7
 [2026-03-30T21:23:08.106Z] Stopping queue due to failure. Fix the issue and re-run.
 [2026-03-30T21:23:08.107Z] 
 Runner finished. Check runner.log for full details.
+[2026-03-30T22:04:30.424Z] ╔══════════════════════════════════════════════╗
+[2026-03-30T22:04:30.428Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-03-30T22:04:30.428Z] ╚══════════════════════════════════════════════╝
+[2026-03-30T22:04:30.476Z] Current branch: feature/auth-visual-refactor
+[2026-03-30T22:04:30.630Z] Found 8 total tasks, 4 queued.
+[2026-03-30T22:04:30.631Z] Running baseline validation...
+[2026-03-30T22:04:44.770Z] ✅ Baseline clean — codebase passes validation.
+[2026-03-30T22:04:44.771Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:04:44.772Z] STARTING: TASK 2A-2 — Tree Wizard Visual Refactor
+[2026-03-30T22:04:44.772Z] Branch: feature/wizard-visual-refactor
+[2026-03-30T22:04:44.773Z] ════════════════════════════════════════════════════════════
+[2026-03-30T22:04:44.904Z] Created and checked out new branch: feature/wizard-visual-refactor
+[2026-03-30T22:04:44.906Z] Invoking Claude Code...
+[2026-03-30T22:04:44.908Z] Prompt length: 3760 chars
+[2026-03-30T22:20:18.981Z] Claude Code finished in 15m 34s (exit: OK)
+
+--- Claude Output for TASK 2A-2 ---
+Validate passes. Here's a summary of what was done for TASK 2A-2:
+
+**`globals.css`** — Added wizard-specific CSS:
+- `.wiz-btn-primary` — ember gradient button with hover slide effect (mirrors landing page `.lp-btn-primary`)
+- `.wiz-textarea` — `--bg-shadow` background, ember border + inner glow on focus
+- `.wiz-option-card` / `.wiz-option-selected` — hover glow + selected state with ember box-shadow
+- `@keyframes wiz-drift`, `wiz-float-a/b/c` — animation keyframes for atmosphere
+
+**`tree/new/page.tsx`** — Full atmospheric treatment:
+- Fixed noise overlay + 10 floating ember particles (matching landing page approach)
+- Centered radial ember glow behind content
+- Step indicator replaced with Roman numerals (I / II / III) with Cinzel typography, faded/active/completed color states, and gold connecting lines
+- Gold gradient divider line between indicator and content
+
+**`GoalInputStep.tsx`** — Ceremonial redesign:
+- Eyebrow label `◆ Speak Your Ambition ◆` in tiny Cinzel caps
+- Heading scaled to `clamp(2.2rem, 5vw, 3.2rem)` in gold
+- Textarea uses `wiz-textarea` class (dark bg, ember focus glow)
+- Atmospheric italic note below textarea
+- Button uses `wiz-btn-primary` ember gradient
+
+**`FollowUpQuestionsStep.tsx`** — Path-choice redesign:
+- Cinzel question text, italic intro copy
+- Option cards use `wiz-option-card` + `wiz-option-selected` (hover lift + glow, selected ember glow)
+- Button uses `wiz-btn-primary`
+
+**`GeneratingStep.tsx`** — Immersive wait:
+- 10 large faint runes (`ᚦ ᛁ ᛗ ᚹ ᛟ…`) drifting slowly in the background via `wiz-drift`
+- Radial ember glow centered behind the rune animation
+- Existing breathing rings preserved
+
+--- End Output ---
+[2026-03-30T22:20:18.982Z] Running validation...
+[2026-03-30T22:20:31.380Z] ✅ Validation PASSED

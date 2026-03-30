@@ -62,7 +62,7 @@ Redesign the auth page (`/auth`) to feel like an extension of the landing page, 
 
 ### TASK 2A-2: Tree Wizard Visual Refactor
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/wizard-visual-refactor`
 **Files to modify**: `frontend/src/app/tree/new/page.tsx`, `frontend/src/components/tree-wizard/GoalInputStep.tsx`, `frontend/src/components/tree-wizard/FollowUpQuestionsStep.tsx`, `frontend/src/components/tree-wizard/GeneratingStep.tsx`, `frontend/src/app/globals.css` (if new animations needed)
 

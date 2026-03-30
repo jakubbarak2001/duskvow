@@ -142,6 +142,13 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-03-31 (TASK 2A-2 — Tree Wizard Visual Refactor)**
+- `globals.css` — Added `.wiz-btn-primary` (ember gradient CTA), `.wiz-textarea` (dark fantasy focus glow), `.wiz-option-card` / `.wiz-option-selected` (hover/selected glow), `@keyframes wiz-drift` / `wiz-float-a/b/c` (wizard atmosphere)
+- `tree/new/page.tsx` — Added noise overlay (fixed), ember particles (fixed), radial glow (absolute); replaced generic dot step indicators with ornamental Roman numeral indicators (I/II/III with labels); added gold gradient divider between step indicator and content
+- `GoalInputStep.tsx` — Dramatic Cinzel heading at `clamp(2.2rem, 5vw, 3.2rem)`, ember eyebrow label, `wiz-textarea` dark fantasy treatment, `wiz-btn-primary` ember gradient button, atmospheric italic note below textarea
+- `FollowUpQuestionsStep.tsx` — Cinzel question text, `wiz-option-card` / `wiz-option-selected` path-choice cards with hover/selected glow, `wiz-btn-primary` ember gradient CTA
+- `GeneratingStep.tsx` — Added drifting rune background (10 faint runes, `wiz-drift` animation), centered radial glow behind rune ring; existing breathing rings preserved
+
 **Session: 2026-03-30 (initial STATE.md creation)**
 - Created STATE.md
 - No code changes — documentation session

@@ -25,26 +25,59 @@ export function FollowUpQuestionsStep({
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Eyebrow label */}
+      <p
+        style={{
+          fontFamily: "var(--font-heading), 'Cinzel', serif",
+          fontSize: "0.7rem",
+          letterSpacing: "0.35em",
+          textTransform: "uppercase",
+          color: "var(--accent-ember)",
+          marginBottom: "1.25rem",
+        }}
+      >
+        ◆ &nbsp; Choose Your Path &nbsp; ◆
+      </p>
+
       <h2
-        className="text-3xl font-bold mb-2"
-        style={{ fontFamily: "var(--font-heading)", color: "var(--accent-gold)" }}
+        style={{
+          fontFamily: "var(--font-heading), 'Cinzel', serif",
+          fontSize: "clamp(1.8rem, 4vw, 2.6rem)",
+          fontWeight: 900,
+          lineHeight: 1.15,
+          color: "var(--accent-gold)",
+          marginBottom: "0.75rem",
+        }}
       >
         Sharpen Your Vision
       </h2>
-      <p className="mb-8" style={{ color: "var(--text-muted)" }}>
-        Answer these questions to forge a more powerful talent tree.
+      <p
+        style={{
+          color: "var(--text-secondary)",
+          marginBottom: "3rem",
+          fontSize: "1rem",
+          lineHeight: 1.8,
+          fontStyle: "italic",
+        }}
+      >
+        Each answer shapes the branches of your tree. Choose wisely.
       </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-10">
         {questions.map((q, idx) => (
           <div key={q.id}>
             <p
-              className="text-sm font-medium mb-3"
-              style={{ color: "var(--text-primary)" }}
+              style={{
+                fontFamily: "var(--font-heading), 'Cinzel', serif",
+                fontSize: "0.9rem",
+                letterSpacing: "0.04em",
+                color: "var(--text-primary)",
+                marginBottom: "1rem",
+              }}
             >
               {idx + 1}. {q.text}
             </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {q.options.map((option) => {
                 const selected = answers[q.id] === option;
                 return (
@@ -52,16 +85,7 @@ export function FollowUpQuestionsStep({
                     key={option}
                     type="button"
                     onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: option }))}
-                    className="p-3 rounded-lg text-sm text-left transition-all"
-                    style={{
-                      backgroundColor: selected
-                        ? "rgba(200, 75, 17, 0.2)"
-                        : "var(--bg-elevated)",
-                      border: selected
-                        ? "1px solid var(--accent-ember)"
-                        : "1px solid var(--border-default)",
-                      color: selected ? "var(--text-primary)" : "var(--text-secondary)",
-                    }}
+                    className={`wiz-option-card p-4 rounded-lg text-sm${selected ? " wiz-option-selected" : ""}`}
                   >
                     {option}
                   </button>
@@ -71,19 +95,15 @@ export function FollowUpQuestionsStep({
           </div>
         ))}
 
-        <button
-          type="submit"
-          disabled={!allAnswered || loading}
-          className="self-end px-6 py-2 rounded font-medium text-sm transition-opacity"
-          style={{
-            backgroundColor: "var(--accent-ember)",
-            color: "var(--text-primary)",
-            opacity: !allAnswered || loading ? 0.5 : 1,
-            cursor: !allAnswered || loading ? "not-allowed" : "pointer",
-          }}
-        >
-          {loading ? "Weaving your fate…" : "Generate My Tree →"}
-        </button>
+        <div className="flex justify-end mt-2">
+          <button
+            type="submit"
+            disabled={!allAnswered || loading}
+            className="wiz-btn-primary"
+          >
+            <span>{loading ? "Weaving your fate…" : "Generate My Tree →"}</span>
+          </button>
+        </div>
       </form>
     </div>
   );
