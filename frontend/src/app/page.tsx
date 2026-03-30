@@ -1,6 +1,12 @@
+"use client";
+
 import Link from "next/link";
 
 export default function LandingPage() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <>
       <style>{landingStyles}</style>
@@ -34,9 +40,9 @@ export default function LandingPage() {
 
         {/* Navigation */}
         <nav className="lp-nav">
-          <Link href="/" className="lp-nav-logo">
+          <button onClick={scrollToTop} className="lp-nav-logo">
             Dusk<span>vow</span>
-          </Link>
+          </button>
           <a href="#vow" className="lp-nav-cta">Make Your Vow</a>
         </nav>
 
@@ -295,6 +301,10 @@ const landingStyles = `
     color: var(--bone);
     text-decoration: none;
     text-transform: uppercase;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
   }
 
   .lp-nav-logo span {
