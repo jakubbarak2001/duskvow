@@ -17,11 +17,10 @@ interface UseUserReturn {
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => isSupabaseConfigured());
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
-      setLoading(false);
       return;
     }
 

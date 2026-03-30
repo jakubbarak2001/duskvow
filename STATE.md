@@ -30,14 +30,12 @@ The landing page (`page.tsx`) defines the visual bar for the entire app. Every n
 
 ### Visual Reference Notes (from landing page screenshots)
 The landing page is the **quality benchmark** for the entire app. Specific details:
-- **Hero**: Full-bleed dark fantasy background image (`hero_bg.webp`) — ruined cityscape/fortress silhouettes in foreground, dark stormy sky, and a massive glowing ember tree on the right side with fire-like orbs in its branches. NOT a character/warrior — it's an environmental scene. Overlaid with gradient darkening (70% opacity top, 50% mid, 85% bottom) + radial text shadow for readability. Ember particles float upward over everything.
-- **Anti-section**: Has its own subtle background image — a dark archway/corridor with warm light bleeding through, heavily overlaid at 85% opacity. Creates depth between sections without competing with text.
+- **Hero**: Full-bleed dark fantasy background image (`hero_bg.webp`) — warrior silhouette in mist/fog. Overlaid with gradient darkening + radial text shadow for readability. Ember particles float upward over everything.
 - **Section dividers**: Gold gradient horizontal lines (`linear-gradient(90deg, transparent, var(--gold-dim), transparent)`) + centered ornamental labels like `◆  A Different Oath  ◆` in small Cinzel caps with wide letter-spacing.
 - **Spacing**: Extremely generous — sections have 4-8rem vertical padding. Text blocks max-width 560-700px centered. Breathing room is a core aesthetic choice.
-- **Step indicators**: Roman numerals (I, II, III) in faded ember (`rgba(196, 85, 58, 0.3)`), grid-aligned left of content. Very large font size, intentionally low contrast — decorative more than functional.
-- **Strikethrough pattern**: Used in anti-section — crossed-out text in muted `var(--ghost)` color contrasting with bright bone-white bold statement below ("We built for the rest of you.").
+- **Step indicators**: Roman numerals (I, II, III) at 3rem in faded ember (`rgba(196, 85, 58, 0.3)`), grid-aligned left of content.
+- **Strikethrough pattern**: Used in anti-section — crossed-out text in muted `var(--ghost)` color contrasting with bright bone-white statement below.
 - **CTA buttons**: Ember gradient (`linear-gradient(135deg, var(--ember), #a03a28)`), wide padding (1.1rem 3.5rem), Cinzel uppercase, hover reveals brighter gradient + glow shadow.
-- **Ember particles**: Floating upward across the entire page, multiple sizes (2-6px), mix of ember-red and gold colors, varying speeds and sway patterns. Subtle but always present — gives the page a living, atmospheric feel.
 - **The app pages (dashboard, tree view) do NOT yet match this visual quality.** This is a known gap.
 
 ### Design Token Usage
