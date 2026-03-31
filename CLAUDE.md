@@ -1,5 +1,5 @@
 # CLAUDE.md — Duskvow Project Configuration
-
+> ⚠️ READ STATE.md BEFORE WRITING ANY CODE. Update Layer 3 before ending session.
 ## Project Overview
 
 **Duskvow** is a dark fantasy AI-powered self-improvement app that generates RPG-style talent trees from user goals.
@@ -183,3 +183,11 @@ interface SkillNode {
 - Do NOT use `console.log` in production code — use a proper logger
 - Do NOT inline styles — use Tailwind classes or CSS custom properties
 - Do NOT use relative imports that go up more than 2 levels — use path aliases (@/)
+
+## Supabase CLI (available in terminal)
+- NEVER ask the user to open the Supabase dashboard
+- Create migrations: `npx supabase migration new <name>`
+- Push to remote: `npx supabase db push`
+- Raw SQL: `npx supabase db execute --sql "<query>"`
+- Check status: `npx supabase migration list`
+- All migrations live in `supabase/migrations/`

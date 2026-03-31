@@ -12,15 +12,6 @@ const TIER_GLOW: Record<string, string> = {
   mythic: "0 0 16px rgba(255, 215, 0, 0.8)",
 };
 
-const BORDER_COLOR: Record<string, string> = {
-  common: "var(--rarity-common)",
-  uncommon: "var(--rarity-uncommon)",
-  rare: "var(--rarity-rare)",
-  epic: "var(--rarity-epic)",
-  legendary: "var(--rarity-legendary)",
-  mythic: "var(--rarity-mythic)",
-};
-
 function NodeShape({
   nodeType,
   size,

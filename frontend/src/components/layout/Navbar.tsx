@@ -24,10 +24,17 @@ export function Navbar() {
     >
       <Link
         href="/"
-        className="text-xl font-bold transition-colors"
-        style={{ fontFamily: "var(--font-heading)", color: "var(--accent-gold)" }}
+        style={{
+          fontFamily: "var(--font-heading), 'Cinzel', serif",
+          fontWeight: 700,
+          fontSize: "1.3rem",
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          textDecoration: "none",
+        }}
       >
-        Duskvow
+        <span style={{ color: "var(--bone)" }}>Dusk</span>
+        <span style={{ color: "var(--logo-ember)" }}>vow</span>
       </Link>
 
       <div className="flex items-center gap-4">

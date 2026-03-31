@@ -15,57 +15,83 @@ export function GoalInputStep({ onSubmit, loading }: GoalInputStepProps) {
     if (goal.trim().length >= 5) onSubmit(goal.trim());
   };
 
+  const canSubmit = goal.trim().length >= 5 && !loading;
+
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Eyebrow label */}
+      <p
+        style={{
+          fontFamily: "var(--font-heading), 'Cinzel', serif",
+          fontSize: "0.7rem",
+          letterSpacing: "0.35em",
+          textTransform: "uppercase",
+          color: "var(--accent-ember)",
+          marginBottom: "1.25rem",
+        }}
+      >
+        ◆ &nbsp; Speak Your Ambition &nbsp; ◆
+      </p>
+
       <h1
-        className="text-4xl font-bold mb-3"
-        style={{ fontFamily: "var(--font-heading)", color: "var(--accent-gold)" }}
+        style={{
+          fontFamily: "var(--font-heading), 'Cinzel', serif",
+          fontSize: "clamp(2.2rem, 5vw, 3.2rem)",
+          fontWeight: 900,
+          lineHeight: 1.15,
+          color: "var(--text-primary)",
+          marginBottom: "1rem",
+        }}
       >
         Make Your Vow
       </h1>
-      <p className="mb-8" style={{ color: "var(--text-muted)" }}>
-        What do you want to achieve? Be specific — the more detail you give, the
-        better your talent tree will be.
+
+      <p
+        style={{
+          color: "var(--text-secondary)",
+          marginBottom: "2.5rem",
+          fontSize: "1.05rem",
+          lineHeight: 1.8,
+          maxWidth: 520,
+        }}
+      >
+        What do you want to achieve? Be specific — the more detail you give,
+        the more powerful your talent tree will be.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <textarea
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          placeholder="e.g. I want to learn Python programming from scratch"
-          rows={4}
+          placeholder="e.g. I want to learn Python programming from scratch and build my first web app within 3 months…"
+          rows={5}
           maxLength={1000}
-          className="w-full p-4 rounded-lg resize-none text-sm"
-          style={{
-            backgroundColor: "var(--bg-elevated)",
-            border: "1px solid var(--border-default)",
-            color: "var(--text-primary)",
-            outline: "none",
-          }}
-          onFocus={(e) =>
-            (e.currentTarget.style.borderColor = "var(--accent-ember)")
-          }
-          onBlur={(e) =>
-            (e.currentTarget.style.borderColor = "var(--border-default)")
-          }
+          className="wiz-textarea w-full p-5 rounded-lg resize-none text-sm leading-relaxed"
         />
 
-        <div className="flex items-center justify-between">
+        {/* Atmospheric note */}
+        <p
+          style={{
+            fontStyle: "italic",
+            fontSize: "0.82rem",
+            color: "var(--text-muted)",
+            lineHeight: 1.7,
+          }}
+        >
+          Your vow becomes the seed from which your talent tree grows.
+          The Oracle reads intent — not just words.
+        </p>
+
+        <div className="flex items-center justify-between mt-1">
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {goal.length}/1000
+            {goal.length} / 1000
           </span>
           <button
             type="submit"
-            disabled={goal.trim().length < 5 || loading}
-            className="px-6 py-2 rounded font-medium text-sm transition-opacity"
-            style={{
-              backgroundColor: "var(--accent-ember)",
-              color: "var(--text-primary)",
-              opacity: goal.trim().length < 5 || loading ? 0.5 : 1,
-              cursor: goal.trim().length < 5 || loading ? "not-allowed" : "pointer",
-            }}
+            disabled={!canSubmit}
+            className="wiz-btn-primary"
           >
-            {loading ? "Consulting the Oracle…" : "Forge My Path →"}
+            <span>{loading ? "Consulting the Oracle…" : "Forge My Path →"}</span>
           </button>
         </div>
       </form>

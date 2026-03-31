@@ -64,40 +64,55 @@ export function AuthForm() {
           default: {
             colors: {
               brand: "#C84B11",
-              brandAccent: "#FFD700",
-              brandButtonText: "#E0D8C8",
+              brandAccent: "#a03a28",
+              brandButtonText: "#ffffff",
               defaultButtonBackground: "#242430",
               defaultButtonBackgroundHover: "#2E2E3A",
               defaultButtonBorder: "rgba(224, 216, 200, 0.1)",
               defaultButtonText: "#E0D8C8",
-              dividerBackground: "rgba(224, 216, 200, 0.1)",
-              inputBackground: "#12121A",
-              inputBorder: "rgba(224, 216, 200, 0.1)",
-              inputBorderHover: "#C84B11",
+              dividerBackground: "rgba(224, 216, 200, 0.08)",
+              inputBackground: "#0A0A12",
+              inputBorder: "rgba(224, 216, 200, 0.12)",
+              inputBorderHover: "rgba(200, 75, 17, 0.6)",
               inputBorderFocus: "#FFD700",
               inputText: "#E0D8C8",
               inputLabelText: "#A09888",
               inputPlaceholder: "#6B6358",
               messageText: "#A09888",
-              messageTextDanger: "#8B0000",
-              anchorTextColor: "#FFD700",
-              anchorTextHoverColor: "#C84B11",
+              messageTextDanger: "#c0524b",
+              anchorTextColor: "rgba(255, 215, 0, 0.8)",
+              anchorTextHoverColor: "#FFD700",
             },
             radii: {
-              borderRadiusButton: "4px",
-              buttonBorderRadius: "4px",
-              inputBorderRadius: "4px",
+              borderRadiusButton: "2px",
+              buttonBorderRadius: "2px",
+              inputBorderRadius: "2px",
+            },
+            space: {
+              inputPadding: "0.85rem 1rem",
+              buttonPadding: "1rem 2rem",
             },
             fontSizes: {
               baseBodySize: "14px",
               baseInputSize: "14px",
-              baseLabelSize: "12px",
-              baseButtonSize: "14px",
+              baseLabelSize: "11px",
+              baseButtonSize: "13px",
+            },
+            fonts: {
+              bodyFontFamily: `var(--font-inter), "Inter", sans-serif`,
+              buttonFontFamily: `var(--font-cinzel), "Cinzel", serif`,
+              inputFontFamily: `var(--font-inter), "Inter", sans-serif`,
+              labelFontFamily: `var(--font-cinzel), "Cinzel", serif`,
             },
           },
         },
+        className: {
+          button: "auth-submit-btn",
+          label: "auth-label",
+          input: "auth-input",
+        },
       }}
-      providers={[]}
+      providers={["google"]}
       redirectTo={redirectTo}
       theme="default"
     />

@@ -30,14 +30,12 @@ The landing page (`page.tsx`) defines the visual bar for the entire app. Every n
 
 ### Visual Reference Notes (from landing page screenshots)
 The landing page is the **quality benchmark** for the entire app. Specific details:
-- **Hero**: Full-bleed dark fantasy background image (`hero_bg.webp`) — ruined cityscape/fortress silhouettes in foreground, dark stormy sky, and a massive glowing ember tree on the right side with fire-like orbs in its branches. NOT a character/warrior — it's an environmental scene. Overlaid with gradient darkening (70% opacity top, 50% mid, 85% bottom) + radial text shadow for readability. Ember particles float upward over everything.
-- **Anti-section**: Has its own subtle background image — a dark archway/corridor with warm light bleeding through, heavily overlaid at 85% opacity. Creates depth between sections without competing with text.
+- **Hero**: Full-bleed dark fantasy background image (`hero_bg.webp`) — warrior silhouette in mist/fog. Overlaid with gradient darkening + radial text shadow for readability. Ember particles float upward over everything.
 - **Section dividers**: Gold gradient horizontal lines (`linear-gradient(90deg, transparent, var(--gold-dim), transparent)`) + centered ornamental labels like `◆  A Different Oath  ◆` in small Cinzel caps with wide letter-spacing.
 - **Spacing**: Extremely generous — sections have 4-8rem vertical padding. Text blocks max-width 560-700px centered. Breathing room is a core aesthetic choice.
-- **Step indicators**: Roman numerals (I, II, III) in faded ember (`rgba(196, 85, 58, 0.3)`), grid-aligned left of content. Very large font size, intentionally low contrast — decorative more than functional.
-- **Strikethrough pattern**: Used in anti-section — crossed-out text in muted `var(--ghost)` color contrasting with bright bone-white bold statement below ("We built for the rest of you.").
+- **Step indicators**: Roman numerals (I, II, III) at 3rem in faded ember (`rgba(196, 85, 58, 0.3)`), grid-aligned left of content.
+- **Strikethrough pattern**: Used in anti-section — crossed-out text in muted `var(--ghost)` color contrasting with bright bone-white statement below.
 - **CTA buttons**: Ember gradient (`linear-gradient(135deg, var(--ember), #a03a28)`), wide padding (1.1rem 3.5rem), Cinzel uppercase, hover reveals brighter gradient + glow shadow.
-- **Ember particles**: Floating upward across the entire page, multiple sizes (2-6px), mix of ember-red and gold colors, varying speeds and sway patterns. Subtle but always present — gives the page a living, atmospheric feel.
 - **The app pages (dashboard, tree view) do NOT yet match this visual quality.** This is a known gap.
 
 ### Design Token Usage
@@ -143,6 +141,43 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
+
+**Session: 2026-03-31 (fix: Navbar logo matched to landing page)**
+- `globals.css` — Added `--bone: #d4c9b0` token (landing page heading parchment; distinct from `--text-primary: #E0D8C8` which is slightly lighter)
+- `Navbar.tsx` — Logo split into `<span>Dusk</span>` (`--bone`) + `<span>vow</span>` (`--accent-ember`); font-size 1.3rem, weight 700, letter-spacing 0.15em, uppercase, Cinzel — exact match to `.lp-nav-logo` on landing page; removed `text-xl font-bold` Tailwind classes and `--accent-gold` color
+
+**Session: 2026-03-31 (fix: heading gold → text-primary across runner pages)**
+- `globals.css` — Added `--gold-dim: #8a7340` token to `:root` (mirrors landing page `--gold-dim`; for ornamental dividers/labels only, never headings)
+- `auth/page.tsx` — h1 "Enter the Realm": `--accent-gold` → `--text-primary`, removed bright gold textShadow; gold gradient divider now uses `var(--gold-dim)`; "Return to the Gates" hover changed from gold to `--text-secondary`
+- `dashboard/page.tsx` — h1 "Your Vow Board": `--accent-gold` → `--text-primary`, removed gold textShadow; SectionHeader ornamental label: `rgba(255,215,0,0.55)` → `--text-secondary`; SectionHeader divider lines: gold → gold-dim rgba; empty state `◆` label: gold → `--text-muted`; empty state h2 textShadow removed; finished tree card title: `--accent-gold` → `--text-primary` (gold badge and left border accent preserved as completion-state indicators)
+- `tree/new/page.tsx` — Step indicator done-state numeral: `--accent-gold` → `rgba(200,75,17,0.5)` (muted ember); done-state label: gold → `--text-muted`; done-state connector line: gold gradient → `rgba(200,75,17,0.35)`
+- `GoalInputStep.tsx` — h1 "Make Your Vow": `--accent-gold` → `--text-primary`
+- Rule established: `--accent-gold` is ONLY for XP numbers (`StatsBar`), node completion states (`--state-complete`), rarity indicators, progress bar fills, and the Duskvow logo. All page headings use `--text-primary`. All ornamental labels/dividers use `--text-secondary` / `--text-muted` / `--gold-dim`.
+
+**Session: 2026-03-31 (TASK 2B-1 — Google OAuth Implementation)**
+- `AuthForm.tsx` — Added `"google"` to `providers` array; existing `defaultButtonBackground`/`defaultButtonText` variables already dark-themed; `redirectTo` uses `window.location.origin + /dashboard` which works for OAuth callback
+- `globals.css` — Added `.auth-submit-btn:has(svg)` overrides so Google button renders as dark surface (`--bg-elevated` background, muted border) instead of inheriting ember gradient from `auth-submit-btn`; hover shows subtle ember border glow matching the rest of the form
+
+**Session: 2026-03-31 (TASK 2A-4 — Follow-Up "Something Else" Freetext Option)**
+- `FollowUpQuestionsStep.tsx` — Added "Something else…" button (dashed border, muted text) after predefined options for every question; clicking opens a freetext `<input>` with `--bg-shadow` background and ember border-on-focus; freetext value used as answer (not the literal string); selecting a predefined option collapses freetext; 3-char minimum enforced with inline hint; `allAnswered` logic accounts for freetext mode per question
+- `globals.css` — Added `.wiz-freetext-input:focus` (ember glow matching `.wiz-textarea:focus`) and `.wiz-freetext-input::placeholder` (muted italic)
+
+**Session: 2026-03-31 (TASK 2A-1 — Auth Page Visual Refactor)**
+- `auth/page.tsx` — Full atmospheric redesign: noise overlay (fixed), ember/gold radial glows (fixed), 11 floating ember particles (reusing wiz-float-a/b/c animations); auth card uses `--bg-shadow` with ember border glow + deep box-shadow; Duskvow logo linking to `/` at top; gold gradient divider; Cinzel heading at `clamp(1.75rem, 4vw, 2.3rem)` with gold text-shadow; Cinzel uppercase subtitle; "Return to the Gates" back link at bottom
+- `AuthForm.tsx` — Pushed `appearance.variables` further: `fonts` object added (Cinzel for buttons/labels, Inter for inputs/body); tighter `brandAccent`, deeper `inputBackground` (`--bg-abyss`), wider button/input spacing; added `appearance.className` with `auth-submit-btn` (ember gradient button), `auth-label` (Cinzel uppercase), `auth-input` (deep focus glow)
+- `globals.css` — Added AUTH PAGE STYLES section: `.auth-submit-btn` (ember gradient, Cinzel uppercase, hover glow), `.auth-label` (Cinzel 0.25em letter-spacing), `.auth-input` (abyss bg, gold focus ring)
+
+**Session: 2026-03-31 (TASK 2A-3 — Dashboard Visual Refactor)**
+- `dashboard/page.tsx` — Full atmospheric redesign: noise overlay (fixed), ember radial glow (fixed), 6 floating ember particles; "Your Vow Board" heading at `clamp(2.4rem, 5vw, 3.4rem)` with gold text-shadow; `wiz-btn-primary` ember gradient on "New Vow" CTA; `SectionHeader` component with `◆ Label ◆` ornamental Cinzel caps + gold gradient divider lines; `TreeCard` upgraded with left border accent in status color (`3px solid`), `dash-tree-card` hover class (elevation + glow), thicker progress bar (`h-2`) using glow fill classes; empty state atmospheric treatment with radial inner glow, italic copy, Cinzel eyebrow
+- `StatsBar.tsx` — Full HUD redesign: full-width layout, 5xl Cinzel numbers, vertical separators between stats, gold glow on XP (`dash-stat-xp`), ember glow on Streak (`dash-stat-streak`), gold/complete glow on Nodes (`dash-stat-nodes`), mini XP milestone progress bar with label
+- `globals.css` — Added DASHBOARD PAGE STYLES section: `.dash-stat-xp/streak/nodes` (text-shadow glow), `.dash-tree-card` / `:hover` (elevation), `.dash-progress-fill-active/complete` (box-shadow glow)
+
+**Session: 2026-03-31 (TASK 2A-2 — Tree Wizard Visual Refactor)**
+- `globals.css` — Added `.wiz-btn-primary` (ember gradient CTA), `.wiz-textarea` (dark fantasy focus glow), `.wiz-option-card` / `.wiz-option-selected` (hover/selected glow), `@keyframes wiz-drift` / `wiz-float-a/b/c` (wizard atmosphere)
+- `tree/new/page.tsx` — Added noise overlay (fixed), ember particles (fixed), radial glow (absolute); replaced generic dot step indicators with ornamental Roman numeral indicators (I/II/III with labels); added gold gradient divider between step indicator and content
+- `GoalInputStep.tsx` — Dramatic Cinzel heading at `clamp(2.2rem, 5vw, 3.2rem)`, ember eyebrow label, `wiz-textarea` dark fantasy treatment, `wiz-btn-primary` ember gradient button, atmospheric italic note below textarea
+- `FollowUpQuestionsStep.tsx` — Cinzel question text, `wiz-option-card` / `wiz-option-selected` path-choice cards with hover/selected glow, `wiz-btn-primary` ember gradient CTA
+- `GeneratingStep.tsx` — Added drifting rune background (10 faint runes, `wiz-drift` animation), centered radial glow behind rune ring; existing breathing rings preserved
 
 **Session: 2026-03-30 (initial STATE.md creation)**
 - Created STATE.md
