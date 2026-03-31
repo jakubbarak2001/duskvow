@@ -17,10 +17,19 @@
   --text-secondary: #A09888;
   --text-muted: #6B6358;
 
+  /* Bone — slightly darker parchment, used for logo "DUSK" and landing page headings */
+  --bone: #d4c9b0;
+
+  /* Logo ember — darker terracotta for "VOW" in the Duskvow logo, matches landing page */
+  --logo-ember: #c4553a;
+
   /* Accent colors */
   --accent-ember: #C84B11;
   --accent-gold: #FFD700;
   --accent-blood: #8B0000;
+
+  /* Ornamental gold — for dividers and section labels only, NOT headings */
+  --gold-dim: #8a7340;
 
   /* Rarity progression (for node tiers) */
   --rarity-common: #808080;

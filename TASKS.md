@@ -201,7 +201,7 @@ Add a "Something else…" option to every follow-up question that expands into a
 
 ### TASK 2B-1: Google OAuth Implementation
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/google-oauth`
 **Files to modify**: `frontend/src/components/auth/AuthForm.tsx`, possibly `frontend/src/app/auth/page.tsx`
 

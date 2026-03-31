@@ -142,6 +142,18 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-03-31 (fix: Navbar logo matched to landing page)**
+- `globals.css` — Added `--bone: #d4c9b0` token (landing page heading parchment; distinct from `--text-primary: #E0D8C8` which is slightly lighter)
+- `Navbar.tsx` — Logo split into `<span>Dusk</span>` (`--bone`) + `<span>vow</span>` (`--accent-ember`); font-size 1.3rem, weight 700, letter-spacing 0.15em, uppercase, Cinzel — exact match to `.lp-nav-logo` on landing page; removed `text-xl font-bold` Tailwind classes and `--accent-gold` color
+
+**Session: 2026-03-31 (fix: heading gold → text-primary across runner pages)**
+- `globals.css` — Added `--gold-dim: #8a7340` token to `:root` (mirrors landing page `--gold-dim`; for ornamental dividers/labels only, never headings)
+- `auth/page.tsx` — h1 "Enter the Realm": `--accent-gold` → `--text-primary`, removed bright gold textShadow; gold gradient divider now uses `var(--gold-dim)`; "Return to the Gates" hover changed from gold to `--text-secondary`
+- `dashboard/page.tsx` — h1 "Your Vow Board": `--accent-gold` → `--text-primary`, removed gold textShadow; SectionHeader ornamental label: `rgba(255,215,0,0.55)` → `--text-secondary`; SectionHeader divider lines: gold → gold-dim rgba; empty state `◆` label: gold → `--text-muted`; empty state h2 textShadow removed; finished tree card title: `--accent-gold` → `--text-primary` (gold badge and left border accent preserved as completion-state indicators)
+- `tree/new/page.tsx` — Step indicator done-state numeral: `--accent-gold` → `rgba(200,75,17,0.5)` (muted ember); done-state label: gold → `--text-muted`; done-state connector line: gold gradient → `rgba(200,75,17,0.35)`
+- `GoalInputStep.tsx` — h1 "Make Your Vow": `--accent-gold` → `--text-primary`
+- Rule established: `--accent-gold` is ONLY for XP numbers (`StatsBar`), node completion states (`--state-complete`), rarity indicators, progress bar fills, and the Duskvow logo. All page headings use `--text-primary`. All ornamental labels/dividers use `--text-secondary` / `--text-muted` / `--gold-dim`.
+
 **Session: 2026-03-31 (TASK 2B-1 — Google OAuth Implementation)**
 - `AuthForm.tsx` — Added `"google"` to `providers` array; existing `defaultButtonBackground`/`defaultButtonText` variables already dark-themed; `redirectTo` uses `window.location.origin + /dashboard` which works for OAuth callback
 - `globals.css` — Added `.auth-submit-btn:has(svg)` overrides so Google button renders as dark surface (`--bg-elevated` background, muted border) instead of inheriting ember gradient from `auth-submit-btn`; hover shows subtle ember border glow matching the rest of the form

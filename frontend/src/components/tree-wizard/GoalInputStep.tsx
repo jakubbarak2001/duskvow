@@ -39,7 +39,7 @@ export function GoalInputStep({ onSubmit, loading }: GoalInputStepProps) {
           fontSize: "clamp(2.2rem, 5vw, 3.2rem)",
           fontWeight: 900,
           lineHeight: 1.15,
-          color: "var(--accent-gold)",
+          color: "var(--text-primary)",
           marginBottom: "1rem",
         }}
       >

@@ -126,7 +126,7 @@ export default function AuthPage() {
           aria-hidden="true"
           style={{
             height: 1,
-            background: "linear-gradient(90deg, transparent, rgba(255,215,0,0.45), transparent)",
+            background: "linear-gradient(90deg, transparent, var(--gold-dim), transparent)",
             marginBottom: "2rem",
           }}
         />
@@ -139,8 +139,7 @@ export default function AuthPage() {
             fontWeight: 700,
             letterSpacing: "0.2em",
             textAlign: "center",
-            color: "var(--accent-gold)",
-            textShadow: "0 0 30px rgba(255,215,0,0.3), 0 0 60px rgba(255,215,0,0.1)",
+            color: "var(--text-primary)",
             marginBottom: "0.5rem",
             lineHeight: 1.2,
           }}
@@ -177,7 +176,7 @@ export default function AuthPage() {
               textDecoration: "none",
               transition: "color 0.3s ease",
             }}
-            onMouseEnter={(e) => { (e.target as HTMLElement).style.color = "var(--accent-gold)"; }}
+            onMouseEnter={(e) => { (e.target as HTMLElement).style.color = "var(--text-secondary)"; }}
             onMouseLeave={(e) => { (e.target as HTMLElement).style.color = "var(--text-muted)"; }}
           >
             ← Return to the Gates

@@ -163,7 +163,7 @@ export default function TreeNewPage() {
                         fontWeight: 900,
                         lineHeight: 1,
                         color: done
-                          ? "var(--accent-gold)"
+                          ? "rgba(200,75,17,0.5)"
                           : active
                           ? "rgba(200,75,17,0.85)"
                           : "rgba(200,75,17,0.2)",
@@ -180,7 +180,7 @@ export default function TreeNewPage() {
                         textTransform: "uppercase",
                         marginTop: "0.35rem",
                         color: done
-                          ? "rgba(255,215,0,0.7)"
+                          ? "var(--text-muted)"
                           : active
                           ? "var(--text-secondary)"
                           : "var(--text-muted)",
@@ -200,7 +200,7 @@ export default function TreeNewPage() {
                         marginLeft: "0.5rem",
                         marginRight: "0.5rem",
                         background: done
-                          ? "linear-gradient(90deg, var(--accent-gold), rgba(200,75,17,0.35))"
+                          ? "rgba(200,75,17,0.35)"
                           : "var(--border-default)",
                         transition: "background 0.4s ease",
                       }}

@@ -159,11 +159,10 @@ export default function DashboardPage() {
               <h1
                 style={{
                   fontFamily: "var(--font-heading)",
-                  color: "var(--accent-gold)",
+                  color: "var(--text-primary)",
                   fontSize: "clamp(2.4rem, 5vw, 3.4rem)",
                   fontWeight: 700,
                   letterSpacing: "0.05em",
-                  textShadow: "0 0 40px rgba(255,215,0,0.25), 0 0 80px rgba(255,215,0,0.1)",
                   lineHeight: 1.1,
                   marginBottom: "0.4rem",
                 }}
@@ -273,7 +272,7 @@ export default function DashboardPage() {
                     fontSize: "0.65rem",
                     letterSpacing: "0.35em",
                     textTransform: "uppercase",
-                    color: "rgba(255,215,0,0.5)",
+                    color: "var(--text-muted)",
                     marginBottom: "1.2rem",
                   }}
                 >
@@ -285,7 +284,6 @@ export default function DashboardPage() {
                     fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
                     color: "var(--text-primary)",
                     marginBottom: "0.8rem",
-                    textShadow: "0 0 30px rgba(255,215,0,0.1)",
                   }}
                 >
                   Welcome to Duskvow
@@ -368,7 +366,7 @@ function SectionHeader({ label }: { label: string }) {
           style={{
             height: "1px",
             flex: 1,
-            background: "linear-gradient(90deg, transparent, rgba(255,215,0,0.2))",
+            background: "linear-gradient(90deg, transparent, rgba(138,115,64,0.35))",
           }}
         />
         <span
@@ -377,7 +375,7 @@ function SectionHeader({ label }: { label: string }) {
             fontSize: "0.65rem",
             letterSpacing: "0.3em",
             textTransform: "uppercase",
-            color: "rgba(255,215,0,0.55)",
+            color: "var(--text-secondary)",
           }}
         >
           ◆  {label}  ◆
@@ -386,7 +384,7 @@ function SectionHeader({ label }: { label: string }) {
           style={{
             height: "1px",
             flex: 1,
-            background: "linear-gradient(90deg, rgba(255,215,0,0.2), transparent)",
+            background: "linear-gradient(90deg, rgba(138,115,64,0.35), transparent)",
           }}
         />
       </div>
@@ -442,7 +440,7 @@ function TreeCard({
                 fontFamily: "var(--font-heading)",
                 fontSize: "1.1rem",
                 fontWeight: 600,
-                color: isFinished ? "var(--accent-gold)" : "var(--text-primary)",
+                color: "var(--text-primary)",
                 letterSpacing: "0.03em",
               }}
             >
