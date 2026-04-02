@@ -147,6 +147,9 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK 2B-5 — Card Icon — The Hearth (Brazier))**
+- `frontend/src/app/dashboard/page.tsx` — Hearth card: removed `hub-door-symbol` div with `🜂` emoji. Replaced with same centered flex container pattern as Vow Chamber anvil. Uses `<picture>` with `<source srcSet="/images/brazier.webp" type="image/webp" />` + `<img src="/images/brazier.jpg" alt="Brazier" style={{ maxHeight: "140px", objectFit: "contain" }}>` fallback. Note: `brazier.webp` and `brazier.jpg` are absent from `/images/` — container is ready, files need to be dropped in.
+
 **Session: 2026-04-02 (TASK 2B-3 — Card Component — Texture & Styling)**
 - `frontend/src/app/globals.css` — `.hub-door-unlocked`: replaced flat `linear-gradient` background with multi-layer `background-image` (dark gradient overlay + `card_texture.webp`), `background-size: cover; background-position: center`. Removed orange/amber border (`rgba(200,75,17,0.3)`) → replaced with subtler `border: 1px solid rgba(200,80,20,0.1)`. Box-shadow changed to `0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5)`. Hover shadow enhances the ember glow. `.hub-door-locked`: same texture + gradient overlay treatment, same border and shadow. `overflow: hidden` retained (clips child elements only, not background — full texture including ornate border remains visible).
 

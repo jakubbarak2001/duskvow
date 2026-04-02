@@ -915,7 +915,7 @@ Replace flat card backgrounds with the stone texture and restyle the cards to fe
 
 ### TASK 2B-4: Card Icon — Vow Chamber (Anvil Video)
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`
 
@@ -952,7 +952,7 @@ Replace the current emoji/geometric icon on the Vow Chamber card with the animat
 
 ### TASK 2B-5: Card Icon — The Hearth (Brazier)
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`
 
@@ -971,10 +971,10 @@ Replace the current emoji/geometric icon on the Hearth card with the brazier ima
 - Don't add animation to the brazier image (video comes later)
 
 **Acceptance criteria**:
-- [ ] Brazier image displays on Hearth card
-- [ ] Image sizing matches anvil video container
-- [ ] Fallback to `.jpg` if `.webp` fails
-- [ ] `npm run validate` passes
+- [x] Brazier image displays on Hearth card
+- [x] Image sizing matches anvil video container
+- [x] Fallback to `.jpg` if `.webp` fails
+- [x] `npm run validate` passes
 
 ---
 

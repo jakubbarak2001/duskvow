@@ -771,3 +771,29 @@ All 3 checks pass. Done — the ᛟ rune symbol on the Vow Chamber card has been
 --- End Output ---
 [2026-04-02T08:46:51.125Z] Running validation...
 [2026-04-02T08:47:06.029Z] ✅ Validation PASSED
+[2026-04-02T08:47:06.163Z] Committed: feat: TASK 2B-4 — Card Icon — Vow Chamber (Anvil Video)
+[2026-04-02T08:47:06.164Z] ✅ TASK 2B-4 COMPLETED
+[2026-04-02T08:47:06.165Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:47:06.165Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:47:06.165Z] STARTING: TASK 2B-5 — Card Icon — The Hearth (Brazier)
+[2026-04-02T08:47:06.165Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:47:06.166Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:47:06.256Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-02T08:47:06.257Z] Invoking Claude Code...
+[2026-04-02T08:47:06.258Z] Prompt length: 2224 chars
+[2026-04-02T08:49:08.240Z] Claude Code finished in 2m 2s (exit: OK)
+
+--- Claude Output for TASK 2B-5 ---
+Done. Here's what was changed:
+
+**`frontend/src/app/dashboard/page.tsx`** — Removed the `hub-door-symbol` div with the `🜂` emoji from the Hearth card. Replaced with a centered flex container wrapping a `<picture>` element:
+- `<source srcSet="/images/brazier.webp" type="image/webp" />` — webp preferred
+- `<img src="/images/brazier.jpg" ... style={{ maxHeight: "140px", objectFit: "contain" }}>` — jpg fallback
+
+The container structure is identical to the Vow Chamber's anvil video container, so swapping `<picture><img>` for `<video>` later won't cause layout shift.
+
+**Note**: `brazier.webp` and `brazier.jpg` don't exist in `/public/images/` yet — the code is wired up but the image files still need to be added.
+
+--- End Output ---
+[2026-04-02T08:49:08.241Z] Running validation...
+[2026-04-02T08:49:23.053Z] ✅ Validation PASSED

@@ -447,9 +447,12 @@ export default function DashboardPage() {
           <Link href="/hearth" className="hub-door hub-door-unlocked">
             <div className="hub-door-glow-ring" style={{ opacity: 0.5 }} />
 
-            {/* Symbol */}
-            <div className="hub-door-symbol hub-door-symbol-unlocked">
-              <span style={{ fontSize: "2.6rem", lineHeight: 1 }}>🜂</span>
+            {/* Brazier image */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <picture>
+                <source srcSet="/images/brazier.webp" type="image/webp" />
+                <img src="/images/brazier.jpg" alt="Brazier" style={{ maxHeight: "140px", objectFit: "contain" }} />
+              </picture>
             </div>
 
             {/* Archway frame */}
