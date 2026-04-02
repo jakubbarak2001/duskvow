@@ -26,6 +26,7 @@ export default function DashboardPage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activeVowCount, setActiveVowCount] = useState<number | null>(null);
+  const [earnedXp, setEarnedXp] = useState<number>(0);
   const [dataLoading, setDataLoading] = useState(true);
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -46,10 +47,16 @@ export default function DashboardPage() {
       if (profileResult.status === "fulfilled" && profileResult.value.data)
         setProfile(profileResult.value.data);
       if (treesResult.status === "fulfilled" && treesResult.value.data) {
-        const active = treesResult.value.data.filter(
-          (t: { status: string }) => t.status === "active"
-        ).length;
-        setActiveVowCount(active);
+        const activeTrees = treesResult.value.data.filter(
+          (t: { status: string; earned_xp: number }) => t.status === "active"
+        );
+        setActiveVowCount(activeTrees.length);
+        setEarnedXp(
+          activeTrees.reduce(
+            (sum: number, t: { earned_xp: number }) => sum + (t.earned_xp ?? 0),
+            0
+          )
+        );
       }
       setDataLoading(false);
     });
@@ -333,7 +340,17 @@ export default function DashboardPage() {
         <div className="hub-doors-grid">
           {/* ── Door 1: The Vow Chamber (UNLOCKED) ── */}
           <Link href="/vows" className="hub-door hub-door-unlocked">
-            <div className="hub-door-glow-ring" />
+            <div
+              className="hub-door-glow-ring"
+              style={{
+                opacity:
+                  activeVowCount === null || activeVowCount === 0
+                    ? 0.4
+                    : activeVowCount <= 2
+                    ? 0.75
+                    : 1,
+              }}
+            />
 
             {/* Symbol */}
             <div className="hub-door-symbol hub-door-symbol-unlocked">
@@ -348,12 +365,35 @@ export default function DashboardPage() {
               <h2 className="hub-door-title">The Vow Chamber</h2>
               <p className="hub-door-subtitle">Forge and walk your talent trees</p>
 
-              {/* Status — active vow count */}
-              <div className="hub-door-status hub-door-status-unlocked">
-                {activeVowCount !== null
-                  ? `${activeVowCount} active ${activeVowCount === 1 ? "vow" : "vows"}`
-                  : "Enter"}
-              </div>
+              {/* Status — active vow count + XP */}
+              {dataLoading ? (
+                <div className="hub-door-status hub-door-status-unlocked">
+                  Enter
+                </div>
+              ) : activeVowCount === 0 ? (
+                <div className="hub-door-status hub-door-status-unlocked">
+                  Begin your journey
+                </div>
+              ) : (
+                <div
+                  className="hub-door-status hub-door-status-unlocked"
+                  style={{ flexDirection: "column", gap: "0.2rem", alignItems: "center" }}
+                >
+                  <span>
+                    {activeVowCount} active {activeVowCount === 1 ? "vow" : "vows"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.65rem",
+                      letterSpacing: "0.15em",
+                      color: "var(--accent-gold)",
+                      opacity: 0.85,
+                    }}
+                  >
+                    {earnedXp.toLocaleString()} XP earned
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Ember leak at base */}

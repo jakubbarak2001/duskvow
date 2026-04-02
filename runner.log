@@ -564,3 +564,30 @@ Validation passes. The `/vows` page is created at `frontend/src/app/vows/page.ts
 --- End Output ---
 [2026-04-02T07:04:12.013Z] Running validation...
 [2026-04-02T07:04:26.706Z] ✅ Validation PASSED
+[2026-04-02T07:04:26.853Z] Committed: feat: TASK P1-2 — Vow Chamber Page — Tree List Migration
+[2026-04-02T07:04:26.854Z] ✅ TASK P1-2 COMPLETED
+[2026-04-02T07:04:26.855Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:04:26.855Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:04:26.855Z] STARTING: TASK P1-3 — Hub Door Active State — Live Data on Vow Chamber
+[2026-04-02T07:04:26.856Z] Branch: feature/hub-door-data
+[2026-04-02T07:04:26.856Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:04:26.948Z] Created and checked out new branch: feature/hub-door-data
+[2026-04-02T07:04:26.949Z] Invoking Claude Code...
+[2026-04-02T07:04:26.949Z] Prompt length: 2301 chars
+[2026-04-02T07:06:15.528Z] Claude Code finished in 1m 49s (exit: OK)
+
+--- Claude Output for TASK P1-3 ---
+TASK P1-3 complete. `npm run validate` passes (TS + ESLint + build all green).
+
+**Changes made** — `frontend/src/app/dashboard/page.tsx` only:
+
+- Added `earnedXp` state, computed alongside `activeVowCount` in the `listTrees` handler (one pass over active trees)
+- Vow Chamber door status badge now has three states:
+  - **Loading**: "Enter"
+  - **0 active trees**: "Begin your journey"
+  - **1+ active trees**: "{X} active vows" with "{Y} XP earned" in gold below it
+- Glow ring opacity scales with activity: `0.4` (no trees) → `0.75` (1-2) → `1.0` (3+)
+
+--- End Output ---
+[2026-04-02T07:06:15.528Z] Running validation...
+[2026-04-02T07:06:28.909Z] ✅ Validation PASSED

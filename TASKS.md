@@ -676,7 +676,7 @@ The hub is a full-viewport atmospheric scene. The player sees:
 
 ### TASK P1-2: Vow Chamber Page — Tree List Migration
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/vow-chamber`
 **Files to modify**: `frontend/src/app/vows/page.tsx` (new), `frontend/src/app/dashboard/page.tsx` (if needed)
 
@@ -718,7 +718,7 @@ Create a new page at `/vows` that contains everything the old dashboard had for 
 
 ### TASK P1-3: Hub Door Active State — Live Data on Vow Chamber
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/hub-door-data`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`
 

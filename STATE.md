@@ -146,6 +146,9 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK P1-3 — Hub Door Active State — Live Data on Vow Chamber)**
+- `frontend/src/app/dashboard/page.tsx` — Added `earnedXp` state (sum of `earned_xp` from active trees). Updated `listTrees` handler to compute both `activeVowCount` and `earnedXp` from active trees in one pass. Vow Chamber door status badge now has three states: loading → "Enter"; 0 active trees → "Begin your journey"; 1+ active trees → "{X} active vow(s)" + "{Y} XP earned" (two-line flex column, XP in gold). Glow ring opacity now scales with activity: 0 trees → 0.4 (dim), 1-2 trees → 0.75 (medium), 3+ trees → 1.0 (bright). No other doors or pages touched.
+
 **Session: 2026-04-02 (TASK P1-2 — Vow Chamber Page — Tree List Migration)**
 - `frontend/src/app/vows/page.tsx` — New page. Full tree management content migrated from old dashboard. "The Vow Chamber" Cinzel heading, "← Return to Hub" link above heading navigates to `/dashboard`, `<Navbar />` visible. Auth guard (redirect to `/auth`). Fetches profile, trees, generation status, embers via `Promise.allSettled`. All existing functionality preserved: New Vow CTA (ember gradient, disabled at cap), generation remaining display, StatsBar, Brazier + AddEmberForm + ember delete confirm dialog, active/finished tree sections with `SectionHeader`, `TreeCard` with delete confirmation + progress bar, empty state with atmospheric treatment. Ember particles (6) + noise overlay + radial glow for atmosphere. `SectionHeader` and `TreeCard` defined as local functions (same as old dashboard pattern).
 
