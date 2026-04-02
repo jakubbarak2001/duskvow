@@ -6,6 +6,10 @@ interface BrazierProps {
   embers: { id: string; title: string }[];
   onEmberHover?: (emberId: string | null) => void;
   onAddClick?: () => void;
+  /** ID of the ember currently playing the drop-in animation. Set to null when done. */
+  animatingEmberId?: string | null;
+  /** Called when the drop animation finishes so the parent can clear animatingEmberId. */
+  onDropComplete?: () => void;
 }
 
 // Deterministic pseudo-random positions seeded by index — consistent between renders
@@ -41,7 +45,13 @@ function getParticleCount(count: number): number {
   return 22;
 }
 
-export function Brazier({ embers, onEmberHover, onAddClick }: BrazierProps) {
+export function Brazier({
+  embers,
+  onEmberHover,
+  onAddClick,
+  animatingEmberId,
+  onDropComplete,
+}: BrazierProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const intensityClass = getIntensityClass(embers.length);
   const particleCount = getParticleCount(embers.length);
@@ -75,18 +85,20 @@ export function Brazier({ embers, onEmberHover, onAddClick }: BrazierProps) {
         {/* Ember orbs — float wrapper separates translate from hover scale */}
         {embers.map((ember, i) => {
           const isHovered = hoveredId === ember.id;
+          const isDropping = animatingEmberId === ember.id;
           return (
             <div
               key={ember.id}
-              className="brazier-ember-float"
+              className={`brazier-ember-float${isDropping ? " ember-drop" : ""}`}
               style={{
                 left: `${seededX(i)}%`,
                 top: `${seededY(i)}%`,
-                animationDelay: `${seededDelay(i + 20)}s`,
-                animationDuration: `${seededDuration(i + 10)}s`,
+                animationDelay: isDropping ? "0s" : `${seededDelay(i + 20)}s`,
+                animationDuration: isDropping ? "1s" : `${seededDuration(i + 10)}s`,
               }}
               onMouseEnter={() => handleHover(ember.id)}
               onMouseLeave={() => handleHover(null)}
+              onAnimationEnd={isDropping ? onDropComplete : undefined}
             >
               <div
                 className={`brazier-ember-orb ${intensityClass}${isHovered ? " brazier-ember-orb--hovered" : ""}`}

@@ -480,7 +480,7 @@ interface BrazierProps {
 
 ### TASK 3B-4: Add Ember Form & Drop Animation
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/ember-add-form`
 **Files to modify**: `frontend/src/components/ui/AddEmberForm.tsx` (new), `frontend/src/components/ui/Brazier.tsx`, `frontend/src/app/globals.css`
 

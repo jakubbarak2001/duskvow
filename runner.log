@@ -431,3 +431,38 @@ TASK 3B-3 complete. Here's what was built:
 --- End Output ---
 [2026-04-02T06:08:49.453Z] Running validation...
 [2026-04-02T06:09:01.231Z] ✅ Validation PASSED
+[2026-04-02T06:09:01.364Z] Committed: feat: TASK 3B-3 — Brazier Component — Visual Container
+[2026-04-02T06:09:01.366Z] ✅ TASK 3B-3 COMPLETED
+[2026-04-02T06:09:01.366Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:09:01.366Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:09:01.367Z] STARTING: TASK 3B-4 — Add Ember Form & Drop Animation
+[2026-04-02T06:09:01.367Z] Branch: feature/ember-add-form
+[2026-04-02T06:09:01.367Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:09:01.452Z] Created and checked out new branch: feature/ember-add-form
+[2026-04-02T06:09:01.461Z] Invoking Claude Code...
+[2026-04-02T06:09:01.462Z] Prompt length: 2841 chars
+[2026-04-02T06:12:54.513Z] Claude Code finished in 3m 53s (exit: OK)
+
+--- Claude Output for TASK 3B-4 ---
+Validate passes. Here's what was built:
+
+**`AddEmberForm.tsx`** — Inline form component:
+- Title input (required, max 100 chars) with live character counter and inline validation error
+- Description textarea (optional, max 500 chars) with counter
+- Cinzel labels, `--bg-shadow` container, `--bg-abyss` inputs with ember glow on focus
+- Ghost "Dismiss" cancel + ember gradient "Kindle Ember" submit
+- `onSubmit({ title, description })` / `onCancel` callbacks — parent controls visibility
+
+**`Brazier.tsx`** changes:
+- Added `animatingEmberId?: string | null` — applies `.ember-drop` class to the matching orb's float wrapper
+- Added `onDropComplete?: () => void` — fires via `onAnimationEnd` so parent can clear the id after 1s
+- `animationDelay` forced to `0s` on the dropping orb to prevent stale float timing from interfering
+
+**`globals.css`** additions:
+- `@keyframes ember-drop` — asymmetric keyframe spacing to simulate gravity: covers only ~28% of the fall distance in the first 40% of time (slow start), then rapid descent to near-impact at 70%, impact flash at 76% (`scale(2.6)` + `brightness(5) blur`), bounce/settle to rest
+- `.brazier-ember-float.ember-drop` — `ease-in` timing (matches gravity feel), 1s, `fill-mode: forwards`
+- Full form CSS matching the dark fantasy token system
+
+--- End Output ---
+[2026-04-02T06:12:54.514Z] Running validation...
+[2026-04-02T06:13:06.397Z] ✅ Validation PASSED
