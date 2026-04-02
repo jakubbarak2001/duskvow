@@ -591,3 +591,27 @@ TASK P1-3 complete. `npm run validate` passes (TS + ESLint + build all green).
 --- End Output ---
 [2026-04-02T07:06:15.528Z] Running validation...
 [2026-04-02T07:06:28.909Z] ✅ Validation PASSED
+[2026-04-02T07:06:29.042Z] Committed: feat: TASK P1-3 — Hub Door Active State — Live Data on Vow Chamber
+[2026-04-02T07:06:29.043Z] ✅ TASK P1-3 COMPLETED
+[2026-04-02T07:06:29.044Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:06:29.044Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:06:29.044Z] STARTING: TASK P1-4 — Update Auth Redirect & Navigation Flow
+[2026-04-02T07:06:29.045Z] Branch: feature/hub-navigation
+[2026-04-02T07:06:29.045Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:06:29.144Z] Created and checked out new branch: feature/hub-navigation
+[2026-04-02T07:06:29.146Z] Invoking Claude Code...
+[2026-04-02T07:06:29.146Z] Prompt length: 2624 chars
+[2026-04-02T07:07:19.266Z] Claude Code finished in 0m 50s (exit: OK)
+
+--- Claude Output for TASK P1-4 ---
+Done. Changes made:
+
+- **Navbar**: "Dashboard" → "Hub" (`/dashboard`), added "Vow Chamber" link (`/vows`), kept "New Vow"
+- **TreeViewPage**: Back button changed to "← Vow Chamber" → `/vows`
+- **AuthForm**: Already redirects to `/dashboard` on sign-in — no change needed
+
+`npm run validate` passes (TypeScript, ESLint, Next.js build all green).
+
+--- End Output ---
+[2026-04-02T07:07:19.267Z] Running validation...
+[2026-04-02T07:07:32.831Z] ✅ Validation PASSED

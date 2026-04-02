@@ -146,6 +146,11 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK P1-4 — Update Auth Redirect & Navigation Flow)**
+- `frontend/src/components/layout/Navbar.tsx` — "Dashboard" link renamed to "Hub"; added "Vow Chamber" link pointing to `/vows`; "New Vow" link unchanged.
+- `frontend/src/components/tree/TreeViewPage.tsx` — Back button changed from "← Dashboard" (`/dashboard`) to "← Vow Chamber" (`/vows`).
+- `frontend/src/components/auth/AuthForm.tsx` — No change needed; already redirects to `/dashboard` (hub) on SIGNED_IN event.
+
 **Session: 2026-04-02 (TASK P1-3 — Hub Door Active State — Live Data on Vow Chamber)**
 - `frontend/src/app/dashboard/page.tsx` — Added `earnedXp` state (sum of `earned_xp` from active trees). Updated `listTrees` handler to compute both `activeVowCount` and `earnedXp` from active trees in one pass. Vow Chamber door status badge now has three states: loading → "Enter"; 0 active trees → "Begin your journey"; 1+ active trees → "{X} active vow(s)" + "{Y} XP earned" (two-line flex column, XP in gold). Glow ring opacity now scales with activity: 0 trees → 0.4 (dim), 1-2 trees → 0.75 (medium), 3+ trees → 1.0 (bright). No other doors or pages touched.
 

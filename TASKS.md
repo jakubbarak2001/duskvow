@@ -718,7 +718,7 @@ Create a new page at `/vows` that contains everything the old dashboard had for 
 
 ### TASK P1-3: Hub Door Active State — Live Data on Vow Chamber
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/hub-door-data`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`
 
@@ -751,7 +751,7 @@ Wire the Vow Chamber door on the hub to show live data from the user's trees.
 
 ### TASK P1-4: Update Auth Redirect & Navigation Flow
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/hub-navigation`
 **Files to modify**: `frontend/src/components/layout/Navbar.tsx`, `frontend/src/components/auth/AuthForm.tsx`, `frontend/src/app/tree/[id]/page.tsx` (or TreeViewPage), `frontend/src/lib/api.ts` (if needed)
 

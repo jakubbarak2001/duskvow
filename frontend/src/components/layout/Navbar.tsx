@@ -45,7 +45,14 @@ export function Navbar() {
               className="text-sm transition-colors"
               style={{ color: "var(--text-secondary)" }}
             >
-              Dashboard
+              Hub
+            </Link>
+            <Link
+              href="/vows"
+              className="text-sm transition-colors"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Vow Chamber
             </Link>
             <Link
               href="/tree/new"

@@ -138,11 +138,11 @@ export function TreeViewPage() {
       >
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/vows")}
             className="text-sm"
             style={{ color: "var(--text-muted)" }}
           >
-            ← Dashboard
+            ← Vow Chamber
           </button>
           {tree && (
             <h1
