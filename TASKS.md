@@ -519,7 +519,7 @@ Build the form for adding new embers and the "drop into brazier" animation.
 
 ### TASK 3B-5: Brazier Integration — Dashboard + API Wiring
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/ember-dashboard-integration`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/components/ui/Brazier.tsx`, `frontend/src/components/ui/AddEmberForm.tsx`
 
@@ -557,6 +557,263 @@ Wire the Brazier into the dashboard with real data.
 - [ ] Brazier glow intensity matches ember count
 - [ ] `npm run validate` passes
 - [ ] No visual regressions on rest of dashboard
+
+# PHASE 1 — THE HUB — Add to TASKS.md
+
+> Copy everything below into TASKS.md, above the "## Completed Tasks" section.
+> These tasks transform the dashboard from a flat page into an RPG hub world.
+
+---
+
+## Phase 1 — The Hub
+
+> Goal: Replace the current dashboard with a visual hub — an atmospheric
+> antechamber with three doors leading to different game areas. Only the
+> Vow Chamber (talent trees) is accessible. The Dungeon and The Hearth
+> show as locked with "coming soon" atmosphere. This is the foundational
+> shift from "productivity app" to "dark fantasy game."
+>
+> The player should feel like they're standing in a room, not looking at a webpage.
+
+---
+
+### TASK P1-1: Hub Page — Layout & Atmosphere
+
+**Status**: `IN_PROGRESS`
+**Branch**: `feature/hub-layout`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx` (major rewrite), `frontend/src/app/globals.css`
+
+**What to do**:
+Rewrite the dashboard page into a hub. This is a major visual redesign but the route stays `/dashboard`.
+
+**Hub layout concept**:
+The hub is a full-viewport atmospheric scene. The player sees:
+- Top: a persistent header bar with DUSKVOW logo, player stats (XP + Streak), and sign out
+- Center: three "doors" or portals arranged horizontally (or in a triangle/arc on larger screens)
+- Background: dark atmospheric treatment — noise overlay, subtle particles, radial ambient glow
+
+**The three doors** (each is a large clickable card/portal):
+
+1. **The Vow Chamber** — UNLOCKED
+   - Visual: an ornate doorway with ember glow leaking through
+   - Icon/symbol: a branching tree rune or ᛟ
+   - Label: "The Vow Chamber" in Cinzel
+   - Subtitle: "Forge and walk your talent trees"
+   - Status indicator: "{X} active vows" in small muted text
+   - Click → navigates to `/vows` (new route, see TASK P1-2)
+   - Hover: door glows brighter, subtle scale-up
+
+2. **The Dungeon** — LOCKED
+   - Visual: a heavy iron door with chains across it, cold/blue-grey tones
+   - Icon/symbol: crossed swords or ⚔
+   - Label: "The Dungeon" in Cinzel
+   - Subtitle: "Face the darkness. Earn your spoils."
+   - Lock indicator: a small lock icon + "Coming Soon" in muted text
+   - Click → nothing (or subtle "locked" shake animation)
+   - Hover: chains rattle subtly (CSS animation), but door stays locked
+   - Overall tone: cold, foreboding, enticing
+
+3. **The Hearth** — LOCKED
+   - Visual: a warm archway with faint firelight, but dimmed/cold since it's locked
+   - Icon/symbol: a flame or brazier silhouette
+   - Label: "The Hearth" in Cinzel
+   - Subtitle: "Your sanctum. Your trophies. Your fire."
+   - Lock indicator: lock icon + "Coming Soon"
+   - Click → nothing (or subtle shake)
+   - Hover: faint warmth flickers but doesn't ignite
+   - This is where the brazier/embers will eventually live
+
+**Door card design**:
+- Each door is roughly 280-320px wide, 350-400px tall
+- Dark surface background (`--bg-surface` or `--bg-shadow`)
+- Ornamental border — thin, with subtle glow for unlocked, muted for locked
+- The icon/symbol area at top (large, decorative)
+- Title + subtitle centered below
+- Locked doors have 50-60% opacity overall, with the lock indicator
+- Generous spacing between doors
+
+**Player info bar** (top of page):
+- Left: DUSKVOW logo (matching navbar style)
+- Center or right: XP and Streak stats — compact inline, not the full StatsBar
+- Right: Sign out link
+- This replaces the current Navbar on the hub page — the hub has its own header
+
+**Background atmosphere**:
+- Noise overlay
+- Very subtle ember particles (5-8, slow)
+- Central radial glow (warm, dim — like torchlight in the room)
+- Optional: subtle stone/dungeon floor texture via CSS gradient (no image files)
+
+**What to REMOVE from the current dashboard**:
+- The tree list (moves to `/vows` in P1-2)
+- The full StatsBar component (replaced by compact inline stats)
+- The "New Vow" button (moves to `/vows`)
+- The brazier section (moves to The Hearth eventually)
+- All the current layout — this is a full rewrite of the page JSX
+
+**What to KEEP**:
+- The data fetching for profile (for XP + Streak display)
+- The auth guard (redirect to /auth if not logged in)
+- The `useUser` hook usage
+
+**What NOT to do**:
+- Don't create the `/vows` page yet (that's P1-2)
+- Don't build the dungeon or hearth interiors
+- Don't remove any existing components from `components/` — they'll be reused
+- Don't change the Navbar component itself — the hub just doesn't use it
+
+**Acceptance criteria**:
+- [ ] Hub page renders with three door cards
+- [ ] Vow Chamber door is visually "open"/glowing, Dungeon and Hearth are locked
+- [ ] Clicking Vow Chamber navigates to `/vows` (will 404 until P1-2, that's fine)
+- [ ] Clicking locked doors does nothing or shows subtle locked feedback
+- [ ] Player XP and Streak visible at top
+- [ ] Full atmospheric background (noise, particles, glow)
+- [ ] Responsive: doors stack vertically on mobile
+- [ ] `npm run validate` passes
+
+---
+
+### TASK P1-2: Vow Chamber Page — Tree List Migration
+
+**Status**: `QUEUED`
+**Branch**: `feature/vow-chamber`
+**Files to modify**: `frontend/src/app/vows/page.tsx` (new), `frontend/src/app/dashboard/page.tsx` (if needed)
+
+**What to do**:
+Create a new page at `/vows` that contains everything the old dashboard had for tree management. This is the interior of the Vow Chamber door.
+
+**Page content** (migrated from old dashboard):
+1. Page header: "The Vow Chamber" in Cinzel + a "← Return to Hub" link back to `/dashboard`
+2. "New Vow" button (ember gradient CTA)
+3. Generation status display (X of Y generations remaining)
+4. Active Vows section with tree cards
+5. Finished Vows section with tree cards
+6. Empty state if no trees
+7. Full StatsBar component (XP, Streak — shows tree-specific stats here)
+
+**The layout and styling should match the current dashboard's visual quality** — ornamental section headers, atmospheric background, tree cards with hover states. You're essentially moving the existing dashboard content into this new route.
+
+**Navigation**:
+- `/dashboard` (hub) → click Vow Chamber → `/vows`
+- `/vows` → "Return to Hub" link → `/dashboard`
+- The Navbar should show on this page (unlike the hub which has its own header)
+
+**What NOT to do**:
+- Don't redesign the tree cards or StatsBar — reuse them as-is
+- Don't change tree creation flow (`/tree/new` stays the same)
+- Don't change tree view (`/tree/[id]` stays the same)
+- Don't modify any component files — just import and use them
+
+**Acceptance criteria**:
+- [ ] `/vows` page renders with all tree management functionality
+- [ ] "Return to Hub" link navigates to `/dashboard`
+- [ ] Tree list, create, delete all work from this page
+- [ ] Navbar visible on this page
+- [ ] Auth guard active (redirect if not logged in)
+- [ ] `npm run validate` passes
+- [ ] No functionality lost from old dashboard
+
+---
+
+### TASK P1-3: Hub Door Active State — Live Data on Vow Chamber
+
+**Status**: `QUEUED`
+**Branch**: `feature/hub-door-data`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`
+
+**What to do**:
+Wire the Vow Chamber door on the hub to show live data from the user's trees.
+
+**Specific changes**:
+1. Fetch tree list on hub mount (already fetching profile — add trees fetch)
+2. On the Vow Chamber door card, show:
+   - "{X} active vows" where X is the count of active trees
+   - A tiny progress indicator — e.g. "105 XP earned" or a mini progress ring
+   - If user has no trees: show "Begin your journey" instead
+3. The door's glow intensity could scale subtly with activity (optional, nice touch):
+   - No trees: dim glow
+   - 1-2 trees: medium glow
+   - 3+ trees: bright glow
+
+**What NOT to do**:
+- Don't change locked door behavior
+- Don't add data fetching for dungeon or hearth (they don't exist yet)
+- Don't modify the `/vows` page
+
+**Acceptance criteria**:
+- [ ] Vow Chamber door shows active tree count
+- [ ] Data fetched on mount with loading state
+- [ ] Works correctly with 0, 1, and multiple trees
+- [ ] `npm run validate` passes
+
+---
+
+### TASK P1-4: Update Auth Redirect & Navigation Flow
+
+**Status**: `QUEUED`
+**Branch**: `feature/hub-navigation`
+**Files to modify**: `frontend/src/components/layout/Navbar.tsx`, `frontend/src/components/auth/AuthForm.tsx`, `frontend/src/app/tree/[id]/page.tsx` (or TreeViewPage), `frontend/src/lib/api.ts` (if needed)
+
+**What to do**:
+Update navigation across the app to work with the new hub structure.
+
+**Specific changes**:
+1. **Navbar**: 
+   - "Dashboard" link → rename to "Hub" and point to `/dashboard`
+   - Add "Vow Chamber" link pointing to `/vows`
+   - Keep "New Vow" link pointing to `/tree/new`
+2. **AuthForm**: after sign-in redirect goes to `/dashboard` (hub) — verify this still works
+3. **TreeViewPage**: "← Dashboard" back button → change to "← Hub" pointing to `/dashboard` OR "← Vow Chamber" pointing to `/vows` (the Vow Chamber makes more sense as you're navigating back from a tree to the tree list)
+4. **Landing page**: "Make Your Vow" CTA still goes to `/auth` — no change needed
+5. **Auth page**: "Return to the Gates" still goes to `/` — no change needed
+
+**What NOT to do**:
+- Don't change any page layouts
+- Don't modify component styling
+- Don't change the auth flow logic
+
+**Acceptance criteria**:
+- [ ] All navigation links point to correct routes
+- [ ] No dead links or broken back-buttons
+- [ ] Sign-in redirects to hub
+- [ ] Tree view back button goes to Vow Chamber
+- [ ] Navbar shows Hub + Vow Chamber links
+- [ ] `npm run validate` passes
+
+---
+
+### TASK P1-5: Move Brazier to Hearth Placeholder
+
+**Status**: `QUEUED`
+**Branch**: `feature/hearth-placeholder`
+**Files to modify**: `frontend/src/app/hearth/page.tsx` (new), `frontend/src/app/dashboard/page.tsx`
+
+**What to do**:
+Create a locked Hearth page at `/hearth` that shows the brazier and a "coming soon" message. This preserves the existing brazier work while putting it in the right place architecturally.
+
+**Page content**:
+1. Full-screen atmospheric page (noise, particles, warm glow — warmer than hub)
+2. "The Hearth" heading in Cinzel
+3. "← Return to Hub" link
+4. The existing `<Brazier>` component, centered, with real data if user has embers
+5. The `<AddEmberForm>` below it
+6. A "coming soon" banner for future features: "Your sanctum grows. Trophy room, character customization, and more — forging soon."
+7. **Update the Hearth door on the hub to link to `/hearth` instead of being locked** — since we already have the brazier built, players can access it. Change the door from locked to unlocked state.
+
+**What NOT to do**:
+- Don't redesign the brazier (fix the visual issues in a separate task if needed)
+- Don't add new features to the hearth
+- Don't change any other hub doors
+
+**Acceptance criteria**:
+- [ ] `/hearth` page renders with brazier
+- [ ] Brazier shows real user embers (API connected)
+- [ ] Add ember form works
+- [ ] "Coming soon" message for future features
+- [ ] Hub's Hearth door is now unlocked and links to `/hearth`
+- [ ] Auth guard active
+- [ ] `npm run validate` passes
 
 ## Completed Tasks
 

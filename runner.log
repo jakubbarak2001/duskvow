@@ -497,3 +497,46 @@ Validate passes. Here's what was built:
 --- End Output ---
 [2026-04-02T06:16:57.015Z] Running validation...
 [2026-04-02T06:17:08.997Z] ✅ Validation PASSED
+[2026-04-02T06:17:09.137Z] Committed: feat: TASK 3B-5 — Brazier Integration — Dashboard + API Wiring
+[2026-04-02T06:17:09.138Z] ✅ TASK 3B-5 COMPLETED
+[2026-04-02T06:17:09.139Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:17:09.139Z] 
+[2026-04-02T06:17:09.139Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:17:09.140Z] DONE: 6/6 tasks completed.
+[2026-04-02T06:17:09.140Z] All tasks succeeded.
+[2026-04-02T06:17:09.140Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:57:00.294Z] ╔══════════════════════════════════════════════╗
+[2026-04-02T06:57:00.298Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-04-02T06:57:00.299Z] ╚══════════════════════════════════════════════╝
+[2026-04-02T06:57:00.349Z] Current branch: feature/ember-dashboard-integration
+[2026-04-02T06:57:00.495Z] Found 19 total tasks, 5 queued.
+[2026-04-02T06:57:00.496Z] Running baseline validation...
+[2026-04-02T06:57:13.741Z] ✅ Baseline clean — codebase passes validation.
+[2026-04-02T06:57:13.742Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:57:13.742Z] STARTING: TASK P1-1 — Hub Page — Layout & Atmosphere
+[2026-04-02T06:57:13.743Z] Branch: feature/hub-layout
+[2026-04-02T06:57:13.743Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:57:13.885Z] Created and checked out new branch: feature/hub-layout
+[2026-04-02T06:57:13.888Z] Invoking Claude Code...
+[2026-04-02T06:57:13.888Z] Prompt length: 5429 chars
+[2026-04-02T07:01:09.116Z] Claude Code finished in 3m 55s (exit: OK)
+
+--- Claude Output for TASK P1-1 ---
+Validate passed. TASK P1-1 is complete.
+
+**What was built:**
+
+- **`frontend/src/app/dashboard/page.tsx`** — Full rewrite as hub page:
+  - Custom hub header: DUSKVOW logo (left), compact XP + Day Streak stats (center), Sign Out button (right)
+  - Three door cards in a horizontal flex grid, stacking vertically on mobile (≤760px)
+  - **The Vow Chamber** (unlocked): ember-glow arch border with pulse animation, ᛟ rune symbol in glowing circle, active vow count status badge, ember leak at the base, hover scales up + brightens, navigates to `/vows`
+  - **The Dungeon** (locked): ⚔ symbol, diagonal chain overlay that rattles on hover, shake animation on click, 56% opacity
+  - **The Hearth** (locked): 🜂 flame symbol, faint warmth hint on hover, shake on click
+  - 8 slow atmospheric ember particles, central warm radial glow, noise overlay, stone floor gradient
+  - Auth guard and profile/tree data fetching preserved; all old dashboard content (tree list, StatsBar, Brazier, New Vow button) removed
+
+- **`frontend/src/app/globals.css`** — Added `HUB PAGE STYLES` section with 4 keyframes and all door/hub layout classes
+
+--- End Output ---
+[2026-04-02T07:01:09.117Z] Running validation...
+[2026-04-02T07:01:22.681Z] ✅ Validation PASSED
