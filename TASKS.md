@@ -201,7 +201,7 @@ Add a "Something else…" option to every follow-up question that expands into a
 
 ### TASK 2B-1: Google OAuth Implementation
 
-**Status**: `DONE`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/google-oauth`
 **Files to modify**: `frontend/src/components/auth/AuthForm.tsx`, possibly `frontend/src/app/auth/page.tsx`
 
@@ -785,7 +785,7 @@ Update navigation across the app to work with the new hub structure.
 
 ### TASK P1-5: Move Brazier to Hearth Placeholder
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/hearth-placeholder`
 **Files to modify**: `frontend/src/app/hearth/page.tsx` (new), `frontend/src/app/dashboard/page.tsx`
 
@@ -813,6 +813,258 @@ Create a locked Hearth page at `/hearth` that shows the brazier and a "coming so
 - [ ] "Coming soon" message for future features
 - [ ] Hub's Hearth door is now unlocked and links to `/hearth`
 - [ ] Auth guard active
+- [ ] `npm run validate` passes
+
+## Sprint 2B — Dashboard Visual Overhaul
+
+> Goal: Replace placeholder emoji icons and flat card styling with dark fantasy AI-generated assets.
+> Raw assets are in `frontend/public/images/`: `anvil.jpg`, `anvil_video.mp4`, `brazier.jpg`, `card_texture.jpg`, `sealed_door.jpg`, `entry_background.jpg`
+> Reference the landing page (`frontend/src/app/page.tsx`) for visual tone, particle effects, and CSS variable usage.
+
+---
+
+### TASK 2B-1: Asset Optimization
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: `frontend/public/images/`
+
+**What to do**:
+Convert all raw dashboard assets to optimized web formats. Do NOT touch `anvil_video.mp4` source — create new optimized files alongside it.
+
+**Specific changes**:
+1. Install `sharp` if not present (`npm install sharp --save-dev`) or use FFmpeg for conversions.
+2. Convert `card_texture.jpg` → `card_texture.webp` at 512x512, quality 80.
+3. Convert `entry_background.jpg` → `entry_background.webp` at 1920x1080, quality 80.
+4. Convert `brazier.jpg` → `brazier.webp` at 256x256, quality 80.
+5. Convert `sealed_door.jpg` → `sealed_door.webp` at 256x256, quality 80.
+6. Convert `anvil_video.mp4` → `anvil_video.webm` using FFmpeg: `ffmpeg -i anvil_video.mp4 -c:v libvpx-vp9 -b:v 200k -an anvil_video.webm`
+7. Keep original files as fallbacks. Place all `.webp` and `.webm` files in `frontend/public/images/`.
+8. Verify total size of all new assets < 500KB combined.
+
+**What NOT to do**:
+- Don't delete original files — they serve as fallbacks
+- Don't touch any existing images (`hero_bg.webp`, `anti-section-bg.webp`, etc.)
+
+**Acceptance criteria**:
+- [ ] All `.webp` and `.webm` files generated in `frontend/public/images/`
+- [ ] Total new asset size < 500KB
+- [ ] Original files still present
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 2B-2: Dashboard Page Background
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
+
+**What to do**:
+Replace the current plain dark background on the dashboard/hub with `entry_background.webp` and add atmosphere.
+
+**Specific changes**:
+1. Set `entry_background.webp` as the full-page background: `background-size: cover; background-position: center; background-attachment: fixed;`
+2. Add a dark overlay on top using a pseudo-element or wrapper div: `background: linear-gradient(rgba(10,10,18,0.75), rgba(10,10,18,0.85))` — this ensures cards remain readable.
+3. Reuse the floating ember particle system from the landing page (`.lp-ember` or similar). If it's tightly coupled to the landing page, extract it into a shared component first.
+4. The overall feel should be: you're standing in a dark sanctum choosing your path. NOT a SaaS dashboard with a background image.
+
+**What NOT to do**:
+- Don't change any hub logic, data fetching, or navigation
+- Don't modify the landing page's particle system — copy or extract it
+
+**Acceptance criteria**:
+- [ ] Background image visible on dashboard
+- [ ] Dark overlay ensures card readability
+- [ ] Ember particles floating
+- [ ] `npm run validate` passes
+- [ ] No visual regressions on landing page or other routes
+
+---
+
+### TASK 2B-3: Card Component — Texture & Styling
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
+
+**What to do**:
+Replace flat card backgrounds with the stone texture and restyle the cards to feel like dark fantasy UI panels.
+
+**Specific changes**:
+1. Set `card_texture.webp` as `background-image` on each hub door card. Use `background-size: cover; background-position: center;`
+2. Remove the current flat orange/amber top-border on cards.
+3. Add a subtle warm ember glow shadow: `box-shadow: 0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5);`
+4. Add a subtle inner border using `border: 1px solid rgba(200,80,20,0.1);`
+5. Round corners slightly: `border-radius: 8px; overflow: hidden;`
+6. Ensure the ornate border from the texture image is visible — do NOT crop it with padding or overflow.
+
+**What NOT to do**:
+- Don't change card click behavior or navigation
+- Don't change card layout or sizing
+- Don't modify cards on other pages (tree cards on `/vows` stay as-is)
+
+**Acceptance criteria**:
+- [ ] All three hub door cards use stone texture background
+- [ ] Old flat borders removed
+- [ ] Ember glow shadow visible on hover
+- [ ] Ornate texture border visible, not cropped
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 2B-4: Card Icon — Vow Chamber (Anvil Video)
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`
+
+**What to do**:
+Replace the current emoji/geometric icon on the Vow Chamber card with the animated anvil video.
+
+**Specific changes**:
+1. Remove the existing icon/emoji element from the Vow Chamber door card.
+2. Add a `<video>` element with attributes: `autoPlay loop muted playsInline`.
+3. Provide both sources for browser compatibility:
+   ```html
+   <video autoPlay loop muted playsInline style={{ maxHeight: '140px', objectFit: 'contain' }}>
+     <source src="/images/anvil_video.webm" type="video/webm" />
+     <source src="/images/anvil_video.mp4" type="video/mp4" />
+   </video>
+   ```
+4. Center the video in the upper portion of the card, above the title text.
+5. The black video background will blend naturally with the dark card texture — no transparency tricks needed.
+6. Test that the video loops seamlessly with no visible jump between end and start.
+
+**What NOT to do**:
+- Don't change other card icons (those are separate tasks)
+- Don't add click handlers to the video
+- Don't add loading spinners — let it load naturally
+
+**Acceptance criteria**:
+- [ ] Anvil video plays on Vow Chamber card
+- [ ] Video loops seamlessly
+- [ ] WebM loads first, MP4 as fallback
+- [ ] Video centered above card title
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 2B-5: Card Icon — The Hearth (Brazier)
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`
+
+**What to do**:
+Replace the current emoji/geometric icon on the Hearth card with the brazier image.
+
+**Specific changes**:
+1. Remove the existing icon/emoji element from the Hearth door card.
+2. Use Next.js `<Image>` component or `<img>` tag for `brazier.webp` with `brazier.jpg` as fallback.
+3. Style: `max-height: 140px; object-fit: contain;` — match the anvil video sizing exactly.
+4. Center in the upper portion of the card, same position as the anvil on the Vow Chamber card.
+5. Later this will be replaced with an animated video — ensure the container can swap `img` for `video` without layout shift.
+
+**What NOT to do**:
+- Don't change other card icons
+- Don't add animation to the brazier image (video comes later)
+
+**Acceptance criteria**:
+- [ ] Brazier image displays on Hearth card
+- [ ] Image sizing matches anvil video container
+- [ ] Fallback to `.jpg` if `.webp` fails
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 2B-6: Card Icon — The Dungeon (Sealed Door)
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
+
+**What to do**:
+Replace the current emoji/geometric icon on the Dungeon card with the sealed door image, visually communicating "locked / coming soon."
+
+**Specific changes**:
+1. Remove the existing icon/emoji element and the text-based "COMING SOON" badge from the Dungeon door card.
+2. Use `<Image>` or `<img>` for `sealed_door.webp`.
+3. Style: same `max-height: 140px; object-fit: contain;` as other cards.
+4. Apply a dimming filter: `filter: brightness(0.5) saturate(0.7);` to visually communicate locked state.
+5. The sealed door with chains IS the "coming soon" message — no text badge needed. The door tells the story.
+6. Optionally add a very subtle CSS pulsing glow on the ember cracks: `@keyframes ember-pulse` that gently oscillates `brightness` between 0.45 and 0.55.
+
+**What NOT to do**:
+- Don't make the dungeon door clickable/navigable
+- Don't change other card icons
+
+**Acceptance criteria**:
+- [ ] Sealed door image displays on Dungeon card
+- [ ] Image is visually dimmed (locked state)
+- [ ] Text-based "COMING SOON" badge removed
+- [ ] Optional pulse animation on ember cracks
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 2B-7: Typography & Label Polish
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
+
+**What to do**:
+Ensure all card text is readable over the new textured backgrounds and uses the correct dark fantasy typography.
+
+**Specific changes**:
+1. Card titles ("The Vow Chamber", "The Dungeon", "The Hearth") must use `font-family: 'Cinzel', serif;`
+2. Card subtitles/descriptions must use `font-family: 'Crimson Pro', serif;`
+3. Add `text-shadow: 0 2px 8px rgba(0,0,0,0.8);` to all card text for readability over the stone texture.
+4. Style XP and status badges (like "7 ACTIVE VOWS", "145 XP EARNED") to match dark fantasy theme — use `--ember-red` or `--gold` CSS variables from the landing page, NOT default web-app pill badge styling.
+5. Verify all text passes contrast accessibility check against the card texture background.
+
+**What NOT to do**:
+- Don't change text content or wording
+- Don't change fonts on other pages
+
+**Acceptance criteria**:
+- [ ] Cinzel on titles, Crimson Pro on subtitles
+- [ ] Text shadow ensures readability over texture
+- [ ] Badges use dark fantasy design tokens
+- [ ] Text contrast is accessible
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 2B-8: Performance Validation
+
+**Status**: `QUEUED`
+**Branch**: `feature/dashboard-overhaul`
+**Files to modify**: none — this is a verification task
+
+**What to do**:
+Verify the dashboard loads fast and all assets are properly optimized.
+
+**Specific changes**:
+1. Check total dashboard asset payload is < 500KB (all images + video combined).
+2. Add `loading="lazy"` to the brazier and sealed door images (they're below the fold on mobile).
+3. Ensure the anvil video does not block page render — it should load asynchronously.
+4. Test on mobile: verify the video `autoPlay` works (requires `muted playsInline` attributes).
+5. Run `npm run build` — zero errors, zero warnings.
+6. Run Lighthouse on the dashboard route — target 90+ performance score.
+7. If video causes jank on mobile, add a fallback: show static `anvil.webp` on screens < 768px, video on desktop only.
+
+**What NOT to do**:
+- Don't change any visual design in this task — optimization only
+- Don't remove any assets
+
+**Acceptance criteria**:
+- [ ] Total new asset payload < 500KB
+- [ ] `npm run build` passes with zero errors
+- [ ] Lighthouse performance score 90+
+- [ ] Video plays on mobile
+- [ ] Lazy loading on below-fold images
 - [ ] `npm run validate` passes
 
 ## Completed Tasks

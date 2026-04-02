@@ -647,3 +647,55 @@ Done. Here's what was done:
 --- End Output ---
 [2026-04-02T07:10:28.226Z] Running validation...
 [2026-04-02T07:10:43.322Z] ✅ Validation PASSED
+[2026-04-02T07:10:43.463Z] Committed: feat: TASK P1-5 — Move Brazier to Hearth Placeholder
+[2026-04-02T07:10:43.465Z] ✅ TASK P1-5 COMPLETED
+[2026-04-02T07:10:43.465Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:10:43.465Z] 
+[2026-04-02T07:10:43.466Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:10:43.466Z] DONE: 5/5 tasks completed.
+[2026-04-02T07:10:43.466Z] All tasks succeeded.
+[2026-04-02T07:10:43.467Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:37:38.529Z] ╔══════════════════════════════════════════════╗
+[2026-04-02T08:37:38.532Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-04-02T08:37:38.533Z] ╚══════════════════════════════════════════════╝
+[2026-04-02T08:37:38.586Z] Current branch: feature/hearth-placeholder
+[2026-04-02T08:37:39.047Z] Found 19 total tasks, 0 queued.
+[2026-04-02T08:37:39.048Z] No queued tasks. Nothing to do.
+[2026-04-02T08:40:00.685Z] ╔══════════════════════════════════════════════╗
+[2026-04-02T08:40:00.689Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-04-02T08:40:00.689Z] ╚══════════════════════════════════════════════╝
+[2026-04-02T08:40:00.730Z] Current branch: feature/hearth-placeholder
+[2026-04-02T08:40:00.880Z] Found 27 total tasks, 8 queued.
+[2026-04-02T08:40:00.881Z] Running baseline validation...
+[2026-04-02T08:40:16.477Z] ✅ Baseline clean — codebase passes validation.
+[2026-04-02T08:40:16.478Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:40:16.478Z] STARTING: TASK 2B-1 — Asset Optimization
+[2026-04-02T08:40:16.479Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:40:16.479Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:40:16.572Z] Created and checked out new branch: feature/dashboard-overhaul
+[2026-04-02T08:40:16.574Z] Invoking Claude Code...
+[2026-04-02T08:40:16.574Z] Prompt length: 2510 chars
+[2026-04-02T08:41:38.116Z] Claude Code finished in 1m 22s (exit: OK)
+
+--- Claude Output for TASK 2B-1 ---
+Done. Summary:
+
+**TASK 2B-1 — Asset Optimization: COMPLETE**
+
+Converted 4 JPG assets to WebP using FFmpeg:
+| File | Size | Dimensions |
+|------|------|-----------|
+| `card_texture.webp` | 21 KB | 512×512 |
+| `entry_background.webp` | 59 KB | 1920×1080 |
+| `sealed_door.webp` | 5.7 KB | 256×256 |
+| `anvil.webp` | 3.4 KB | 256×256 |
+
+**Total new asset size: ~89 KB** (well under 500 KB limit). All originals kept as fallbacks.
+
+Two items from the spec were skipped — `brazier.jpg` and `anvil_video.mp4` don't exist in the directory. The actual file present was `anvil.jpg`, converted to `anvil.webp`.
+
+`npm run validate` passes (TS + ESLint + Next.js build all green).
+
+--- End Output ---
+[2026-04-02T08:41:38.117Z] Running validation...
+[2026-04-02T08:41:51.337Z] ✅ Validation PASSED

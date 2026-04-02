@@ -147,6 +147,13 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK 2B-1 — Asset Optimization)**
+- `frontend/public/images/card_texture.webp` — New. Converted from `card_texture.jpg` at 512x512, quality 80. 21KB.
+- `frontend/public/images/entry_background.webp` — New. Converted from `entry_background.jpg` at 1920x1080, quality 80. 58KB.
+- `frontend/public/images/sealed_door.webp` — New. Converted from `sealed_door.jpg` at 256x256, quality 80. 5.7KB.
+- `frontend/public/images/anvil.webp` — New. Converted from `anvil.jpg` at 256x256, quality 80. 3.4KB.
+- Note: Task spec referenced `brazier.jpg` (absent) and `anvil_video.mp4` (absent) — skipped. Actual file was `anvil.jpg`, converted to `anvil.webp`. Total new asset size: ~89KB.
+
 **Session: 2026-04-02 (TASK P1-5 — Move Brazier to Hearth Placeholder)**
 - `frontend/src/app/hearth/page.tsx` — New page. Atmospheric hearth sanctum with auth guard. Fetches `api.listEmbers(token)`. `<Brazier>` centered with real embers, drop animation, add click, delete request. `<AddEmberForm>` below (toggleable, hidden while adding). 50-ember cap message. "Coming soon" banner: "Your sanctum grows. Trophy room, character customization, and more — forging soon." Warmer dual glow: top ember radial (0.13 opacity) + bottom firelight radial. 8 slow ember particles. Noise overlay, Navbar, "← Return to Hub" link. Ember delete confirm modal identical to vow chamber pattern.
 - `frontend/src/app/dashboard/page.tsx` — Hearth door changed from locked (`div` + shake click handler) to unlocked (`Link href="/hearth"`). Now uses `hub-door-unlocked` classes, `hub-door-glow-ring` (dim, 0.5 opacity), `hub-door-symbol-unlocked`, `hub-door-arch hub-door-arch-unlocked`, ember leak, and "Tend your brazier" status badge. Shake state for "hearth" no longer used.
