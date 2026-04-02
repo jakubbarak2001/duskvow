@@ -400,3 +400,34 @@ All checks pass. Changes made:
 --- End Output ---
 [2026-04-02T06:01:57.437Z] Running validation...
 [2026-04-02T06:02:09.274Z] ✅ Validation PASSED
+[2026-04-02T06:02:09.402Z] Committed: feat: TASK 3B-2 — Frontend API Client & Types for Embers
+[2026-04-02T06:02:09.403Z] ✅ TASK 3B-2 COMPLETED
+[2026-04-02T06:02:09.404Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:02:09.404Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:02:09.404Z] STARTING: TASK 3B-3 — Brazier Component — Visual Container
+[2026-04-02T06:02:09.405Z] Branch: feature/ember-brazier-visual
+[2026-04-02T06:02:09.405Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:02:09.495Z] Created and checked out new branch: feature/ember-brazier-visual
+[2026-04-02T06:02:09.497Z] Invoking Claude Code...
+[2026-04-02T06:02:09.497Z] Prompt length: 3781 chars
+[2026-04-02T06:08:49.452Z] Claude Code finished in 6m 40s (exit: OK)
+
+--- Claude Output for TASK 3B-3 ---
+TASK 3B-3 complete. Here's what was built:
+
+**`frontend/src/components/ui/Brazier.tsx`** — The `<Brazier>` component with:
+- Bowl/vessel shape via CSS `border-radius` tapering (rounded bottom, open top)
+- Fire core `radial-gradient` that animates with `brazier-flicker` — intensity scales with ember count across 5 tiers (`cold → blazing`)
+- Ember orbs (`8px` circles) at seeded pseudo-random positions — deterministic from index so they never jump between renders
+- Float animation uses a wrapper div to isolate `translateY` from hover `scale(1.3)`, preventing keyframe/transition conflicts
+- Hover: orb scales 1.3×, glow brightens, tooltip appears with ember title
+- Rising particle VFX (count scales 0/4/9/16/22 with intensity)
+- Cold state: `◈` icon + "Your brazier is cold. Add your first ember."
+- Rim + stem + base structure below the bowl
+- Responsive at ≤400px
+
+**`globals.css`** — Added `@keyframes brazier-flicker`, `brazier-float`, `brazier-rise` plus all glow intensity classes.
+
+--- End Output ---
+[2026-04-02T06:08:49.453Z] Running validation...
+[2026-04-02T06:09:01.231Z] ✅ Validation PASSED

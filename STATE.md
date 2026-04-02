@@ -143,6 +143,10 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK 3B-3 — Brazier Component — Visual Container)**
+- `frontend/src/components/ui/Brazier.tsx` — New `<Brazier embers onEmberHover onAddClick />` component. Bowl/vessel built with CSS (rounded container, layered gradients). Fire core `radial-gradient` animates with `brazier-flicker`. Ember orbs (`8px` circles) use seeded pseudo-random positions (deterministic from index) with float animation. Float wrapper separates translate animation from hover scale to avoid keyframe/transition conflict. Glow intensity (`brazier-cold` → `brazier-blazing`) driven by ember count thresholds (0 / 1-5 / 6-15 / 16-30 / 31+). Hover shows tooltip with ember title. Empty state renders "Your brazier is cold" prompt. Rim + stem + base SVG-free structure below bowl. Responsive at 400px breakpoint.
+- `frontend/src/app/globals.css` — Added BRAZIER COMPONENT STYLES section: `@keyframes brazier-flicker` (fire glow pulse), `@keyframes brazier-float` (ember bob/drift), `@keyframes brazier-rise` (particle ascent + fade). Intensity classes `.brazier-cold/.brazier-dim/.brazier-warm/.brazier-hot/.brazier-blazing` control fire-core gradient and vessel box-shadow glow. Tooltip, empty-state, rim/stem/base, add-button styles.
+
 **Session: 2026-04-02 (TASK 3B-1 — Ember Database Table & API Endpoints)**
 - `supabase/migrations/20260402055909_create_embers_table.sql` — New migration: `public.embers` table with UUID PK, `user_id` FK to `auth.users`, `title` (1-100 chars), optional `description` (max 500 chars), `created_at`. RLS enabled with "Users can CRUD own embers" policy. Index on `user_id`. Applied via `npx supabase db push`.
 - `backend/app/models/ember.py` — New `Ember` SQLModel model (`table=True`) mirroring the DB schema.

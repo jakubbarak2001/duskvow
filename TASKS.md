@@ -374,7 +374,7 @@ DELETE /api/v1/embers/{ember_id} — Delete an ember
 
 ### TASK 3B-2: Frontend API Client & Types for Embers
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/ember-types`
 **Files to modify**: `frontend/src/types/index.ts`, `frontend/src/lib/api.ts`
 
@@ -423,7 +423,7 @@ deleteEmber: (emberId: string, token: string) =>
 
 ### TASK 3B-3: Brazier Component — Visual Container
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/ember-brazier-visual`
 **Files to modify**: `frontend/src/components/ui/Brazier.tsx` (new), `frontend/src/app/globals.css`
 
