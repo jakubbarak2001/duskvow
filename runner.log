@@ -615,3 +615,35 @@ Done. Changes made:
 --- End Output ---
 [2026-04-02T07:07:19.267Z] Running validation...
 [2026-04-02T07:07:32.831Z] ✅ Validation PASSED
+[2026-04-02T07:07:32.991Z] Committed: feat: TASK P1-4 — Update Auth Redirect & Navigation Flow
+[2026-04-02T07:07:32.992Z] ✅ TASK P1-4 COMPLETED
+[2026-04-02T07:07:32.992Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:07:32.993Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:07:32.993Z] STARTING: TASK P1-5 — Move Brazier to Hearth Placeholder
+[2026-04-02T07:07:32.993Z] Branch: feature/hearth-placeholder
+[2026-04-02T07:07:32.993Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:07:33.082Z] Created and checked out new branch: feature/hearth-placeholder
+[2026-04-02T07:07:33.083Z] Invoking Claude Code...
+[2026-04-02T07:07:33.083Z] Prompt length: 2661 chars
+[2026-04-02T07:10:28.226Z] Claude Code finished in 2m 55s (exit: OK)
+
+--- Claude Output for TASK P1-5 ---
+Done. Here's what was done:
+
+**Created** `frontend/src/app/hearth/page.tsx`:
+- Auth-guarded page with atmospheric atmosphere (warmer than hub — dual radial glows: ember from top + firelight from bottom)
+- "The Hearth" Cinzel heading + "← Return to Hub" link + Navbar
+- `<Brazier>` with real embers fetched via `api.listEmbers`
+- `<AddEmberForm>` below (same toggle/add/animate pattern as vow chamber)
+- Ember delete confirm dialog
+- "Coming soon" banner: *"Your sanctum grows. Trophy room, character customization, and more — forging soon."*
+- 8 ember particles + noise overlay
+
+**Updated** `frontend/src/app/dashboard/page.tsx`:
+- Hearth door changed from a locked `div` (with shake handler) to `Link href="/hearth"` with `hub-door-unlocked` styling — matches the Vow Chamber door pattern with glow ring, arch, ember leak, and "Tend your brazier" status badge
+
+`npm run validate` passes — TypeScript, ESLint, and Next.js build all clean.
+
+--- End Output ---
+[2026-04-02T07:10:28.226Z] Running validation...
+[2026-04-02T07:10:43.322Z] ✅ Validation PASSED

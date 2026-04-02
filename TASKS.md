@@ -751,7 +751,7 @@ Wire the Vow Chamber door on the hub to show live data from the user's trees.
 
 ### TASK P1-4: Update Auth Redirect & Navigation Flow
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/hub-navigation`
 **Files to modify**: `frontend/src/components/layout/Navbar.tsx`, `frontend/src/components/auth/AuthForm.tsx`, `frontend/src/app/tree/[id]/page.tsx` (or TreeViewPage), `frontend/src/lib/api.ts` (if needed)
 
@@ -785,7 +785,7 @@ Update navigation across the app to work with the new hub structure.
 
 ### TASK P1-5: Move Brazier to Hearth Placeholder
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/hearth-placeholder`
 **Files to modify**: `frontend/src/app/hearth/page.tsx` (new), `frontend/src/app/dashboard/page.tsx`
 

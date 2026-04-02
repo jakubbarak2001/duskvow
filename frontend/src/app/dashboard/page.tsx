@@ -425,27 +425,31 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Door 3: The Hearth (LOCKED) ── */}
-          <div
-            className={`hub-door hub-door-locked hub-door-hearth${shakingDoor === "hearth" ? " hub-door-shake" : ""}`}
-            onClick={() => handleLockedClick("hearth")}
-          >
+          {/* ── Door 3: The Hearth (UNLOCKED) ── */}
+          <Link href="/hearth" className="hub-door hub-door-unlocked">
+            <div className="hub-door-glow-ring" style={{ opacity: 0.5 }} />
+
             {/* Symbol */}
-            <div className="hub-door-symbol hub-door-symbol-locked hub-door-symbol-hearth">
+            <div className="hub-door-symbol hub-door-symbol-unlocked">
               <span style={{ fontSize: "2.6rem", lineHeight: 1 }}>🜂</span>
             </div>
+
+            {/* Archway frame */}
+            <div className="hub-door-arch hub-door-arch-unlocked" />
 
             {/* Door content */}
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Hearth</h2>
               <p className="hub-door-subtitle">Your sanctum. Your trophies. Your fire.</p>
 
-              <div className="hub-door-status hub-door-status-locked">
-                <span className="hub-lock-icon">🔒</span>
-                Coming Soon
+              <div className="hub-door-status hub-door-status-unlocked">
+                Tend your brazier
               </div>
             </div>
-          </div>
+
+            {/* Ember leak at base */}
+            <div className="hub-door-ember-leak" />
+          </Link>
         </div>
       </main>
     </div>

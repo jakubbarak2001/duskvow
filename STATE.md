@@ -126,7 +126,8 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 - [x] **Backend API** — FastAPI with all endpoints: profile, trees CRUD, node state mutations, AI generation with Gemini, rate limiting, generation status, embers CRUD
 - [x] **Embers backend** — `public.embers` table with RLS, GET/POST/DELETE `/api/v1/embers` endpoints, 50-ember cap enforced server-side
 - [x] **Embers frontend** — `<Brazier>` on dashboard with real data; add flow (form → API → drop animation); delete flow (tooltip icon → confirm dialog → API remove); 50-cap enforced in UI; glow intensity scales with count; cold empty state
-- [x] **Hub page** — `/dashboard` rewritten as atmospheric hub: three door cards (Vow Chamber unlocked → `/vows`, Dungeon + Hearth locked with shake feedback), custom hub header (logo + compact XP/Streak stats + sign-out), ember particles, central radial glow, noise overlay, responsive mobile stack
+- [x] **Hub page** — `/dashboard` rewritten as atmospheric hub: three door cards (Vow Chamber unlocked → `/vows`, Dungeon locked, Hearth unlocked → `/hearth`), custom hub header (logo + compact XP/Streak stats + sign-out), ember particles, central radial glow, noise overlay, responsive mobile stack
+- [x] **Hearth (`/hearth`)** — Atmospheric sanctum page: "The Hearth" Cinzel heading, "← Return to Hub" link, Navbar, `<Brazier>` with real user embers (API connected), `<AddEmberForm>` below, "coming soon" banner for trophy room/customization, auth guard, warmer dual-glow atmosphere (ember radial from top + firelight from bottom), 8 ember particles
 - [x] **Database** — Supabase PostgreSQL with profiles, talent_trees, skill_nodes, daily_activity tables, all with RLS
 
 ### What's Broken / Known Issues
@@ -145,6 +146,10 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
+
+**Session: 2026-04-02 (TASK P1-5 — Move Brazier to Hearth Placeholder)**
+- `frontend/src/app/hearth/page.tsx` — New page. Atmospheric hearth sanctum with auth guard. Fetches `api.listEmbers(token)`. `<Brazier>` centered with real embers, drop animation, add click, delete request. `<AddEmberForm>` below (toggleable, hidden while adding). 50-ember cap message. "Coming soon" banner: "Your sanctum grows. Trophy room, character customization, and more — forging soon." Warmer dual glow: top ember radial (0.13 opacity) + bottom firelight radial. 8 slow ember particles. Noise overlay, Navbar, "← Return to Hub" link. Ember delete confirm modal identical to vow chamber pattern.
+- `frontend/src/app/dashboard/page.tsx` — Hearth door changed from locked (`div` + shake click handler) to unlocked (`Link href="/hearth"`). Now uses `hub-door-unlocked` classes, `hub-door-glow-ring` (dim, 0.5 opacity), `hub-door-symbol-unlocked`, `hub-door-arch hub-door-arch-unlocked`, ember leak, and "Tend your brazier" status badge. Shake state for "hearth" no longer used.
 
 **Session: 2026-04-02 (TASK P1-4 — Update Auth Redirect & Navigation Flow)**
 - `frontend/src/components/layout/Navbar.tsx` — "Dashboard" link renamed to "Hub"; added "Vow Chamber" link pointing to `/vows`; "New Vow" link unchanged.
