@@ -277,7 +277,7 @@ Claude should verify Google OAuth is configured by checking if the Supabase Auth
 
 ### TASK 3A-1: Remove Nodes Done Stat from Dashboard
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/remove-nodes-stat`
 **Files to modify**: `frontend/src/components/ui/StatsBar.tsx`, `frontend/src/app/dashboard/page.tsx`
 
@@ -316,7 +316,7 @@ Remove the third stat ("Nodes Done") from the StatsBar. Keep only Total XP and D
 
 ### TASK 3B-1: Ember Database Table & API Endpoints
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/ember-backend`
 **Files to modify**: `supabase/migrations/`, `backend/app/models/`, `backend/app/schemas/`, `backend/app/api/v1/`
 

@@ -122,7 +122,8 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 - [x] **Interactive skill tree** — React Flow canvas with custom node shapes (circle/square/diamond/hexagon), Dagre auto-layout, zoom/pan, node state colors, tier glow effects
 - [x] **Node detail panel** — Slide-in panel on node click, shows description/type/tier/XP/status, Start/Complete/Reset actions with optimistic updates
 - [x] **Node completion flow** — Optimistic state update, XP tracking, prerequisite auto-unlock, completion pending lock
-- [x] **Backend API** — FastAPI with all endpoints: profile, trees CRUD, node state mutations, AI generation with Gemini, rate limiting, generation status
+- [x] **Backend API** — FastAPI with all endpoints: profile, trees CRUD, node state mutations, AI generation with Gemini, rate limiting, generation status, embers CRUD
+- [x] **Embers backend** — `public.embers` table with RLS, GET/POST/DELETE `/api/v1/embers` endpoints, 50-ember cap enforced server-side
 - [x] **Database** — Supabase PostgreSQL with profiles, talent_trees, skill_nodes, daily_activity tables, all with RLS
 
 ### What's Broken / Known Issues
@@ -141,6 +142,14 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
+
+**Session: 2026-04-02 (TASK 3B-1 — Ember Database Table & API Endpoints)**
+- `supabase/migrations/20260402055909_create_embers_table.sql` — New migration: `public.embers` table with UUID PK, `user_id` FK to `auth.users`, `title` (1-100 chars), optional `description` (max 500 chars), `created_at`. RLS enabled with "Users can CRUD own embers" policy. Index on `user_id`. Applied via `npx supabase db push`.
+- `backend/app/models/ember.py` — New `Ember` SQLModel model (`table=True`) mirroring the DB schema.
+- `backend/app/schemas/embers.py` — New `EmberCreate` and `EmberResponse` Pydantic v2 schemas.
+- `backend/app/core/supabase.py` — Added ember helpers: `list_embers`, `count_embers`, `create_ember`, `get_ember`, `delete_ember`, and `EMBER_CAP = 50` constant.
+- `backend/app/api/v1/embers.py` — New router with `GET /embers` (list), `POST /embers` (create, enforces 50-cap), `DELETE /embers/{ember_id}` (delete with ownership check). All require Bearer auth. Response shape: `{ "data": ..., "error": null }`.
+- `backend/app/api/v1/__init__.py` — Registered `embers_router` at `/embers`.
 
 **Session: 2026-03-31 (fix: Navbar logo matched to landing page)**
 - `globals.css` — Added `--bone: #d4c9b0` token (landing page heading parchment; distinct from `--text-primary: #E0D8C8` which is slightly lighter)

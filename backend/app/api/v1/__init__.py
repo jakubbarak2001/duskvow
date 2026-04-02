@@ -5,8 +5,10 @@ from fastapi import APIRouter
 from app.api.v1.trees import router as trees_router
 from app.api.v1.nodes import router as nodes_router
 from app.api.v1.profile import router as profile_router
+from app.api.v1.embers import router as embers_router
 
 router = APIRouter()
 router.include_router(trees_router, prefix="/trees", tags=["trees"])
 router.include_router(nodes_router, prefix="/nodes", tags=["nodes"])
 router.include_router(profile_router, prefix="/profile", tags=["profile"])
+router.include_router(embers_router, prefix="/embers", tags=["embers"])

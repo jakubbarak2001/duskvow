@@ -349,3 +349,33 @@ All 3 checks pass. Here's what was changed:
 --- End Output ---
 [2026-04-02T05:58:24.247Z] Running validation...
 [2026-04-02T05:58:36.230Z] ✅ Validation PASSED
+[2026-04-02T05:58:36.395Z] Committed: feat: TASK 3A-1 — Remove Nodes Done Stat from Dashboard
+[2026-04-02T05:58:36.397Z] ✅ TASK 3A-1 COMPLETED
+[2026-04-02T05:58:36.397Z] ════════════════════════════════════════════════════════════
+[2026-04-02T05:58:36.398Z] ════════════════════════════════════════════════════════════
+[2026-04-02T05:58:36.398Z] STARTING: TASK 3B-1 — Ember Database Table & API Endpoints
+[2026-04-02T05:58:36.398Z] Branch: feature/ember-backend
+[2026-04-02T05:58:36.399Z] ════════════════════════════════════════════════════════════
+[2026-04-02T05:58:36.495Z] Created and checked out new branch: feature/ember-backend
+[2026-04-02T05:58:36.496Z] Invoking Claude Code...
+[2026-04-02T05:58:36.497Z] Prompt length: 3097 chars
+[2026-04-02T06:01:08.925Z] Claude Code finished in 2m 32s (exit: OK)
+
+--- Claude Output for TASK 3B-1 ---
+TASK 3B-1 is complete. Here's a summary of what was done:
+
+**Database**
+- Created and pushed migration `20260402055909_create_embers_table.sql` — `public.embers` table with UUID PK, `user_id` FK, `title` (1–100 chars), optional `description` (≤500 chars), `created_at`, RLS enabled with a single "Users can CRUD own embers" policy, and an index on `user_id`.
+
+**Backend**
+- `backend/app/models/ember.py` — `Ember` SQLModel model
+- `backend/app/schemas/embers.py` — `EmberCreate` and `EmberResponse` Pydantic v2 schemas
+- `backend/app/core/supabase.py` — Added `EMBER_CAP = 50` and five helper functions: `list_embers`, `count_embers`, `create_ember`, `get_ember`, `delete_ember`
+- `backend/app/api/v1/embers.py` — Three endpoints: `GET /api/v1/embers`, `POST /api/v1/embers` (400 at cap), `DELETE /api/v1/embers/{ember_id}` (404 if not owned)
+- `backend/app/api/v1/__init__.py` — Router registered at `/embers`
+
+**Validation**: `npm run validate` — all 3 checks passed (TypeScript, ESLint, Next.js build).
+
+--- End Output ---
+[2026-04-02T06:01:08.926Z] Running validation...
+[2026-04-02T06:01:20.883Z] ✅ Validation PASSED

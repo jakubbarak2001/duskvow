@@ -542,3 +542,89 @@ async def update_node(node_id: str, data: dict[str, Any]) -> dict[str, Any]:
     """
     rows = await _patch("skill_nodes", {"id": f"eq.{node_id}"}, data)
     return rows[0]
+
+
+# ---------------------------------------------------------------------------
+# Embers
+# ---------------------------------------------------------------------------
+
+EMBER_CAP = 50
+
+
+async def list_embers(user_id: str) -> list[dict[str, Any]]:
+    """List all embers for a user, ordered by created_at DESC.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        List of ember dicts.
+    """
+    return await _get(
+        "embers",
+        {"user_id": f"eq.{user_id}", "select": "*", "order": "created_at.desc"},
+    )
+
+
+async def count_embers(user_id: str) -> int:
+    """Count how many embers the user has.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Integer count.
+    """
+    rows = await _get("embers", {"user_id": f"eq.{user_id}", "select": "id"})
+    return len(rows)
+
+
+async def create_ember(
+    user_id: str,
+    title: str,
+    description: str | None,
+) -> dict[str, Any]:
+    """Insert a new ember row.
+
+    Args:
+        user_id: Owner's UUID.
+        title: Victory title (1-100 chars).
+        description: Optional description (max 500 chars).
+
+    Returns:
+        The created ember dict.
+    """
+    payload: dict[str, Any] = {"user_id": user_id, "title": title}
+    if description is not None:
+        payload["description"] = description
+    return await _insert_one("embers", payload)
+
+
+async def get_ember(ember_id: str) -> dict[str, Any] | None:
+    """Fetch a single ember row.
+
+    Args:
+        ember_id: Ember UUID.
+
+    Returns:
+        Ember dict or None.
+    """
+    rows = await _get("embers", {"id": f"eq.{ember_id}", "select": "*"})
+    return rows[0] if rows else None
+
+
+async def delete_ember(ember_id: str, user_id: str) -> bool:
+    """Delete an ember, verifying ownership.
+
+    Args:
+        ember_id: Ember UUID.
+        user_id: Expected owner UUID.
+
+    Returns:
+        True if deleted, False if not found or not owned.
+    """
+    ember = await get_ember(ember_id)
+    if not ember or ember["user_id"] != user_id:
+        return False
+    await _delete("embers", {"id": f"eq.{ember_id}"})
+    return True
