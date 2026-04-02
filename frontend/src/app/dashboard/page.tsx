@@ -367,9 +367,12 @@ export default function DashboardPage() {
               }}
             />
 
-            {/* Symbol */}
-            <div className="hub-door-symbol hub-door-symbol-unlocked">
-              <span style={{ fontSize: "2.8rem", lineHeight: 1 }}>ᛟ</span>
+            {/* Anvil video */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <video autoPlay loop muted playsInline style={{ maxHeight: "140px", objectFit: "contain" }}>
+                <source src="/images/anvil_video.webm" type="video/webm" />
+                <source src="/images/anvil_video.mp4" type="video/mp4" />
+              </video>
             </div>
 
             {/* Archway frame */}

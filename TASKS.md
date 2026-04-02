@@ -915,7 +915,7 @@ Replace flat card backgrounds with the stone texture and restyle the cards to fe
 
 ### TASK 2B-4: Card Icon — Vow Chamber (Anvil Video)
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`
 

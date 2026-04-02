@@ -753,3 +753,21 @@ The texture border in the image remains fully visible — `overflow: hidden` onl
 --- End Output ---
 [2026-04-02T08:45:58.687Z] Running validation...
 [2026-04-02T08:46:12.780Z] ✅ Validation PASSED
+[2026-04-02T08:46:12.920Z] Committed: feat: TASK 2B-3 — Card Component — Texture & Styling
+[2026-04-02T08:46:12.921Z] ✅ TASK 2B-3 COMPLETED
+[2026-04-02T08:46:12.921Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:46:12.922Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:46:12.922Z] STARTING: TASK 2B-4 — Card Icon — Vow Chamber (Anvil Video)
+[2026-04-02T08:46:12.922Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:46:12.922Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:46:13.016Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-02T08:46:13.018Z] Invoking Claude Code...
+[2026-04-02T08:46:13.018Z] Prompt length: 2573 chars
+[2026-04-02T08:46:51.124Z] Claude Code finished in 0m 38s (exit: OK)
+
+--- Claude Output for TASK 2B-4 ---
+All 3 checks pass. Done — the ᛟ rune symbol on the Vow Chamber card has been replaced with the animated anvil video (`anvil_video.webm` / `anvil_video.mp4` fallback), centered above the card title with `maxHeight: 140px`.
+
+--- End Output ---
+[2026-04-02T08:46:51.125Z] Running validation...
+[2026-04-02T08:47:06.029Z] ✅ Validation PASSED
