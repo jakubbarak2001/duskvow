@@ -3,13 +3,14 @@
 interface StatsBarProps {
   totalXp: number;
   currentStreak: number;
-  nodesCompleted: number;
-  totalNodes: number;
+  nodesCompleted?: number;
+  totalNodes?: number;
 }
 
 const XP_MILESTONE = 500;
 
 export function StatsBar({ totalXp, currentStreak, nodesCompleted, totalNodes }: StatsBarProps) {
+  const showNodes = nodesCompleted !== undefined && totalNodes !== undefined;
   const xpInMilestone = totalXp % XP_MILESTONE;
   const xpProgress = xpInMilestone / XP_MILESTONE;
   const xpToNext = XP_MILESTONE - xpInMilestone;
@@ -88,28 +89,32 @@ export function StatsBar({ totalXp, currentStreak, nodesCompleted, totalNodes }:
           </div>
         </div>
 
-        {/* Separator */}
-        <div
-          className="w-px my-4"
-          style={{ backgroundColor: "var(--border-default)" }}
-        />
+        {showNodes && (
+          <>
+            {/* Separator */}
+            <div
+              className="w-px my-4"
+              style={{ backgroundColor: "var(--border-default)" }}
+            />
 
-        {/* Nodes */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-6">
-          <div
-            className="text-5xl font-bold mb-1 dash-stat-nodes"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            <span style={{ color: "var(--state-complete)" }}>{nodesCompleted}</span>
-            <span style={{ color: "var(--text-muted)", fontSize: "2rem" }}>/{totalNodes}</span>
-          </div>
-          <div
-            className="text-xs uppercase"
-            style={{ color: "var(--text-muted)", letterSpacing: "0.25em" }}
-          >
-            Nodes Done
-          </div>
-        </div>
+            {/* Nodes */}
+            <div className="flex-1 flex flex-col items-center justify-center px-6 py-6">
+              <div
+                className="text-5xl font-bold mb-1 dash-stat-nodes"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <span style={{ color: "var(--state-complete)" }}>{nodesCompleted}</span>
+                <span style={{ color: "var(--text-muted)", fontSize: "2rem" }}>/{totalNodes}</span>
+              </div>
+              <div
+                className="text-xs uppercase"
+                style={{ color: "var(--text-muted)", letterSpacing: "0.25em" }}
+              >
+                Nodes Done
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -265,8 +265,302 @@ Claude should verify Google OAuth is configured by checking if the Supabase Auth
 
 ---
 
+# SPRINT 3 TASKS — Add to TASKS.md
+
+> Copy everything below into TASKS.md, above the "## Completed Tasks" section.
+
+---
+
+## Sprint 3A — Dashboard Cleanup
+
+---
+
+### TASK 3A-1: Remove Nodes Done Stat from Dashboard
+
+**Status**: `IN_PROGRESS`
+**Branch**: `feature/remove-nodes-stat`
+**Files to modify**: `frontend/src/components/ui/StatsBar.tsx`, `frontend/src/app/dashboard/page.tsx`
+
+**What to do**:
+Remove the third stat ("Nodes Done") from the StatsBar. Keep only Total XP and Day Streak.
+
+**Specific changes**:
+1. In `StatsBar.tsx`: remove the `nodesCompleted` and `totalNodes` props and the third stat column entirely.
+2. Update the `StatsBarProps` interface to only have `totalXp` and `currentStreak`.
+3. In `dashboard/page.tsx`: remove the `nodesCompleted` and `totalNodes` props being passed to `<StatsBar>`.
+4. In `frontend/src/components/tree/TreeViewPage.tsx`: check if `StatsBar` is used there too — update props if so. If the tree view page needs node progress, keep it local to that page (do NOT remove from tree view — only from the dashboard).
+5. The two remaining stats should center properly and take up equal width.
+
+**What NOT to do**:
+- Don't remove StatsBar from the tree view page — it's still useful there with all stats
+- Don't change any other dashboard elements
+- If StatsBar is used in tree view with all 4 props, create a separate interface or make the node props optional
+
+**Acceptance criteria**:
+- [ ] Dashboard StatsBar shows only Total XP and Day Streak
+- [ ] Tree view StatsBar still shows all stats (XP, streak, nodes)
+- [ ] No TypeScript errors from removed props
+- [ ] `npm run validate` passes
+
+---
+
+## Sprint 3B — Ember Brazier
+
+> The Ember Brazier is a personal victory collection. Users add "embers" — short
+> descriptions of past wins — that live inside a visual brazier on the dashboard.
+> The more embers you add, the brighter the fire burns. Hovering an ember reveals
+> its name. This is a psychological anchor for motivation (David Goggins' "cookie jar"
+> concept, reskinned for dark fantasy).
+
+---
+
+### TASK 3B-1: Ember Database Table & API Endpoints
+
+**Status**: `QUEUED`
+**Branch**: `feature/ember-backend`
+**Files to modify**: `supabase/migrations/`, `backend/app/models/`, `backend/app/schemas/`, `backend/app/api/v1/`
+
+**What to do**:
+Create the database table and REST API for embers.
+
+**Database migration** (create via `npx supabase migration new create_embers_table`):
+```sql
+CREATE TABLE public.embers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL CHECK (char_length(title) BETWEEN 1 AND 100),
+    description TEXT CHECK (char_length(description) <= 500),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.embers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can CRUD own embers" ON public.embers
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE INDEX idx_embers_user_id ON public.embers(user_id);
+```
+
+Push with `npx supabase db push`.
+
+**API endpoints**:
+```
+GET    /api/v1/embers           — List user's embers (ordered by created_at DESC)
+POST   /api/v1/embers           — Create ember { title: string, description?: string }
+DELETE /api/v1/embers/{ember_id} — Delete an ember
+```
+
+**Backend implementation**:
+- Add Pydantic schemas: `EmberCreate`, `EmberResponse`
+- Add SQLModel model: `Ember`
+- Add route handler in `api/v1/embers.py`
+- Register router in `main.py`
+- All endpoints require auth (Bearer token)
+- Max 50 embers per user (return 400 if at cap)
+- Response format: `{ "data": [...], "error": null }`
+
+**What NOT to do**:
+- Don't build any frontend yet
+- Don't add update/edit endpoint (embers are immutable once created — you don't edit victories)
+
+**Acceptance criteria**:
+- [ ] Migration creates table with RLS
+- [ ] `npx supabase db push` succeeds
+- [ ] GET/POST/DELETE endpoints work with auth
+- [ ] 50 ember cap enforced
+- [ ] Response shape matches existing API patterns
+
+---
+
+### TASK 3B-2: Frontend API Client & Types for Embers
+
+**Status**: `QUEUED`
+**Branch**: `feature/ember-types`
+**Files to modify**: `frontend/src/types/index.ts`, `frontend/src/lib/api.ts`
+
+**What to do**:
+Add TypeScript types and API client methods for embers.
+
+**Type definitions** (add to `types/index.ts`):
+```typescript
+export interface Ember {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+}
+```
+
+**API methods** (add to `lib/api.ts`):
+```typescript
+listEmbers: (token: string) => request<Ember[]>("/api/v1/embers", { headers: authHeader(token) }),
+
+createEmber: (title: string, description: string | null, token: string) =>
+  request<Ember>("/api/v1/embers", {
+    method: "POST",
+    headers: authHeader(token),
+    body: JSON.stringify({ title, description }),
+  }),
+
+deleteEmber: (emberId: string, token: string) =>
+  request<{ deleted: boolean }>(`/api/v1/embers/${emberId}`, {
+    method: "DELETE",
+    headers: authHeader(token),
+  }),
+```
+
+**What NOT to do**:
+- Don't build any UI components yet
+- Don't add a Zustand store yet
+
+**Acceptance criteria**:
+- [ ] `Ember` type exported from `types/index.ts`
+- [ ] Three API methods added to `api.ts`
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 3B-3: Brazier Component — Visual Container
+
+**Status**: `QUEUED`
+**Branch**: `feature/ember-brazier-visual`
+**Files to modify**: `frontend/src/components/ui/Brazier.tsx` (new), `frontend/src/app/globals.css`
+
+**What to do**:
+Build the visual Brazier component — the container that holds embers. This task is CSS/animation only — no data fetching, no API calls.
+
+**Component**: `<Brazier embers={mockEmbers} onEmberHover={} onAddClick={} />`
+
+**Visual design**:
+1. The brazier is a bowl/vessel shape at the bottom, built with CSS (rounded container, dark borders, inner gradient suggesting depth).
+2. Inside the vessel, a fire/glow effect that scales with ember count:
+   - 0 embers: dark, cold, faint smoke-like gradient. Prompt text: "Your brazier is cold. Add your first ember."
+   - 1-5 embers: dim warm glow, subtle animation
+   - 6-15 embers: medium fire glow, visible ember particles floating up
+   - 16-30 embers: bright fire, prominent glow, more particles
+   - 31-50 embers: blazing — maximum glow radius, intense animation
+3. Individual embers are small glowing orbs (6-10px) positioned pseudo-randomly inside the vessel using seeded positions based on ember index (not truly random — consistent between renders).
+4. Hover on individual ember: it scales up slightly (1.3x), glows brighter, and shows tooltip with the ember's title.
+5. The vessel should be roughly 300px wide × 200px tall on desktop, responsive.
+6. All colors from design tokens — ember reds, gold accents for glow, `--bg-shadow` for vessel.
+
+**CSS animations** (add to globals.css):
+- `@keyframes brazier-flicker` — subtle fire glow pulsing
+- `@keyframes brazier-float` — embers inside gently bob/drift
+- Glow intensity classes: `.brazier-cold`, `.brazier-dim`, `.brazier-warm`, `.brazier-hot`, `.brazier-blazing`
+
+**Props interface**:
+```typescript
+interface BrazierProps {
+  embers: { id: string; title: string }[];
+  onEmberHover?: (emberId: string | null) => void;
+  onAddClick?: () => void;
+}
+```
+
+**Use mock data for development** — pass 10-15 fake embers to test visual states.
+
+**What NOT to do**:
+- Don't fetch real data — just accept props
+- Don't build the "add ember" form — just expose `onAddClick` callback
+- Don't build the delete functionality
+- Don't integrate into dashboard yet
+
+**Acceptance criteria**:
+- [ ] Brazier renders with mock data
+- [ ] Glow intensity visually changes based on ember count
+- [ ] Individual ember hover shows tooltip with title
+- [ ] Empty state shows "cold brazier" prompt
+- [ ] Animations are smooth, not janky
+- [ ] All colors use design tokens
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 3B-4: Add Ember Form & Drop Animation
+
+**Status**: `QUEUED`
+**Branch**: `feature/ember-add-form`
+**Files to modify**: `frontend/src/components/ui/AddEmberForm.tsx` (new), `frontend/src/components/ui/Brazier.tsx`, `frontend/src/app/globals.css`
+
+**What to do**:
+Build the form for adding new embers and the "drop into brazier" animation.
+
+**AddEmberForm component**:
+1. Simple form: title input (required, max 100 chars) + description textarea (optional, max 500 chars) + submit button.
+2. Dark fantasy styling: `--bg-shadow` background, ember focus borders, Cinzel label text, ember gradient submit button.
+3. Form appears when user clicks "+ Add Ember" button (or the brazier's onAddClick).
+4. Can be a modal overlay or an inline expansion below the brazier — inline is simpler.
+5. On submit, calls `onSubmit({ title, description })` callback. Parent handles API call.
+
+**Drop animation**:
+6. When a new ember is added, animate it dropping into the brazier:
+   - A glowing orb appears above the brazier
+   - Falls down with slight ease-in (gravity feel)
+   - Lands in the vessel with a small burst/flash
+   - Then settles into its position among other embers
+7. Add `@keyframes ember-drop` to globals.css.
+8. Brazier component accepts an `animatingEmberId` prop — when set, that ember gets the drop animation class.
+
+**What NOT to do**:
+- Don't wire up to real API yet
+- Don't add delete functionality
+- Don't integrate into dashboard
+
+**Acceptance criteria**:
+- [ ] Form validates title (1-100 chars required)
+- [ ] Form styled with dark fantasy tokens
+- [ ] New ember drops into brazier with animation
+- [ ] Animation looks like gravity — not linear
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 3B-5: Brazier Integration — Dashboard + API Wiring
+
+**Status**: `QUEUED`
+**Branch**: `feature/ember-dashboard-integration`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/components/ui/Brazier.tsx`, `frontend/src/components/ui/AddEmberForm.tsx`
+
+**What to do**:
+Wire the Brazier into the dashboard with real data.
+
+**Specific changes**:
+1. In `dashboard/page.tsx`:
+   - Fetch embers on mount: `api.listEmbers(token)`
+   - Add state: `embers`, `showAddForm`, `animatingEmberId`
+   - Place `<Brazier>` component below the StatsBar, above the tree list
+   - Add section header: `◆ Your Brazier ◆` in ornamental style matching "Active Vows"
+   - Place `<AddEmberForm>` below the brazier, toggleable via "Add Ember" button
+2. Wire up add flow:
+   - Form submit → `api.createEmber(title, description, token)`
+   - On success → prepend to embers array, set `animatingEmberId` for drop animation
+   - Clear animation ID after 1.5s timeout
+3. Wire up delete:
+   - Long-press or dedicated delete icon on ember hover tooltip
+   - Confirm dialog: "Extinguish this ember?"
+   - On confirm → `api.deleteEmber(id, token)`, remove from array
+4. Handle 50-ember cap: hide "Add Ember" button when at cap, show message.
+
+**What NOT to do**:
+- Don't create a separate page for the brazier — it lives on the dashboard
+- Don't add a Zustand store — local state in dashboard is fine for now
+- Don't change the tree list or any other dashboard element
+
+**Acceptance criteria**:
+- [ ] Brazier shows on dashboard with real user embers
+- [ ] Add ember flow works: form → API → drop animation → ember appears
+- [ ] Delete ember works with confirmation
+- [ ] 50 ember cap enforced in UI
+- [ ] Empty brazier shows cold state with "add your first ember" prompt
+- [ ] Brazier glow intensity matches ember count
+- [ ] `npm run validate` passes
+- [ ] No visual regressions on rest of dashboard
+
 ## Completed Tasks
 
 > Move tasks here when done, with completion date and any notes.
 
 (none yet)
+

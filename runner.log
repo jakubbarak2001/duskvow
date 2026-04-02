@@ -323,3 +323,29 @@ Done. Here's what changed:
 --- End Output ---
 [2026-03-30T22:40:03.880Z] Running validation...
 [2026-03-30T22:40:17.184Z] ✅ Validation PASSED
+[2026-04-02T05:57:04.933Z] ╔══════════════════════════════════════════════╗
+[2026-04-02T05:57:04.943Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-04-02T05:57:04.943Z] ╚══════════════════════════════════════════════╝
+[2026-04-02T05:57:04.988Z] Current branch: main
+[2026-04-02T05:57:05.443Z] Found 14 total tasks, 6 queued.
+[2026-04-02T05:57:05.443Z] Running baseline validation...
+[2026-04-02T05:57:21.872Z] ✅ Baseline clean — codebase passes validation.
+[2026-04-02T05:57:21.873Z] ════════════════════════════════════════════════════════════
+[2026-04-02T05:57:21.874Z] STARTING: TASK 3A-1 — Remove Nodes Done Stat from Dashboard
+[2026-04-02T05:57:21.874Z] Branch: feature/remove-nodes-stat
+[2026-04-02T05:57:21.874Z] ════════════════════════════════════════════════════════════
+[2026-04-02T05:57:21.973Z] Created and checked out new branch: feature/remove-nodes-stat
+[2026-04-02T05:57:21.974Z] Invoking Claude Code...
+[2026-04-02T05:57:21.975Z] Prompt length: 2609 chars
+[2026-04-02T05:58:24.246Z] Claude Code finished in 1m 2s (exit: OK)
+
+--- Claude Output for TASK 3A-1 ---
+All 3 checks pass. Here's what was changed:
+
+- **`StatsBar.tsx`**: Made `nodesCompleted` and `totalNodes` optional in `StatsBarProps`. Added `showNodes` flag — the second separator and Nodes Done column only render when both props are provided.
+- **`dashboard/page.tsx`**: Removed `nodesCompleted` and `totalNodes` props from `<StatsBar>`, and removed the now-unused `primaryActiveTree` variable.
+- **`TreeViewPage.tsx`**: Untouched — still passes all 4 props, so the tree view StatsBar continues to show XP, streak, and nodes.
+
+--- End Output ---
+[2026-04-02T05:58:24.247Z] Running validation...
+[2026-04-02T05:58:36.230Z] ✅ Validation PASSED

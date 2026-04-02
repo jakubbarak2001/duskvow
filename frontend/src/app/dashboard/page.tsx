@@ -89,7 +89,6 @@ export default function DashboardPage() {
 
   const activeTrees = trees.filter((t) => t.status === "active");
   const finishedTrees = trees.filter((t) => t.status === "completed");
-  const primaryActiveTree = activeTrees[0] ?? null;
   const atActiveCap = (genStatus?.active_trees ?? 0) >= (genStatus?.active_tree_cap ?? 5);
   const outOfGenerations = (genStatus?.generations_remaining ?? 1) === 0;
   const ctaDisabled = atActiveCap || outOfGenerations;
@@ -238,8 +237,6 @@ export default function DashboardPage() {
               <StatsBar
                 totalXp={profile.total_xp}
                 currentStreak={profile.current_streak}
-                nodesCompleted={primaryActiveTree?.completed_nodes ?? 0}
-                totalNodes={primaryActiveTree?.total_nodes ?? 0}
               />
             </div>
           )}
