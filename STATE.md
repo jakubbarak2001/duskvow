@@ -147,6 +147,9 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK 2B-3 — Card Component — Texture & Styling)**
+- `frontend/src/app/globals.css` — `.hub-door-unlocked`: replaced flat `linear-gradient` background with multi-layer `background-image` (dark gradient overlay + `card_texture.webp`), `background-size: cover; background-position: center`. Removed orange/amber border (`rgba(200,75,17,0.3)`) → replaced with subtler `border: 1px solid rgba(200,80,20,0.1)`. Box-shadow changed to `0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5)`. Hover shadow enhances the ember glow. `.hub-door-locked`: same texture + gradient overlay treatment, same border and shadow. `overflow: hidden` retained (clips child elements only, not background — full texture including ornate border remains visible).
+
 **Session: 2026-04-02 (TASK 2B-2 — Dashboard Page Background)**
 - `frontend/src/app/dashboard/page.tsx` — Outer wrapper: replaced `backgroundColor: var(--bg-abyss)` with `entry_background.webp` as full-page background (`background-size: cover`, `background-position: center`, `background-attachment: fixed`). Added dark gradient overlay (`linear-gradient(rgba(10,10,18,0.75), rgba(10,10,18,0.85))`) as first child fixed div at `zIndex: 0`. Existing 8 ember particles enhanced with `boxShadow` glow (`rgba(200,75,17,0.6)`) for richer atmospheric effect matching landing page particle quality. Central radial glow opacity bumped slightly (0.09→0.12) to compensate for darker overlay. No logic, data fetching, or navigation changes.
 

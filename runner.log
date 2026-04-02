@@ -727,3 +727,29 @@ TASK 2B-2 is complete.
 --- End Output ---
 [2026-04-02T08:43:43.904Z] Running validation...
 [2026-04-02T08:43:57.611Z] ✅ Validation PASSED
+[2026-04-02T08:43:57.743Z] Committed: feat: TASK 2B-2 — Dashboard Page Background
+[2026-04-02T08:43:57.744Z] ✅ TASK 2B-2 COMPLETED
+[2026-04-02T08:43:57.744Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:43:57.745Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:43:57.745Z] STARTING: TASK 2B-3 — Card Component — Texture & Styling
+[2026-04-02T08:43:57.745Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:43:57.746Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:43:57.828Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-02T08:43:57.829Z] Invoking Claude Code...
+[2026-04-02T08:43:57.830Z] Prompt length: 2472 chars
+[2026-04-02T08:45:58.686Z] Claude Code finished in 2m 1s (exit: OK)
+
+--- Claude Output for TASK 2B-3 ---
+Done. Here's what was changed:
+
+**`frontend/src/app/globals.css`** — Two card classes updated:
+
+- **`.hub-door-unlocked`**: Replaced flat `linear-gradient` background with a multi-layer `background-image` combining a translucent dark overlay + `card_texture.webp` (`background-size: cover; background-position: center`). Removed the orange/amber `rgba(200,75,17,0.3)` border → replaced with the subtler `border: 1px solid rgba(200,80,20,0.1)`. Shadow changed to `0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5)`. Hover now enhances the ember glow on top of the same base shadow.
+
+- **`.hub-door-locked`**: Same treatment — texture background with darker gradient overlay (heavier dark to keep the locked/muted feel), same new border and shadow.
+
+The texture border in the image remains fully visible — `overflow: hidden` only clips child elements, not background images, so no ornate border is cropped. `npm run validate` passes ✅.
+
+--- End Output ---
+[2026-04-02T08:45:58.687Z] Running validation...
+[2026-04-02T08:46:12.780Z] ✅ Validation PASSED

@@ -856,7 +856,7 @@ Convert all raw dashboard assets to optimized web formats. Do NOT touch `anvil_v
 
 ### TASK 2B-2: Dashboard Page Background
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
 
@@ -884,7 +884,7 @@ Replace the current plain dark background on the dashboard/hub with `entry_backg
 
 ### TASK 2B-3: Card Component — Texture & Styling
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
 

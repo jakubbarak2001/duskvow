@@ -1000,36 +1000,43 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Unlocked door ── */
 .hub-door-unlocked {
-  background: linear-gradient(
-    180deg,
-    var(--bg-shadow) 0%,
-    var(--bg-surface) 60%,
-    rgba(200, 75, 17, 0.08) 100%
-  );
-  border: 1px solid rgba(200, 75, 17, 0.3);
-  box-shadow:
-    0 0 24px rgba(200, 75, 17, 0.12),
-    inset 0 1px 0 rgba(255,215,0,0.06);
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(10,10,18,0.45) 0%,
+      rgba(18,18,26,0.25) 60%,
+      rgba(200,75,17,0.06) 100%
+    ),
+    url('/images/card_texture.webp');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(200,80,20,0.1);
+  box-shadow: 0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5);
 }
 
 .hub-door-unlocked:hover {
   transform: translateY(-6px) scale(1.015);
   box-shadow:
-    0 0 48px rgba(200, 75, 17, 0.28),
+    0 0 20px rgba(200,80,20,0.15),
+    0 0 48px rgba(200,75,17,0.28),
     0 16px 48px rgba(0,0,0,0.5),
-    inset 0 1px 0 rgba(255,215,0,0.1);
-  border-color: rgba(200, 75, 17, 0.6);
+    inset 0 0 30px rgba(0,0,0,0.5);
+  border-color: rgba(200, 75, 17, 0.3);
 }
 
 /* ── Locked door ── */
 .hub-door-locked {
-  background: linear-gradient(
-    180deg,
-    var(--bg-shadow) 0%,
-    rgba(18,18,26,0.8) 100%
-  );
-  border: 1px solid rgba(224,216,200,0.08);
-  box-shadow: inset 0 0 40px rgba(0,0,0,0.3);
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(10,10,18,0.65) 0%,
+      rgba(18,18,26,0.55) 100%
+    ),
+    url('/images/card_texture.webp');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(200,80,20,0.1);
+  box-shadow: 0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5);
   opacity: 0.56;
   cursor: default;
 }
