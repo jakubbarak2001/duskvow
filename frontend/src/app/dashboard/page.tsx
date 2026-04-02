@@ -423,9 +423,20 @@ export default function DashboardPage() {
             className={`hub-door hub-door-locked${shakingDoor === "dungeon" ? " hub-door-shake" : ""}`}
             onClick={() => handleLockedClick("dungeon")}
           >
-            {/* Symbol */}
-            <div className="hub-door-symbol hub-door-symbol-locked">
-              <span style={{ fontSize: "2.6rem", lineHeight: 1 }}>⚔</span>
+            {/* Sealed door image — the chains tell the story */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <picture>
+                <source srcSet="/images/sealed_door.webp" type="image/webp" />
+                <img
+                  src="/images/sealed_door.jpg"
+                  alt="Sealed Door"
+                  style={{
+                    maxHeight: "140px",
+                    objectFit: "contain",
+                    animation: "ember-pulse 3s ease-in-out infinite",
+                  }}
+                />
+              </picture>
             </div>
 
             {/* Chains overlay */}
@@ -435,11 +446,6 @@ export default function DashboardPage() {
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Dungeon</h2>
               <p className="hub-door-subtitle">Face the darkness. Earn your spoils.</p>
-
-              <div className="hub-door-status hub-door-status-locked">
-                <span className="hub-lock-icon">🔒</span>
-                Coming Soon
-              </div>
             </div>
           </div>
 

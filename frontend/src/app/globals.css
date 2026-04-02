@@ -1058,6 +1058,12 @@ h1, h2, h3, h4, h5, h6 {
   animation: hub-door-shake 0.5s ease !important;
 }
 
+/* ── Ember crack pulse on sealed dungeon door ── */
+@keyframes ember-pulse {
+  0%, 100% { filter: brightness(0.45) saturate(0.7); }
+  50%       { filter: brightness(0.55) saturate(0.7); }
+}
+
 /* ── Glow ring behind unlocked door ── */
 .hub-door-glow-ring {
   position: absolute;

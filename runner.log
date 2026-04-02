@@ -797,3 +797,26 @@ The container structure is identical to the Vow Chamber's anvil video container,
 --- End Output ---
 [2026-04-02T08:49:08.241Z] Running validation...
 [2026-04-02T08:49:23.053Z] ✅ Validation PASSED
+[2026-04-02T08:49:23.209Z] Committed: feat: TASK 2B-5 — Card Icon — The Hearth (Brazier)
+[2026-04-02T08:49:23.210Z] ✅ TASK 2B-5 COMPLETED
+[2026-04-02T08:49:23.211Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:49:23.211Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:49:23.212Z] STARTING: TASK 2B-6 — Card Icon — The Dungeon (Sealed Door)
+[2026-04-02T08:49:23.212Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:49:23.212Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:49:23.309Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-02T08:49:23.311Z] Invoking Claude Code...
+[2026-04-02T08:49:23.311Z] Prompt length: 2479 chars
+[2026-04-02T08:51:15.436Z] Claude Code finished in 1m 52s (exit: OK)
+
+--- Claude Output for TASK 2B-6 ---
+TASK 2B-6 complete. Here's what was done:
+
+- **`dashboard/page.tsx`**: Replaced the `⚔` emoji symbol div and "Coming Soon" badge on the Dungeon card with a `<picture><img>` element using `sealed_door.webp`. The image uses the `ember-pulse` animation for the dimming effect.
+- **`globals.css`**: Added `@keyframes ember-pulse` that gently oscillates `filter: brightness` between `0.45` and `0.55` with `saturate(0.7)` — the sealed door now breathes subtly, communicating locked state without any text badge.
+
+`npm run validate` passes (TypeScript, ESLint, Next.js build all green).
+
+--- End Output ---
+[2026-04-02T08:51:15.437Z] Running validation...
+[2026-04-02T08:51:30.182Z] ✅ Validation PASSED

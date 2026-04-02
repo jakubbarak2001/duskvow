@@ -980,7 +980,7 @@ Replace the current emoji/geometric icon on the Hearth card with the brazier ima
 
 ### TASK 2B-6: Card Icon — The Dungeon (Sealed Door)
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
 
