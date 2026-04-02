@@ -466,3 +466,34 @@ Validate passes. Here's what was built:
 --- End Output ---
 [2026-04-02T06:12:54.514Z] Running validation...
 [2026-04-02T06:13:06.397Z] ✅ Validation PASSED
+[2026-04-02T06:13:06.537Z] Committed: feat: TASK 3B-4 — Add Ember Form & Drop Animation
+[2026-04-02T06:13:06.538Z] ✅ TASK 3B-4 COMPLETED
+[2026-04-02T06:13:06.538Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:13:06.538Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:13:06.539Z] STARTING: TASK 3B-5 — Brazier Integration — Dashboard + API Wiring
+[2026-04-02T06:13:06.539Z] Branch: feature/ember-dashboard-integration
+[2026-04-02T06:13:06.539Z] ════════════════════════════════════════════════════════════
+[2026-04-02T06:13:06.627Z] Created and checked out new branch: feature/ember-dashboard-integration
+[2026-04-02T06:13:06.633Z] Invoking Claude Code...
+[2026-04-02T06:13:06.634Z] Prompt length: 3059 chars
+[2026-04-02T06:16:57.014Z] Claude Code finished in 3m 50s (exit: OK)
+
+--- Claude Output for TASK 3B-5 ---
+`npm run validate` passes (TypeScript + ESLint + Next.js build — all green). Here's what was done:
+
+**`Brazier.tsx`** — Added `onDeleteRequest?: (emberId: string) => void` prop. Hover tooltip now renders the ember title alongside a `×` delete button that calls `onDeleteRequest` on click (with `stopPropagation`).
+
+**`globals.css`** — Updated `.brazier-tooltip` from `pointer-events: none` to `pointer-events: auto` + `display: flex; align-items: center` so the inline delete button is clickable.
+
+**`dashboard/page.tsx`**:
+- Imports `Brazier`, `AddEmberForm`, `Ember` type; defines `EMBER_CAP = 50`
+- New state: `embers`, `showAddForm`, `animatingEmberId`, `confirmDeleteEmberId`, `deletingEmber`, `addingEmber`
+- `api.listEmbers` added to the existing `Promise.allSettled` fetch
+- `handleAddEmber`: calls `api.createEmber` → prepends to array → sets `animatingEmberId` → clears after 1.5s
+- `handleDeleteEmberConfirm`: calls `api.deleteEmber` → filters from array
+- `◆ Your Brazier ◆` section (using existing `SectionHeader`) placed after the stats bar — contains `<Brazier>`, cap message at 50, toggleable `<AddEmberForm>`
+- Fixed-position ember delete confirm dialog ("Extinguish this ember?" / Extinguish / Keep)
+
+--- End Output ---
+[2026-04-02T06:16:57.015Z] Running validation...
+[2026-04-02T06:17:08.997Z] ✅ Validation PASSED

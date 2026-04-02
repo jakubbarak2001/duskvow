@@ -124,6 +124,7 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 - [x] **Node completion flow** — Optimistic state update, XP tracking, prerequisite auto-unlock, completion pending lock
 - [x] **Backend API** — FastAPI with all endpoints: profile, trees CRUD, node state mutations, AI generation with Gemini, rate limiting, generation status, embers CRUD
 - [x] **Embers backend** — `public.embers` table with RLS, GET/POST/DELETE `/api/v1/embers` endpoints, 50-ember cap enforced server-side
+- [x] **Embers frontend** — `<Brazier>` on dashboard with real data; add flow (form → API → drop animation); delete flow (tooltip icon → confirm dialog → API remove); 50-cap enforced in UI; glow intensity scales with count; cold empty state
 - [x] **Database** — Supabase PostgreSQL with profiles, talent_trees, skill_nodes, daily_activity tables, all with RLS
 
 ### What's Broken / Known Issues
@@ -142,6 +143,11 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
+
+**Session: 2026-04-02 (TASK 3B-5 — Brazier Integration — Dashboard + API Wiring)**
+- `frontend/src/app/dashboard/page.tsx` — Added `Ember[]` state + `showAddForm`, `animatingEmberId`, `confirmDeleteEmberId`, `deletingEmber`, `addingEmber` states. Fetches `api.listEmbers(token)` alongside other data in `Promise.allSettled`. Added `handleAddEmber` (calls `api.createEmber`, prepends to array, sets `animatingEmberId`, clears after 1.5s) and `handleDeleteEmberConfirm` (calls `api.deleteEmber`, filters from array). Added `◆ Your Brazier ◆` section via `<SectionHeader label="Your Brazier">` between stats bar and tree list. `<Brazier>` wired with real embers, animation id, drop complete callback, add click (hidden at cap), delete request. `<AddEmberForm>` rendered below brazier (toggleable, hidden while `addingEmber`). 50-ember cap message shown when at limit. Ember delete confirm modal: fixed overlay with "Extinguish this ember?" dialog, blood-red confirm + muted cancel buttons.
+- `frontend/src/components/ui/Brazier.tsx` — Added `onDeleteRequest?: (emberId: string) => void` prop. Delete icon button (×, blood-red) added inside hover tooltip alongside title span. Button stops propagation.
+- `frontend/src/app/globals.css` — `.brazier-tooltip` updated: `pointer-events: none` → `pointer-events: auto`, added `display: flex; align-items: center` to support inline delete button.
 
 **Session: 2026-04-02 (TASK 3B-4 — Add Ember Form & Drop Animation)**
 - `frontend/src/components/ui/AddEmberForm.tsx` — New form: title input (required, 1-100 chars) + description textarea (optional, max 500 chars). Inline validation with error message. Dark fantasy styling: `--bg-shadow` container, `--bg-abyss` inputs with ember focus glow, Cinzel labels (`0.25em` letter-spacing uppercase), character counters. Ghost cancel + ember gradient submit (inherits `wiz-btn-primary`, compact padding override). `onSubmit({ title, description })` + `onCancel` callbacks — parent drives visibility.

@@ -10,6 +10,8 @@ interface BrazierProps {
   animatingEmberId?: string | null;
   /** Called when the drop animation finishes so the parent can clear animatingEmberId. */
   onDropComplete?: () => void;
+  /** Called when the user clicks the delete icon on an ember's hover tooltip. */
+  onDeleteRequest?: (emberId: string) => void;
 }
 
 // Deterministic pseudo-random positions seeded by index — consistent between renders
@@ -51,6 +53,7 @@ export function Brazier({
   onAddClick,
   animatingEmberId,
   onDropComplete,
+  onDeleteRequest,
 }: BrazierProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const intensityClass = getIntensityClass(embers.length);
@@ -104,7 +107,31 @@ export function Brazier({
                 className={`brazier-ember-orb ${intensityClass}${isHovered ? " brazier-ember-orb--hovered" : ""}`}
               >
                 {isHovered && (
-                  <div className="brazier-tooltip">{ember.title}</div>
+                  <div className="brazier-tooltip">
+                    <span style={{ flex: 1 }}>{ember.title}</span>
+                    {onDeleteRequest && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteRequest(ember.id);
+                        }}
+                        title="Extinguish ember"
+                        style={{
+                          marginLeft: "8px",
+                          background: "none",
+                          border: "none",
+                          color: "rgba(139,0,0,0.8)",
+                          cursor: "pointer",
+                          fontSize: "1rem",
+                          lineHeight: 1,
+                          padding: "0 2px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
