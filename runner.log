@@ -540,3 +540,27 @@ Validate passed. TASK P1-1 is complete.
 --- End Output ---
 [2026-04-02T07:01:09.117Z] Running validation...
 [2026-04-02T07:01:22.681Z] ✅ Validation PASSED
+[2026-04-02T07:01:22.819Z] Committed: feat: TASK P1-1 — Hub Page — Layout & Atmosphere
+[2026-04-02T07:01:22.821Z] ✅ TASK P1-1 COMPLETED
+[2026-04-02T07:01:22.821Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:01:22.821Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:01:22.822Z] STARTING: TASK P1-2 — Vow Chamber Page — Tree List Migration
+[2026-04-02T07:01:22.822Z] Branch: feature/vow-chamber
+[2026-04-02T07:01:22.822Z] ════════════════════════════════════════════════════════════
+[2026-04-02T07:01:22.911Z] Created and checked out new branch: feature/vow-chamber
+[2026-04-02T07:01:22.920Z] Invoking Claude Code...
+[2026-04-02T07:01:22.920Z] Prompt length: 3028 chars
+[2026-04-02T07:04:12.012Z] Claude Code finished in 2m 49s (exit: OK)
+
+--- Claude Output for TASK P1-2 ---
+Validation passes. The `/vows` page is created at `frontend/src/app/vows/page.tsx` with:
+
+- **"The Vow Chamber"** heading in Cinzel + **"← Return to Hub"** link to `/dashboard` above it
+- **Navbar** rendered at the top
+- **Auth guard** — redirects to `/auth` if not logged in
+- Full tree management migrated from the old dashboard: New Vow CTA (ember gradient, disabled at active cap / generation limit), generation status display, StatsBar, Brazier + AddEmberForm + ember delete dialog, Active Vows / Finished Vows sections with TreeCard, empty state
+- Same atmospheric styling: noise overlay, radial glow, ember particles
+
+--- End Output ---
+[2026-04-02T07:04:12.013Z] Running validation...
+[2026-04-02T07:04:26.706Z] ✅ Validation PASSED

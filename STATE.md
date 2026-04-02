@@ -117,7 +117,8 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### What's Built & Working
 - [x] **Landing page** — Full dark fantasy design with ember particles, noise overlay, Cinzel/Crimson Pro typography, hero with background image, anti-section, how-it-works, CTA, footer
 - [x] **Auth flow** — Supabase email/password login, auth guard on protected routes, middleware redirect
-- [x] **Dashboard** — Lists active/finished trees, stats bar (XP, streak, nodes), delete with confirmation, "New Vow" button with generation limit display
+- [x] **Dashboard (Hub)** — Hub scene with three door cards (Vow Chamber → `/vows`, Dungeon locked, Hearth locked), compact XP/Streak header, ember particles
+- [x] **Vow Chamber (`/vows`)** — Full tree management page: "The Vow Chamber" heading, "← Return to Hub" link, Navbar, New Vow CTA, generation status, StatsBar, Brazier, tree list (active/finished), delete confirmation, empty state
 - [x] **Tree creation wizard** — 3-step flow: goal input → AI follow-up questions → generating animation → redirect to tree view
 - [x] **Interactive skill tree** — React Flow canvas with custom node shapes (circle/square/diamond/hexagon), Dagre auto-layout, zoom/pan, node state colors, tier glow effects
 - [x] **Node detail panel** — Slide-in panel on node click, shows description/type/tier/XP/status, Start/Complete/Reset actions with optimistic updates
@@ -144,6 +145,9 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
+
+**Session: 2026-04-02 (TASK P1-2 — Vow Chamber Page — Tree List Migration)**
+- `frontend/src/app/vows/page.tsx` — New page. Full tree management content migrated from old dashboard. "The Vow Chamber" Cinzel heading, "← Return to Hub" link above heading navigates to `/dashboard`, `<Navbar />` visible. Auth guard (redirect to `/auth`). Fetches profile, trees, generation status, embers via `Promise.allSettled`. All existing functionality preserved: New Vow CTA (ember gradient, disabled at cap), generation remaining display, StatsBar, Brazier + AddEmberForm + ember delete confirm dialog, active/finished tree sections with `SectionHeader`, `TreeCard` with delete confirmation + progress bar, empty state with atmospheric treatment. Ember particles (6) + noise overlay + radial glow for atmosphere. `SectionHeader` and `TreeCard` defined as local functions (same as old dashboard pattern).
 
 **Session: 2026-04-02 (TASK P1-1 — Hub Page — Layout & Atmosphere)**
 - `frontend/src/app/dashboard/page.tsx` — Full rewrite. Old dashboard (tree list, StatsBar, Brazier, New Vow CTA) replaced with hub scene. Keeps auth guard + `useUser`. Fetches only `getProfile` + `listTrees` (for active vow count). Custom hub header (logo left, compact XP+Streak center, sign-out right; no Navbar). Three door cards: "The Vow Chamber" (unlocked, Link to `/vows`, ember glow arch, pulsing glow ring, ember leak at base, ᛟ rune icon, active vow count status badge), "The Dungeon" (locked, ⚔ icon, chains overlay, shake on click), "The Hearth" (locked, 🜂 icon, shake on click). 8 slow ember particles. Central warm radial glow. Noise overlay. Stone floor gradient. `handleSignOut` uses `getSupabase().auth.signOut()`.
