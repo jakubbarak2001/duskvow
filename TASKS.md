@@ -374,7 +374,7 @@ DELETE /api/v1/embers/{ember_id} — Delete an ember
 
 ### TASK 3B-2: Frontend API Client & Types for Embers
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/ember-types`
 **Files to modify**: `frontend/src/types/index.ts`, `frontend/src/lib/api.ts`
 

@@ -5,6 +5,7 @@ import type {
   FollowUpQuestionsResponse,
   TreeGenerationResult,
   GenerationStatus,
+  Ember,
 } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -132,4 +133,21 @@ export const api = {
       `/api/v1/nodes/${nodeId}/reset`,
       { method: "PATCH", headers: authHeader(token) },
     ),
+
+  // Embers
+  listEmbers: (token: string) =>
+    request<Ember[]>("/api/v1/embers", { headers: authHeader(token) }),
+
+  createEmber: (title: string, description: string | null, token: string) =>
+    request<Ember>("/api/v1/embers", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify({ title, description }),
+    }),
+
+  deleteEmber: (emberId: string, token: string) =>
+    request<{ deleted: boolean }>(`/api/v1/embers/${emberId}`, {
+      method: "DELETE",
+      headers: authHeader(token),
+    }),
 };

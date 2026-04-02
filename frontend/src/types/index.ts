@@ -89,6 +89,18 @@ export interface GenerationStatus {
 }
 
 // ============================================================
+// Ember Types
+// ============================================================
+
+export interface Ember {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+}
+
+// ============================================================
 // API Response Types
 // ============================================================
 
