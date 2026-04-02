@@ -201,7 +201,7 @@ Add a "Something else…" option to every follow-up question that expands into a
 
 ### TASK 2B-1: Google OAuth Implementation
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/google-oauth`
 **Files to modify**: `frontend/src/components/auth/AuthForm.tsx`, possibly `frontend/src/app/auth/page.tsx`
 
@@ -856,7 +856,7 @@ Convert all raw dashboard assets to optimized web formats. Do NOT touch `anvil_v
 
 ### TASK 2B-2: Dashboard Page Background
 
-**Status**: `QUEUED`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
 

@@ -97,7 +97,10 @@ export default function DashboardPage() {
   return (
     <div
       style={{
-        backgroundColor: "var(--bg-abyss)",
+        backgroundImage: 'url("/images/entry_background.webp")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
         minHeight: "100vh",
         position: "relative",
         overflow: "hidden",
@@ -105,6 +108,17 @@ export default function DashboardPage() {
         flexDirection: "column",
       }}
     >
+      {/* Dark overlay — ensures cards remain readable over background image */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "linear-gradient(rgba(10,10,18,0.75), rgba(10,10,18,0.85))",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+
       {/* Noise overlay */}
       <div
         style={{
@@ -129,13 +143,13 @@ export default function DashboardPage() {
           width: "1000px",
           height: "700px",
           background:
-            "radial-gradient(ellipse at center, rgba(200,75,17,0.09) 0%, rgba(200,75,17,0.03) 40%, transparent 70%)",
+            "radial-gradient(ellipse at center, rgba(200,75,17,0.12) 0%, rgba(200,75,17,0.04) 40%, transparent 70%)",
           pointerEvents: "none",
           zIndex: 0,
         }}
       />
 
-      {/* Stone floor texture via CSS gradient */}
+      {/* Stone floor vignette */}
       <div
         style={{
           position: "fixed",
@@ -144,7 +158,7 @@ export default function DashboardPage() {
           right: 0,
           height: "35%",
           background:
-            "linear-gradient(to top, rgba(10,10,18,0.9) 0%, rgba(18,18,26,0.5) 50%, transparent 100%)",
+            "linear-gradient(to top, rgba(10,10,18,0.92) 0%, rgba(18,18,26,0.5) 50%, transparent 100%)",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -162,6 +176,7 @@ export default function DashboardPage() {
             height: `${p.size}px`,
             borderRadius: "50%",
             backgroundColor: "var(--accent-ember)",
+            boxShadow: `0 0 ${p.size * 2 + 2}px ${p.size}px rgba(200,75,17,0.6)`,
             opacity: 0,
             animationName: p.anim,
             animationDuration: p.dur,
@@ -169,7 +184,7 @@ export default function DashboardPage() {
             animationTimingFunction: "ease-in-out",
             animationIterationCount: "infinite",
             pointerEvents: "none",
-            zIndex: 0,
+            zIndex: 1,
           }}
         />
       ))}

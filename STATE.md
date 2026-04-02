@@ -147,6 +147,9 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK 2B-2 — Dashboard Page Background)**
+- `frontend/src/app/dashboard/page.tsx` — Outer wrapper: replaced `backgroundColor: var(--bg-abyss)` with `entry_background.webp` as full-page background (`background-size: cover`, `background-position: center`, `background-attachment: fixed`). Added dark gradient overlay (`linear-gradient(rgba(10,10,18,0.75), rgba(10,10,18,0.85))`) as first child fixed div at `zIndex: 0`. Existing 8 ember particles enhanced with `boxShadow` glow (`rgba(200,75,17,0.6)`) for richer atmospheric effect matching landing page particle quality. Central radial glow opacity bumped slightly (0.09→0.12) to compensate for darker overlay. No logic, data fetching, or navigation changes.
+
 **Session: 2026-04-02 (TASK 2B-1 — Asset Optimization)**
 - `frontend/public/images/card_texture.webp` — New. Converted from `card_texture.jpg` at 512x512, quality 80. 21KB.
 - `frontend/public/images/entry_background.webp` — New. Converted from `entry_background.jpg` at 1920x1080, quality 80. 58KB.

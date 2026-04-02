@@ -699,3 +699,31 @@ Two items from the spec were skipped — `brazier.jpg` and `anvil_video.mp4` don
 --- End Output ---
 [2026-04-02T08:41:38.117Z] Running validation...
 [2026-04-02T08:41:51.337Z] ✅ Validation PASSED
+[2026-04-02T08:41:51.634Z] Committed: feat: TASK 2B-1 — Asset Optimization
+[2026-04-02T08:41:51.635Z] ✅ TASK 2B-1 COMPLETED
+[2026-04-02T08:41:51.635Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:41:51.636Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:41:51.636Z] STARTING: TASK 2B-2 — Dashboard Page Background
+[2026-04-02T08:41:51.636Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:41:51.637Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:41:51.724Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-02T08:41:51.726Z] Invoking Claude Code...
+[2026-04-02T08:41:51.726Z] Prompt length: 2498 chars
+[2026-04-02T08:43:43.903Z] Claude Code finished in 1m 52s (exit: OK)
+
+--- Claude Output for TASK 2B-2 ---
+TASK 2B-2 is complete.
+
+**Changes made to `frontend/src/app/dashboard/page.tsx`:**
+
+1. **Background image** — Outer wrapper now uses `entry_background.webp` with `background-size: cover`, `background-position: center`, `background-attachment: fixed` (removed the flat `--bg-abyss` solid color).
+
+2. **Dark overlay** — Added a new `position: fixed; inset: 0` div as the first layer with `linear-gradient(rgba(10,10,18,0.75), rgba(10,10,18,0.85))` — ensures door cards remain readable over the atmospheric background.
+
+3. **Ember particles enhanced** — Existing 8 particles gained a `boxShadow` ember glow (`rgba(200,75,17,0.6)`) to match the visual quality of the landing page's `.lp-ember` particles. The landing page ember system lives in a scoped template literal and can't be shared directly, so the existing `wiz-float-a/b/c` animated system was enhanced in-place rather than extracting a new component.
+
+`npm run validate` passes (TypeScript ✅, ESLint ✅, Next.js Build ✅).
+
+--- End Output ---
+[2026-04-02T08:43:43.904Z] Running validation...
+[2026-04-02T08:43:57.611Z] ✅ Validation PASSED
