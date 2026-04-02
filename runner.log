@@ -820,3 +820,31 @@ TASK 2B-6 complete. Here's what was done:
 --- End Output ---
 [2026-04-02T08:51:15.437Z] Running validation...
 [2026-04-02T08:51:30.182Z] ✅ Validation PASSED
+[2026-04-02T08:51:30.330Z] Committed: feat: TASK 2B-6 — Card Icon — The Dungeon (Sealed Door)
+[2026-04-02T08:51:30.331Z] ✅ TASK 2B-6 COMPLETED
+[2026-04-02T08:51:30.331Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:51:30.332Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:51:30.332Z] STARTING: TASK 2B-7 — Typography & Label Polish
+[2026-04-02T08:51:30.332Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:51:30.333Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:51:30.418Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-02T08:51:30.419Z] Invoking Claude Code...
+[2026-04-02T08:51:30.420Z] Prompt length: 2398 chars
+[2026-04-02T08:52:53.034Z] Claude Code finished in 1m 23s (exit: OK)
+
+--- Claude Output for TASK 2B-7 ---
+All 3 checks pass. Here's a summary of changes made to `globals.css`:
+
+**`.hub-door-title`** — added explicit `'Cinzel', serif` fallback + `text-shadow: 0 2px 8px rgba(0,0,0,0.8)`
+
+**`.hub-door-subtitle`** — added `font-family: var(--font-crimson), 'Crimson Pro', Georgia, serif` (Crimson Pro is already loaded in layout.tsx as `--font-crimson`) + bumped font-size slightly to 0.9rem for readability + `text-shadow`
+
+**`.hub-door-status`** — added explicit Cinzel fallback, `text-shadow`, tightened `border-radius` to `2px` (less pill-like), slightly more padding
+
+**`.hub-door-status-unlocked`** — stronger ember background/border, added `box-shadow` with inset highlight and drop shadow for depth — dark fantasy token usage (`--accent-ember`, `--accent-gold`) already in place
+
+**`.hub-door-status-locked`** — darker background, subtle shadow for consistency
+
+--- End Output ---
+[2026-04-02T08:52:53.035Z] Running validation...
+[2026-04-02T08:53:07.927Z] ✅ Validation PASSED
