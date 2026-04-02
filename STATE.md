@@ -147,6 +147,10 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-02 (TASK 2B-8 — Performance Validation)**
+- `frontend/src/app/dashboard/page.tsx` — Sealed door `<img>`: added `loading="lazy"`. Brazier `<img>`: added `loading="lazy"`. Anvil video wrapper: added mobile fallback pattern — `<video>` gets CSS class `hub-anvil-desktop` (hidden on ≤768px), sibling `<picture><img>` with `anvil.webp` gets class `hub-anvil-mobile` (hidden on >768px).
+- `frontend/src/app/globals.css` — Added `.hub-anvil-desktop` / `.hub-anvil-mobile` rules + `@media (max-width: 768px)` override to toggle between video and static image on mobile.
+
 **Session: 2026-04-02 (TASK 2B-5 — Card Icon — The Hearth (Brazier))**
 - `frontend/src/app/dashboard/page.tsx` — Hearth card: removed `hub-door-symbol` div with `🜂` emoji. Replaced with same centered flex container pattern as Vow Chamber anvil. Uses `<picture>` with `<source srcSet="/images/brazier.webp" type="image/webp" />` + `<img src="/images/brazier.jpg" alt="Brazier" style={{ maxHeight: "140px", objectFit: "contain" }}>` fallback. Note: `brazier.webp` and `brazier.jpg` are absent from `/images/` — container is ready, files need to be dropped in.
 

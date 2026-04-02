@@ -848,3 +848,32 @@ All 3 checks pass. Here's a summary of changes made to `globals.css`:
 --- End Output ---
 [2026-04-02T08:52:53.035Z] Running validation...
 [2026-04-02T08:53:07.927Z] ✅ Validation PASSED
+[2026-04-02T08:53:08.071Z] Committed: feat: TASK 2B-7 — Typography & Label Polish
+[2026-04-02T08:53:08.073Z] ✅ TASK 2B-7 COMPLETED
+[2026-04-02T08:53:08.073Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:53:08.073Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:53:08.074Z] STARTING: TASK 2B-8 — Performance Validation
+[2026-04-02T08:53:08.074Z] Branch: feature/dashboard-overhaul
+[2026-04-02T08:53:08.074Z] ════════════════════════════════════════════════════════════
+[2026-04-02T08:53:08.167Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-02T08:53:08.169Z] Invoking Claude Code...
+[2026-04-02T08:53:08.169Z] Prompt length: 2367 chars
+[2026-04-02T08:56:46.907Z] Claude Code finished in 3m 39s (exit: OK)
+
+--- Claude Output for TASK 2B-8 ---
+TASK 2B-8 complete. Here's what was done:
+
+**Changes made to `frontend/src/app/dashboard/page.tsx`:**
+- Added `loading="lazy"` to the sealed door `<img>` (below-fold on mobile)
+- Added `loading="lazy"` to the brazier `<img>` (below-fold on mobile)
+- Added mobile video fallback: `<video>` gets `hub-anvil-desktop` class, a `<picture><img src="/images/anvil.webp">` sibling gets `hub-anvil-mobile` class
+
+**Changes made to `frontend/src/app/globals.css`:**
+- Added `.hub-anvil-desktop { display: block }` / `.hub-anvil-mobile { display: none }` defaults
+- Added `@media (max-width: 768px)` override that hides the video and shows the static image instead — prevents jank on mobile
+
+**`npm run validate` passes:** TypeScript ✅ · ESLint ✅ · Next.js Build ✅
+
+--- End Output ---
+[2026-04-02T08:56:46.908Z] Running validation...
+[2026-04-02T08:57:03.417Z] ✅ Validation PASSED

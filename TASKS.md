@@ -1010,7 +1010,7 @@ Replace the current emoji/geometric icon on the Dungeon card with the sealed doo
 
 ### TASK 2B-7: Typography & Label Polish
 
-**Status**: `IN_PROGRESS`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/src/app/dashboard/page.tsx`, `frontend/src/app/globals.css`
 
@@ -1039,7 +1039,7 @@ Ensure all card text is readable over the new textured backgrounds and uses the 
 
 ### TASK 2B-8: Performance Validation
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: none — this is a verification task
 

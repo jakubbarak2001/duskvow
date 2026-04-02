@@ -367,12 +367,20 @@ export default function DashboardPage() {
               }}
             />
 
-            {/* Anvil video */}
+            {/* Anvil: video on desktop, static image on mobile */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <video autoPlay loop muted playsInline style={{ maxHeight: "140px", objectFit: "contain" }}>
+              <video autoPlay loop muted playsInline className="hub-anvil-desktop" style={{ maxHeight: "140px", objectFit: "contain" }}>
                 <source src="/images/anvil_video.webm" type="video/webm" />
                 <source src="/images/anvil_video.mp4" type="video/mp4" />
               </video>
+              <picture>
+                <img
+                  src="/images/anvil.webp"
+                  alt="Anvil"
+                  className="hub-anvil-mobile"
+                  style={{ maxHeight: "140px", objectFit: "contain" }}
+                />
+              </picture>
             </div>
 
             {/* Archway frame */}
@@ -430,6 +438,7 @@ export default function DashboardPage() {
                 <img
                   src="/images/sealed_door.jpg"
                   alt="Sealed Door"
+                  loading="lazy"
                   style={{
                     maxHeight: "140px",
                     objectFit: "contain",
@@ -457,7 +466,7 @@ export default function DashboardPage() {
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <picture>
                 <source srcSet="/images/brazier.webp" type="image/webp" />
-                <img src="/images/brazier.jpg" alt="Brazier" style={{ maxHeight: "140px", objectFit: "contain" }} />
+                <img src="/images/brazier.jpg" alt="Brazier" loading="lazy" style={{ maxHeight: "140px", objectFit: "contain" }} />
               </picture>
             </div>
 
