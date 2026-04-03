@@ -8,17 +8,6 @@ import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import type { UserProfile } from "@/types";
 
-// Slow, atmospheric ember particles for the hub
-const HUB_PARTICLES = [
-  { left: "5%",  delay: "0s",    dur: "14s", anim: "wiz-float-a", size: 3 },
-  { left: "18%", delay: "3s",    dur: "18s", anim: "wiz-float-b", size: 2 },
-  { left: "33%", delay: "7s",    dur: "12s", anim: "wiz-float-c", size: 2 },
-  { left: "52%", delay: "1.5s",  dur: "16s", anim: "wiz-float-a", size: 3 },
-  { left: "68%", delay: "5s",    dur: "20s", anim: "wiz-float-b", size: 2 },
-  { left: "82%", delay: "9s",    dur: "13s", anim: "wiz-float-c", size: 2 },
-  { left: "91%", delay: "2s",    dur: "17s", anim: "wiz-float-a", size: 2 },
-  { left: "44%", delay: "11s",   dur: "15s", anim: "wiz-float-b", size: 3 },
-];
 
 export default function DashboardPage() {
   const { user, session, loading } = useUser();
@@ -113,7 +102,7 @@ export default function DashboardPage() {
         style={{
           position: "fixed",
           inset: 0,
-          background: "linear-gradient(rgba(10,10,18,0.75), rgba(10,10,18,0.85))",
+          background: "linear-gradient(rgba(10,10,18,0.55), rgba(10,10,18,0.70))",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -133,61 +122,6 @@ export default function DashboardPage() {
         }}
       />
 
-      {/* Central radial glow — warm torchlight in the room */}
-      <div
-        style={{
-          position: "fixed",
-          top: "30%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "1000px",
-          height: "700px",
-          background:
-            "radial-gradient(ellipse at center, rgba(200,75,17,0.12) 0%, rgba(200,75,17,0.04) 40%, transparent 70%)",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-
-      {/* Stone floor vignette */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: "35%",
-          background:
-            "linear-gradient(to top, rgba(10,10,18,0.92) 0%, rgba(18,18,26,0.5) 50%, transparent 100%)",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-
-      {/* Ember particles */}
-      {HUB_PARTICLES.map((p, i) => (
-        <div
-          key={i}
-          style={{
-            position: "fixed",
-            left: p.left,
-            bottom: "-5%",
-            width: `${p.size}px`,
-            height: `${p.size}px`,
-            borderRadius: "50%",
-            backgroundColor: "var(--accent-ember)",
-            boxShadow: `0 0 ${p.size * 2 + 2}px ${p.size}px rgba(200,75,17,0.6)`,
-            opacity: 0,
-            animationName: p.anim,
-            animationDuration: p.dur,
-            animationDelay: p.delay,
-            animationTimingFunction: "ease-in-out",
-            animationIterationCount: "infinite",
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        />
-      ))}
 
       {/* ── Hub Header ── */}
       <header
@@ -355,21 +289,9 @@ export default function DashboardPage() {
         <div className="hub-doors-grid">
           {/* ── Door 1: The Vow Chamber (UNLOCKED) ── */}
           <Link href="/vows" className="hub-door hub-door-unlocked">
-            <div
-              className="hub-door-glow-ring"
-              style={{
-                opacity:
-                  activeVowCount === null || activeVowCount === 0
-                    ? 0.4
-                    : activeVowCount <= 2
-                    ? 0.75
-                    : 1,
-              }}
-            />
-
             {/* Anvil: video on desktop, static image on mobile */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <video autoPlay loop muted playsInline className="hub-anvil-desktop" style={{ maxHeight: "140px", objectFit: "contain" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
+              <video autoPlay loop muted playsInline className="hub-anvil-desktop" style={{ maxHeight: "220px", objectFit: "contain" }}>
                 <source src="/images/anvil_video.webm" type="video/webm" />
                 <source src="/images/anvil_video.mp4" type="video/mp4" />
               </video>
@@ -378,7 +300,7 @@ export default function DashboardPage() {
                   src="/images/anvil.webp"
                   alt="Anvil"
                   className="hub-anvil-mobile"
-                  style={{ maxHeight: "140px", objectFit: "contain" }}
+                  style={{ maxHeight: "220px", objectFit: "contain" }}
                 />
               </picture>
             </div>
@@ -422,8 +344,6 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Ember leak at base */}
-            <div className="hub-door-ember-leak" />
           </Link>
 
           {/* ── Door 2: The Dungeon (LOCKED) ── */}
@@ -432,7 +352,7 @@ export default function DashboardPage() {
             onClick={() => handleLockedClick("dungeon")}
           >
             {/* Sealed door image — the chains tell the story */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
               <picture>
                 <source srcSet="/images/sealed_door.webp" type="image/webp" />
                 <img
@@ -440,7 +360,7 @@ export default function DashboardPage() {
                   alt="Sealed Door"
                   loading="lazy"
                   style={{
-                    maxHeight: "140px",
+                    maxHeight: "220px",
                     objectFit: "contain",
                     animation: "ember-pulse 3s ease-in-out infinite",
                   }}
@@ -460,13 +380,11 @@ export default function DashboardPage() {
 
           {/* ── Door 3: The Hearth (UNLOCKED) ── */}
           <Link href="/hearth" className="hub-door hub-door-unlocked">
-            <div className="hub-door-glow-ring" style={{ opacity: 0.5 }} />
-
             {/* Brazier image */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
               <picture>
                 <source srcSet="/images/brazier.webp" type="image/webp" />
-                <img src="/images/brazier.jpg" alt="Brazier" loading="lazy" style={{ maxHeight: "140px", objectFit: "contain" }} />
+                <img src="/images/brazier.jpg" alt="Brazier" loading="lazy" style={{ maxHeight: "220px", objectFit: "contain" }} />
               </picture>
             </div>
 
@@ -482,9 +400,6 @@ export default function DashboardPage() {
                 Tend your brazier
               </div>
             </div>
-
-            {/* Ember leak at base */}
-            <div className="hub-door-ember-leak" />
           </Link>
         </div>
       </main>

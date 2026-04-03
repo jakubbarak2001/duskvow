@@ -955,10 +955,10 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: rotate(-1deg) scaleX(1); }
 }
 
-/* ── Ember glow pulse on unlocked door ── */
+/* ── Subtle arch pulse on unlocked door ── */
 @keyframes hub-ember-pulse {
-  0%, 100% { opacity: 0.55; box-shadow: 0 0 18px 4px rgba(200,75,17,0.35); }
-  50%       { opacity: 0.8;  box-shadow: 0 0 32px 8px rgba(200,75,17,0.55); }
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
 }
 
 /* ── Outer glow ring pulse for unlocked door ── */
@@ -976,14 +976,14 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   flex-wrap: wrap;
   width: 100%;
-  max-width: 1040px;
+  max-width: 1200px;
 }
 
 /* ── Base door card ── */
 .hub-door {
   position: relative;
-  width: 300px;
-  min-height: 380px;
+  width: 340px;
+  min-height: 500px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -1005,23 +1005,22 @@ h1, h2, h3, h4, h5, h6 {
       180deg,
       rgba(10,10,18,0.45) 0%,
       rgba(18,18,26,0.25) 60%,
-      rgba(200,75,17,0.06) 100%
+      rgba(18,18,26,0.35) 100%
     ),
     url('/images/card_texture.webp');
   background-size: cover;
   background-position: center;
-  border: 1px solid rgba(200,80,20,0.1);
-  box-shadow: 0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5);
+  border: 1px solid rgba(224,216,200,0.12);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.4);
 }
 
 .hub-door-unlocked:hover {
   transform: translateY(-6px) scale(1.015);
   box-shadow:
-    0 0 20px rgba(200,80,20,0.15),
-    0 0 48px rgba(200,75,17,0.28),
-    0 16px 48px rgba(0,0,0,0.5),
-    inset 0 0 30px rgba(0,0,0,0.5);
-  border-color: rgba(200, 75, 17, 0.3);
+    0 4px 24px rgba(0,0,0,0.5),
+    0 16px 48px rgba(0,0,0,0.4),
+    inset 0 0 30px rgba(0,0,0,0.4);
+  border-color: rgba(224,216,200,0.2);
 }
 
 /* ── Locked door ── */
@@ -1035,8 +1034,8 @@ h1, h2, h3, h4, h5, h6 {
     url('/images/card_texture.webp');
   background-size: cover;
   background-position: center;
-  border: 1px solid rgba(200,80,20,0.1);
-  box-shadow: 0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5);
+  border: 1px solid rgba(224,216,200,0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.5);
   opacity: 0.56;
   cursor: default;
 }
@@ -1087,9 +1086,9 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateX(-50%);
   width: 80%;
   height: 120px;
-  border-top: 2px solid rgba(200,75,17,0.4);
-  border-left: 2px solid rgba(200,75,17,0.25);
-  border-right: 2px solid rgba(200,75,17,0.25);
+  border-top: 2px solid rgba(224,216,200,0.15);
+  border-left: 2px solid rgba(224,216,200,0.1);
+  border-right: 2px solid rgba(224,216,200,0.1);
   border-radius: 80px 80px 0 0;
   pointer-events: none;
   z-index: 1;
@@ -1254,8 +1253,8 @@ h1, h2, h3, h4, h5, h6 {
 
   .hub-door {
     width: 100%;
-    max-width: 340px;
-    min-height: 320px;
+    max-width: 380px;
+    min-height: 420px;
   }
 }
 

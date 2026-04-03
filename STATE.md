@@ -147,6 +147,10 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
 
+**Session: 2026-04-03 (Fix — Remove Orange Glow Artifacts & Enlarge Hub Cards)**
+- `frontend/src/app/dashboard/page.tsx` — Removed `HUB_PARTICLES` array and all ember particle rendering. Removed central radial glow div (`rgba(200,75,17,0.12)`) and stone floor vignette div. Lightened dark overlay from `0.75→0.85` opacity to `0.55→0.70` so background image is more visible on 4K. Removed `hub-door-glow-ring` divs from Vow Chamber and Hearth cards. Removed `hub-door-ember-leak` divs from both unlocked cards. Increased all card image `maxHeight` from `140px` to `220px` with `flex: 1` and `paddingTop: "2rem"` on image containers for better space usage.
+- `frontend/src/app/globals.css` — `.hub-door`: width `300px→340px`, min-height `380px→500px`. `.hub-doors-grid` max-width `1040px→1200px`. Mobile `.hub-door` max-width `340px→380px`, min-height `320px→420px`. `.hub-door-unlocked`: replaced orange border/shadow with neutral parchment tones (`rgba(224,216,200,0.12)`), removed orange gradient tint at bottom. Hover shadow changed from orange glow to neutral dark elevation. `.hub-door-locked`: same neutral border treatment. `.hub-door-arch`: borders changed from orange `rgba(200,75,17,*)` to parchment `rgba(224,216,200,*)`. `hub-ember-pulse` keyframes simplified to opacity-only (removed orange box-shadow).
+
 **Session: 2026-04-02 (TASK 2B-8 — Performance Validation)**
 - `frontend/src/app/dashboard/page.tsx` — Sealed door `<img>`: added `loading="lazy"`. Brazier `<img>`: added `loading="lazy"`. Anvil video wrapper: added mobile fallback pattern — `<video>` gets CSS class `hub-anvil-desktop` (hidden on ≤768px), sibling `<picture><img>` with `anvil.webp` gets class `hub-anvil-mobile` (hidden on >768px).
 - `frontend/src/app/globals.css` — Added `.hub-anvil-desktop` / `.hub-anvil-mobile` rules + `@media (max-width: 768px)` override to toggle between video and static image on mobile.
