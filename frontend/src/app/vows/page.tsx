@@ -6,12 +6,8 @@ import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { Navbar } from "@/components/layout/Navbar";
-import { Brazier } from "@/components/ui/Brazier";
-import { AddEmberForm } from "@/components/ui/AddEmberForm";
 import { api } from "@/lib/api";
-import type { UserProfile, TalentTree, GenerationStatus, Ember } from "@/types";
-
-const EMBER_CAP = 50;
+import type { UserProfile, TalentTree, GenerationStatus } from "@/types";
 
 const PARTICLES = [
   { left: "8%",  delay: "0s",   dur: "9s",  anim: "wiz-float-a", size: 3 },
@@ -33,13 +29,6 @@ export default function VowChamberPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Ember state
-  const [embers, setEmbers] = useState<Ember[]>([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [animatingEmberId, setAnimatingEmberId] = useState<string | null>(null);
-  const [confirmDeleteEmberId, setConfirmDeleteEmberId] = useState<string | null>(null);
-  const [deletingEmber, setDeletingEmber] = useState(false);
-  const [addingEmber, setAddingEmber] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -55,16 +44,13 @@ export default function VowChamberPage() {
       api.getProfile(token),
       api.listTrees(token),
       api.getGenerationStatus(token),
-      api.listEmbers(token),
-    ]).then(([profileResult, treesResult, genResult, embersResult]) => {
+    ]).then(([profileResult, treesResult, genResult]) => {
       if (profileResult.status === "fulfilled" && profileResult.value.data)
         setProfile(profileResult.value.data);
       if (treesResult.status === "fulfilled" && treesResult.value.data)
         setTrees(treesResult.value.data);
       if (genResult.status === "fulfilled" && genResult.value.data)
         setGenStatus(genResult.value.data);
-      if (embersResult.status === "fulfilled" && embersResult.value.data)
-        setEmbers(embersResult.value.data);
       setDataLoading(false);
     });
   }, [session]);
@@ -88,29 +74,6 @@ export default function VowChamberPage() {
     }
   };
 
-  const handleAddEmber = async ({ title, description }: { title: string; description: string }) => {
-    if (!session?.access_token) return;
-    setAddingEmber(true);
-    const res = await api.createEmber(title, description || null, session.access_token);
-    setAddingEmber(false);
-    if (!res.error && res.data) {
-      setEmbers((prev) => [res.data!, ...prev]);
-      setAnimatingEmberId(res.data.id);
-      setShowAddForm(false);
-      setTimeout(() => setAnimatingEmberId(null), 1500);
-    }
-  };
-
-  const handleDeleteEmberConfirm = async () => {
-    if (!session?.access_token || !confirmDeleteEmberId) return;
-    setDeletingEmber(true);
-    const res = await api.deleteEmber(confirmDeleteEmberId, session.access_token);
-    setDeletingEmber(false);
-    if (!res.error) {
-      setEmbers((prev) => prev.filter((e) => e.id !== confirmDeleteEmberId));
-      setConfirmDeleteEmberId(null);
-    }
-  };
 
   if (loading || (!user && loading)) {
     return (
@@ -301,151 +264,6 @@ export default function VowChamberPage() {
             </div>
           )}
 
-          {/* Brazier section */}
-          {!dataLoading && (
-            <div className="mb-12">
-              <SectionHeader label="Your Brazier" />
-
-              <Brazier
-                embers={embers}
-                animatingEmberId={animatingEmberId}
-                onDropComplete={() => setAnimatingEmberId(null)}
-                onAddClick={embers.length < EMBER_CAP ? () => setShowAddForm((v) => !v) : undefined}
-                onDeleteRequest={(id) => setConfirmDeleteEmberId(id)}
-              />
-
-              {embers.length >= EMBER_CAP && (
-                <p
-                  style={{
-                    color: "var(--text-muted)",
-                    textAlign: "center",
-                    fontSize: "0.75rem",
-                    letterSpacing: "0.08em",
-                    marginTop: "0.75rem",
-                  }}
-                >
-                  Your brazier holds {EMBER_CAP} embers — extinguish one to kindle another.
-                </p>
-              )}
-
-              {showAddForm && embers.length < EMBER_CAP && (
-                <div
-                  style={{
-                    marginTop: "1.5rem",
-                    maxWidth: "520px",
-                    margin: "1.5rem auto 0",
-                  }}
-                >
-                  {addingEmber ? (
-                    <p
-                      style={{
-                        textAlign: "center",
-                        color: "var(--text-muted)",
-                        fontSize: "0.8rem",
-                        padding: "1.5rem 0",
-                      }}
-                    >
-                      Kindling…
-                    </p>
-                  ) : (
-                    <AddEmberForm
-                      onSubmit={handleAddEmber}
-                      onCancel={() => setShowAddForm(false)}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Ember delete confirm dialog */}
-          {confirmDeleteEmberId && (
-            <div
-              style={{
-                position: "fixed",
-                inset: 0,
-                backgroundColor: "rgba(10,10,18,0.85)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 100,
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "var(--bg-shadow)",
-                  border: "1px solid rgba(139,0,0,0.4)",
-                  borderRadius: "6px",
-                  padding: "2rem 2.5rem",
-                  maxWidth: "360px",
-                  width: "90%",
-                  boxShadow: "0 0 40px rgba(139,0,0,0.15), 0 8px 32px rgba(0,0,0,0.6)",
-                  textAlign: "center",
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "0.75rem",
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    color: "var(--text-secondary)",
-                    marginBottom: "0.6rem",
-                  }}
-                >
-                  ◆ Confirm ◆
-                </p>
-                <p
-                  style={{
-                    color: "var(--text-primary)",
-                    marginBottom: "1.75rem",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Extinguish this ember?
-                </p>
-                <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
-                  <button
-                    onClick={handleDeleteEmberConfirm}
-                    disabled={deletingEmber}
-                    style={{
-                      padding: "0.55rem 1.5rem",
-                      borderRadius: "4px",
-                      fontSize: "0.75rem",
-                      fontFamily: "var(--font-heading)",
-                      letterSpacing: "0.15em",
-                      textTransform: "uppercase",
-                      backgroundColor: "rgba(139,0,0,0.35)",
-                      color: "var(--text-primary)",
-                      border: "1px solid var(--accent-blood)",
-                      cursor: deletingEmber ? "not-allowed" : "pointer",
-                      opacity: deletingEmber ? 0.5 : 1,
-                    }}
-                  >
-                    {deletingEmber ? "Extinguishing…" : "Extinguish"}
-                  </button>
-                  <button
-                    onClick={() => setConfirmDeleteEmberId(null)}
-                    disabled={deletingEmber}
-                    style={{
-                      padding: "0.55rem 1.5rem",
-                      borderRadius: "4px",
-                      fontSize: "0.75rem",
-                      fontFamily: "var(--font-heading)",
-                      letterSpacing: "0.15em",
-                      textTransform: "uppercase",
-                      backgroundColor: "var(--bg-elevated)",
-                      color: "var(--text-muted)",
-                      border: "1px solid var(--border-default)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Keep
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {dataLoading ? (
             <p style={{ color: "var(--text-muted)" }}>Loading your vows…</p>

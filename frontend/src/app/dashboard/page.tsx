@@ -291,57 +291,21 @@ export default function DashboardPage() {
           <Link href="/vows" className="hub-door hub-door-unlocked">
             {/* Anvil: video on desktop, static image on mobile */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <video autoPlay loop muted playsInline className="hub-anvil-desktop" style={{ maxHeight: "220px", objectFit: "contain" }}>
-                <source src="/images/anvil_video.webm" type="video/webm" />
-                <source src="/images/anvil_video.mp4" type="video/mp4" />
-              </video>
-              <picture>
-                <img
-                  src="/images/anvil.webp"
-                  alt="Anvil"
-                  className="hub-anvil-mobile"
-                  style={{ maxHeight: "220px", objectFit: "contain" }}
-                />
-              </picture>
+              <img
+                src="/images/anvil_clipped.webp"
+                alt="Anvil"
+                style={{ maxHeight: "320px", objectFit: "contain" }}
+              />
             </div>
-
-            {/* Archway frame */}
-            <div className="hub-door-arch hub-door-arch-unlocked" />
 
             {/* Door content */}
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Vow Chamber</h2>
               <p className="hub-door-subtitle">Forge and walk your talent trees</p>
 
-              {/* Status — active vow count + XP */}
-              {dataLoading ? (
-                <div className="hub-door-status hub-door-status-unlocked">
-                  Enter
-                </div>
-              ) : activeVowCount === 0 ? (
-                <div className="hub-door-status hub-door-status-unlocked">
-                  Begin your journey
-                </div>
-              ) : (
-                <div
-                  className="hub-door-status hub-door-status-unlocked"
-                  style={{ flexDirection: "column", gap: "0.2rem", alignItems: "center" }}
-                >
-                  <span>
-                    {activeVowCount} active {activeVowCount === 1 ? "vow" : "vows"}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "0.65rem",
-                      letterSpacing: "0.15em",
-                      color: "var(--accent-gold)",
-                      opacity: 0.85,
-                    }}
-                  >
-                    {earnedXp.toLocaleString()} XP earned
-                  </span>
-                </div>
-              )}
+              <div className="hub-door-status hub-door-status-unlocked">
+                Enter the chamber
+              </div>
             </div>
 
           </Link>
@@ -351,56 +315,37 @@ export default function DashboardPage() {
             className={`hub-door hub-door-locked${shakingDoor === "dungeon" ? " hub-door-shake" : ""}`}
             onClick={() => handleLockedClick("dungeon")}
           >
-            {/* Sealed door image — the chains tell the story */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <picture>
-                <source srcSet="/images/sealed_door.webp" type="image/webp" />
-                <img
-                  src="/images/sealed_door.jpg"
-                  alt="Sealed Door"
-                  loading="lazy"
-                  style={{
-                    maxHeight: "220px",
-                    objectFit: "contain",
-                    animation: "ember-pulse 3s ease-in-out infinite",
-                  }}
-                />
-              </picture>
-            </div>
-
-            {/* Chains overlay */}
-            <div className="hub-door-chains" />
-
             {/* Door content */}
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Dungeon</h2>
               <p className="hub-door-subtitle">Face the darkness. Earn your spoils.</p>
+
+              <div className="hub-door-status hub-door-status-locked">
+                Locked
+              </div>
             </div>
           </div>
 
-          {/* ── Door 3: The Hearth (UNLOCKED) ── */}
-          <Link href="/hearth" className="hub-door hub-door-unlocked">
+          {/* ── Door 3: The Hearth (LOCKED) ── */}
+          <div
+            className={`hub-door hub-door-locked${shakingDoor === "hearth" ? " hub-door-shake" : ""}`}
+            onClick={() => handleLockedClick("hearth")}
+          >
             {/* Brazier image */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <picture>
-                <source srcSet="/images/brazier.webp" type="image/webp" />
-                <img src="/images/brazier.jpg" alt="Brazier" loading="lazy" style={{ maxHeight: "220px", objectFit: "contain" }} />
-              </picture>
+              <img src="/images/brazier_clipped.webp" alt="Brazier" loading="lazy" style={{ maxHeight: "320px", objectFit: "contain", opacity: 0.5 }} />
             </div>
-
-            {/* Archway frame */}
-            <div className="hub-door-arch hub-door-arch-unlocked" />
 
             {/* Door content */}
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Hearth</h2>
               <p className="hub-door-subtitle">Your sanctum. Your trophies. Your fire.</p>
 
-              <div className="hub-door-status hub-door-status-unlocked">
-                Tend your brazier
+              <div className="hub-door-status hub-door-status-locked">
+                Locked
               </div>
             </div>
-          </Link>
+          </div>
         </div>
       </main>
     </div>
