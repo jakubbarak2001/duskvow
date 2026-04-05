@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
-import Image from "next/image";
 import { Navbar } from "@/components/layout/Navbar";
 
 type TimerMode = "continuous" | "single";
@@ -276,11 +275,10 @@ export default function DungeonPage() {
               pointerEvents: "none",
               zIndex: 0,
             }} />
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/images/dungeon_card.webp"
               alt="Dungeon Hourglass"
-              width={300}
-              height={300}
               style={{
                 maxHeight: "300px",
                 objectFit: "contain",

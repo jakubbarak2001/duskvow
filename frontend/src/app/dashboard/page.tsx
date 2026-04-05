@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { useUser } from "@/hooks/useUser";
 import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
@@ -294,13 +293,11 @@ export default function DashboardPage() {
           <Link href="/vows" className="hub-door hub-door-unlocked">
             {/* Anvil: video on desktop, static image on mobile */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/images/anvil_clipped.webp"
                 alt="Anvil"
-                width={380}
-                height={380}
-                style={{ maxHeight: "380px", objectFit: "contain", width: "auto" }}
-                priority
+                style={{ maxHeight: "380px", objectFit: "contain" }}
               />
             </div>
 
@@ -320,12 +317,12 @@ export default function DashboardPage() {
           <Link href="/dungeon" className="hub-door hub-door-unlocked">
             {/* Dungeon image */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/images/dungeon_card.webp"
                 alt="Dungeon"
-                width={380}
-                height={380}
-                style={{ maxHeight: "380px", objectFit: "contain", width: "auto" }}
+                loading="lazy"
+                style={{ maxHeight: "380px", objectFit: "contain" }}
               />
             </div>
 
@@ -347,7 +344,8 @@ export default function DashboardPage() {
           >
             {/* Brazier image */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <Image src="/images/brazier_clipped.webp" alt="Brazier" width={380} height={380} style={{ maxHeight: "380px", objectFit: "contain", opacity: 0.5, width: "auto" }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/brazier_clipped.webp" alt="Brazier" loading="lazy" style={{ maxHeight: "380px", objectFit: "contain", opacity: 0.5 }} />
             </div>
 
             {/* Door content */}
