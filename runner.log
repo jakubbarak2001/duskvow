@@ -962,3 +962,31 @@ All checks pass. Here's a summary of what was changed in `dashboard/page.tsx`:
 --- End Output ---
 [2026-04-05T09:32:31.557Z] Running validation...
 [2026-04-05T09:32:48.129Z] ✅ Validation PASSED
+[2026-04-05T09:32:48.308Z] Committed: feat: TASK 4A-1 — Dashboard Card Polish — Image Sizes & Dungeon CTA
+[2026-04-05T09:32:48.310Z] ✅ TASK 4A-1 COMPLETED
+[2026-04-05T09:32:48.310Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:32:48.311Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:32:48.311Z] STARTING: TASK 4A-2 — Dungeon Page Scaffold — Layout, Background & Navigation
+[2026-04-05T09:32:48.312Z] Branch: feature/dungeon
+[2026-04-05T09:32:48.312Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:32:48.426Z] Checked out existing branch: feature/dungeon
+[2026-04-05T09:32:48.427Z] Invoking Claude Code...
+[2026-04-05T09:32:48.428Z] Prompt length: 4100 chars
+[2026-04-05T09:33:54.100Z] Claude Code finished in 1m 6s (exit: OK)
+
+--- Claude Output for TASK 4A-2 ---
+All 3 checks pass. TASK 4A-2 is complete.
+
+**Summary**: Created `frontend/src/app/dungeon/page.tsx` with:
+- Auth guard via `useUser()` + redirect to `/auth` if unauthenticated
+- Loading state matching the dashboard pattern
+- Background with `dungeon_background.webp` (falls back to `--bg-abyss` if missing), dark overlay, and noise texture
+- `Navbar` component at the top
+- Centered hourglass image (`dungeon_card.webp`) at 60% opacity
+- "The Dungeon Awaits" heading in Cinzel font
+- "Steel your mind. Forge your focus." subtitle in Crimson Pro italic
+- Used `next/image` (`Image`) instead of `<img>` to satisfy ESLint
+
+--- End Output ---
+[2026-04-05T09:33:54.100Z] Running validation...
+[2026-04-05T09:34:12.516Z] ✅ Validation PASSED
