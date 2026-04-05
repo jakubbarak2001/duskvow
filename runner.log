@@ -1046,3 +1046,27 @@ Changes made:
 --- End Output ---
 [2026-04-05T09:38:21.726Z] Running validation...
 [2026-04-05T09:38:40.246Z] ✅ Validation PASSED
+[2026-04-05T09:38:40.415Z] Committed: feat: TASK 4A-4 — Dungeon Timer UI — Dark Fantasy Interface
+[2026-04-05T09:38:40.416Z] ✅ TASK 4A-4 COMPLETED
+[2026-04-05T09:38:40.417Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:38:40.417Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:38:40.417Z] STARTING: TASK 4A-5 — Dungeon Polish & Validation
+[2026-04-05T09:38:40.418Z] Branch: feature/dungeon
+[2026-04-05T09:38:40.418Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:38:40.519Z] Checked out existing branch: feature/dungeon
+[2026-04-05T09:38:40.521Z] Invoking Claude Code...
+[2026-04-05T09:38:40.522Z] Prompt length: 3174 chars
+[2026-04-05T09:39:38.392Z] Claude Code finished in 0m 58s (exit: OK)
+
+--- Claude Output for TASK 4A-5 ---
+All 3 checks pass. Here's what was added to `frontend/src/app/dungeon/page.tsx`:
+
+1. **`Link` import** from `next/link`
+2. **"Return to Hub" link** — positioned at the start of `<main>`, Cinzel font, `0.6rem`, `0.15em` letter-spacing, uppercase, `var(--text-muted)` color with hover → `var(--text-secondary)`
+3. **Radial glow** — absolute `400×400px` div with `radial-gradient(ellipse at center, rgba(200,75,17,0.08) 0%, transparent 70%)` at `zIndex: 0`, behind the hourglass image at `zIndex: 1`
+
+`npm run validate` passes with zero errors (TypeScript, ESLint, Next.js build all green).
+
+--- End Output ---
+[2026-04-05T09:39:38.393Z] Running validation...
+[2026-04-05T09:39:56.772Z] ✅ Validation PASSED

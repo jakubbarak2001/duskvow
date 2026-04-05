@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import Image from "next/image";
 import { Navbar } from "@/components/layout/Navbar";
@@ -246,19 +247,50 @@ export default function DungeonPage() {
             padding: "2rem 1.5rem",
           }}
         >
-          {/* Hourglass image — opacity changes with phase */}
-          <Image
-            src="/images/dungeon_card.webp"
-            alt="Dungeon Hourglass"
-            width={300}
-            height={300}
+          {/* Return to Hub link */}
+          <Link
+            href="/dashboard"
             style={{
-              maxHeight: "300px",
-              objectFit: "contain",
-              opacity: getHourglassOpacity(),
-              transition: "opacity 0.8s ease",
+              fontFamily: "var(--font-cinzel)",
+              fontSize: "0.6rem",
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+              textDecoration: "none",
+              alignSelf: "flex-start",
+              transition: "color 0.2s ease",
             }}
-          />
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
+          >
+            ← Return to Hub
+          </Link>
+
+          {/* Hourglass with radial glow */}
+          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{
+              position: "absolute",
+              width: "400px",
+              height: "400px",
+              background: "radial-gradient(ellipse at center, rgba(200,75,17,0.08) 0%, transparent 70%)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }} />
+            <Image
+              src="/images/dungeon_card.webp"
+              alt="Dungeon Hourglass"
+              width={300}
+              height={300}
+              style={{
+                maxHeight: "300px",
+                objectFit: "contain",
+                opacity: getHourglassOpacity(),
+                transition: "opacity 0.8s ease",
+                position: "relative",
+                zIndex: 1,
+              }}
+            />
+          </div>
 
           <h1
             style={{
