@@ -310,11 +310,21 @@ export default function DashboardPage() {
 
           </Link>
 
-          {/* ── Door 2: The Dungeon (LOCKED) ── */}
+          {/* ── Door 2: The Dungeon (COMING SOON) ── */}
           <div
-            className={`hub-door hub-door-locked${shakingDoor === "dungeon" ? " hub-door-shake" : ""}`}
+            className={`hub-door hub-door-unlocked${shakingDoor === "dungeon" ? " hub-door-shake" : ""}`}
             onClick={() => handleLockedClick("dungeon")}
           >
+            {/* Dungeon image */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
+              <img
+                src="/images/dungeon_clipped.webp"
+                alt="Dungeon"
+                loading="lazy"
+                style={{ maxHeight: "320px", objectFit: "contain" }}
+              />
+            </div>
+
             {/* Door content */}
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Dungeon</h2>
