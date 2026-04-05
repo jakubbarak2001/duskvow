@@ -1067,6 +1067,313 @@ Verify the dashboard loads fast and all assets are properly optimized.
 - [ ] Lazy loading on below-fold images
 - [ ] `npm run validate` passes
 
+## Sprint 4A — The Dungeon (Pomodoro Focus Timer)
+
+> Goal: Build "The Dungeon" — a dark fantasy Pomodoro focus timer. Fix dashboard card sizing, make the Dungeon card an active link, create the /dungeon page with a working timer.
+> Pre-requisite: User must generate `dungeon_background.webp` via Leonardo.ai and place it in `frontend/public/images/` before running Task 4A-2.
+> All copy must use dark fantasy / Diablo-like language — no generic timer terms.
+
+---
+
+### TASK 4A-1: Dashboard Card Polish — Image Sizes & Dungeon CTA
+
+**Status**: `QUEUED`
+**Branch**: `feature/dungeon`
+**Files to modify**: `frontend/src/app/dashboard/page.tsx`
+
+**What to do**:
+Fix image sizing across all three hub cards so they visually match, update the Dungeon card to be an active link with a dark fantasy CTA, and fix the dungeon image filename reference.
+
+**Specific changes**:
+1. In `dashboard/page.tsx`, change the anvil image `maxHeight` from `"320px"` to `"380px"` to better fill the card.
+2. Change the brazier image `maxHeight` from `"320px"` to `"380px"` and remove `opacity: 0.5` (since the Hearth also has content now).
+3. Fix the dungeon image `src` from `"/images/dungeon_clipped.webp"` to `"/images/dungeon_card.webp"` (matching the actual filename).
+4. Change the Dungeon card from a `<div>` with `onClick={handleLockedClick}` to a `<Link href="/dungeon">` — same pattern as the Vow Chamber card on line 291.
+5. Remove the shake animation logic for the dungeon door (it's no longer locked).
+6. Change the Dungeon status badge from `hub-door-status-locked` to `hub-door-status-unlocked`.
+7. Change the status badge text from "Locked" to "Descend".
+8. Update the subtitle from "Face the darkness. Earn your spoils." to "Face the darkness. Master your focus."
+
+**What NOT to do**:
+- Don't change the Vow Chamber card (it's already correct)
+- Don't change the Hearth card's locked status (it stays locked)
+- Don't modify any CSS animations or hub-door base classes
+- Don't add new CSS — reuse existing `hub-door-status-unlocked` class
+
+**Acceptance criteria**:
+- [ ] All three card images are visually similar height (~380px max)
+- [ ] Dungeon card is a `<Link>` to `/dungeon`
+- [ ] Dungeon CTA says "Descend" with ember styling (same as "Enter the Chamber")
+- [ ] Dungeon image references correct filename `dungeon_card.webp`
+- [ ] Brazier image is full opacity
+- [ ] No shake animation on Dungeon card
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 4A-2: Dungeon Page Scaffold — Layout, Background & Navigation
+
+**Status**: `QUEUED`
+**Branch**: `feature/dungeon`
+**Files to modify**: `frontend/src/app/dungeon/page.tsx` (new file)
+
+**What to do**:
+Create the Dungeon page at `/dungeon` with the standard protected page layout, dungeon background, and atmospheric dark fantasy styling. This task only builds the page shell — the timer UI comes in the next task.
+
+**Specific changes**:
+1. Create `frontend/src/app/dungeon/page.tsx` as a `"use client"` page component.
+2. Implement the auth guard pattern: `useUser()` hook + `useEffect` redirect to `/auth` if not logged in (same as `dashboard/page.tsx` lines 23-27).
+3. Add loading state (same pattern as dashboard lines 68-85).
+4. Page layout structure (follow dashboard pattern):
+   - Root div with background image `dungeon_background.webp`, `backgroundSize: "cover"`, `backgroundPosition: "center"`, `backgroundAttachment: "fixed"`, `minHeight: "100vh"`.
+   - Dark overlay div: `linear-gradient(rgba(10,10,18,0.60), rgba(10,10,18,0.75))`, `position: "fixed"`, `inset: 0`, `zIndex: 0`.
+   - Noise texture overlay: `url("/noise.png")`, `opacity: 0.04`, `position: "fixed"`, `inset: 0`, `zIndex: 0`.
+   - Content wrapper with `position: "relative"`, `zIndex: 2`.
+5. Add Navbar component at the top (import from `@/components/layout/Navbar`).
+6. Main content area centered on screen with flexbox: `display: "flex"`, `flexDirection: "column"`, `alignItems: "center"`, `justifyContent: "center"`, `minHeight: "calc(100vh - 80px)"`.
+7. Place the hourglass image centered: `<img src="/images/dungeon_card.webp" alt="Dungeon Hourglass" style={{ maxHeight: "300px", objectFit: "contain", opacity: 0.6 }} />`.
+8. Below the hourglass, add a heading in Cinzel font: "The Dungeon Awaits" using `fontFamily: "var(--font-cinzel)"`, `color: "var(--text-primary)"`, `fontSize: "1.8rem"`, `letterSpacing: "0.15em"`, `textTransform: "uppercase"`.
+9. Below the heading, add a subtitle in Crimson Pro italic: "Steel your mind. Forge your focus." using `fontFamily: "var(--font-crimson)"`, `fontStyle: "italic"`, `color: "var(--text-secondary)"`.
+10. If `dungeon_background.webp` doesn't exist yet, use `var(--bg-abyss)` as fallback background color so the page still works.
+
+**What NOT to do**:
+- Don't build the timer UI yet — that's Task 4A-3/4A-4
+- Don't add any state management beyond auth
+- Don't add API calls — this is frontend-only
+- Don't create new CSS classes in globals.css — use inline styles with CSS variables
+- Don't use any inline hex colors — only CSS variables
+
+**Acceptance criteria**:
+- [ ] `/dungeon` route renders with dark background and overlay
+- [ ] Auth guard redirects unauthenticated users to `/auth`
+- [ ] Navbar is present for navigation
+- [ ] Hourglass image displayed centered
+- [ ] "The Dungeon Awaits" heading visible
+- [ ] Loading state shows while auth is checking
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 4A-3: Dungeon Timer Engine — Pomodoro Logic
+
+**Status**: `QUEUED`
+**Branch**: `feature/dungeon`
+**Files to modify**: `frontend/src/app/dungeon/page.tsx`
+
+**What to do**:
+Build the Pomodoro timer logic into the Dungeon page. The timer supports two modes: **Continuous** (work/break cycles until stopped) and **Single Delve** (one timed session). All state is client-side React state — no backend, no persistence.
+
+**Specific changes**:
+
+1. Add the following state variables to the component:
+   ```typescript
+   type TimerMode = "continuous" | "single";
+   type TimerPhase = "idle" | "work" | "break" | "complete";
+   
+   const [mode, setMode] = useState<TimerMode>("continuous");
+   const [workMinutes, setWorkMinutes] = useState(45);
+   const [breakMinutes, setBreakMinutes] = useState(15);
+   const [singleMinutes, setSingleMinutes] = useState(60);
+   const [phase, setPhase] = useState<TimerPhase>("idle");
+   const [secondsLeft, setSecondsLeft] = useState(0);
+   const [isRunning, setIsRunning] = useState(false);
+   const [cycleCount, setCycleCount] = useState(0);
+   ```
+
+2. Implement the countdown timer with `useEffect` + `useRef` for the interval:
+   ```typescript
+   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+   
+   useEffect(() => {
+     if (!isRunning) {
+       if (intervalRef.current) clearInterval(intervalRef.current);
+       return;
+     }
+     intervalRef.current = setInterval(() => {
+       setSecondsLeft(prev => {
+         if (prev <= 1) {
+           handlePhaseEnd();
+           return 0;
+         }
+         return prev - 1;
+       });
+     }, 1000);
+     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+   }, [isRunning]);
+   ```
+
+3. `handlePhaseEnd()` function for phase transitions (when `secondsLeft` hits 0):
+   - **Continuous mode, work phase**: Switch to break phase, set `secondsLeft = breakMinutes * 60`, increment `cycleCount`.
+   - **Continuous mode, break phase**: Switch to work phase, set `secondsLeft = workMinutes * 60`.
+   - **Single mode, work phase**: Set phase to `"complete"`, set `isRunning = false`.
+
+4. Control functions:
+   - `handleStart()`: Set `secondsLeft` based on mode (`workMinutes * 60` or `singleMinutes * 60`), set `phase = "work"`, set `isRunning = true`, reset `cycleCount = 0`.
+   - `handlePause()`: Set `isRunning = false`.
+   - `handleResume()`: Set `isRunning = true`.
+   - `handleStop()`: Set `isRunning = false`, `phase = "idle"`, `secondsLeft = 0`, `cycleCount = 0`.
+
+5. Time display helper:
+   ```typescript
+   const formatTime = (totalSeconds: number): string => {
+     const m = Math.floor(totalSeconds / 60);
+     const s = totalSeconds % 60;
+     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+   };
+   ```
+
+6. Add a minimal placeholder rendering for the timer so the logic is testable — show `formatTime(secondsLeft)` and basic start/stop buttons. The full UI comes in Task 4A-4.
+
+7. Clean up interval on component unmount via the useEffect cleanup.
+
+**What NOT to do**:
+- Don't add audio/sound effects
+- Don't persist timer state to localStorage or database
+- Don't add notification/alert APIs
+- Don't build the full styled UI — just the logic + minimal placeholder rendering
+- Don't use `any` types
+- Don't use `console.log`
+
+**Acceptance criteria**:
+- [ ] Timer state variables and types are defined
+- [ ] Timer counts down by 1 second each tick when running
+- [ ] Continuous mode cycles between work and break phases
+- [ ] Single mode stops at completion
+- [ ] Start/pause/resume/stop all function correctly
+- [ ] Phase transitions happen at correct times
+- [ ] Interval is cleaned up on unmount
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 4A-4: Dungeon Timer UI — Dark Fantasy Interface
+
+**Status**: `QUEUED`
+**Branch**: `feature/dungeon`
+**Files to modify**: `frontend/src/app/dungeon/page.tsx`, `frontend/src/app/globals.css`
+
+**What to do**:
+Build the full visual timer interface with dark fantasy theming. Replace any minimal placeholder UI from Task 4A-3 with the complete dark fantasy timer interface. All copy uses RPG language — never generic timer terms.
+
+**Specific changes**:
+
+1. **Layout** (centered column, below the hourglass image):
+   - Timer display area
+   - Phase indicator
+   - Control buttons
+   - Mode selector (only visible in `idle` phase)
+
+2. **Mode selector** (visible only when `phase === "idle"`):
+   - Two option buttons side by side: "Endless Delve" (continuous) and "Timed Raid" (single).
+   - Active mode: `color: var(--accent-ember)`, `border: 1px solid rgba(200,75,17,0.5)`, `background: rgba(200,75,17,0.15)`.
+   - Inactive mode: `color: var(--text-muted)`, `border: 1px solid var(--border-default)`, `background: transparent`.
+   - Font: `fontFamily: "var(--font-cinzel)"`, `textTransform: "uppercase"`, `fontSize: "0.65rem"`, `letterSpacing: "0.15em"`.
+
+3. **Time configuration** (visible only when `phase === "idle"`):
+   - For continuous mode: two inputs — "Battle" (work minutes) and "Rest" (break minutes).
+   - For single mode: one input — "Delve Duration" (minutes).
+   - Number inputs styled with `background: var(--bg-elevated)`, ember border on focus (`borderColor: var(--accent-ember)`), Cinzel font.
+   - Labels in Crimson Pro italic: `fontFamily: "var(--font-crimson)"`, `fontStyle: "italic"`, `color: var(--text-secondary)`.
+   - Preset quick-select buttons: 25, 45, 60 min for work; 5, 10, 15 min for break.
+   - Active preset gets ember highlight, inactive gets muted border.
+
+4. **Timer display** (visible when `phase !== "idle"`):
+   - Large countdown: `formatTime(secondsLeft)` in `fontFamily: "var(--font-cinzel)"`, `fontSize: "4rem"`, `color: var(--text-primary)`, `letterSpacing: "0.1em"`.
+   - Apply `dungeon-pulse` animation class when `isRunning` is true.
+   - Phase label below:
+     - Work: "Delving..." in `color: var(--accent-ember)`.
+     - Break: "Resting at Campfire" in `color: var(--accent-gold)`.
+     - Complete: "The Dungeon Yields" in `color: var(--accent-gold)`.
+   - Cycle counter (continuous mode only): "Cycle {cycleCount}" in `color: var(--text-muted)`, `fontSize: "0.7rem"`.
+
+5. **Control buttons**:
+   - **Idle**: "Venture Forth" — primary ember styling.
+   - **Running**: "Hold Position" (pause, gold) + "Retreat" (stop, muted).
+   - **Paused**: "Press Onward" (resume, ember) + "Retreat" (stop, muted).
+   - **Complete**: "Delve Again" (ember).
+   - Primary (start/resume): `color: var(--accent-ember)`, `background: rgba(200,75,17,0.15)`, `border: 1px solid rgba(200,75,17,0.35)`. Hover: `background: rgba(200,75,17,0.28)`, `borderColor: rgba(200,75,17,0.7)`, `boxShadow: 0 0 12px rgba(200,75,17,0.3)`.
+   - Pause: `color: var(--accent-gold)`, `background: rgba(255,215,0,0.1)`, `border: 1px solid rgba(255,215,0,0.25)`.
+   - Stop: `color: var(--text-muted)`, `background: rgba(20,18,28,0.7)`, `border: 1px solid rgba(224,216,200,0.1)`.
+   - All buttons: `fontFamily: "var(--font-cinzel)"`, `fontSize: "0.6rem"`, `letterSpacing: "0.2em"`, `textTransform: "uppercase"`, `padding: "0.6rem 1.5rem"`, `borderRadius: "2px"`, `cursor: "pointer"`, `transition: "all 0.2s ease"`.
+
+6. **Add CSS to globals.css** — a pulse animation for the active timer:
+   ```css
+   @keyframes dungeon-pulse {
+     0%, 100% { text-shadow: 0 0 20px rgba(200,75,17,0.2); }
+     50% { text-shadow: 0 0 40px rgba(200,75,17,0.4), 0 0 80px rgba(200,75,17,0.15); }
+   }
+   ```
+
+7. **Hourglass opacity** changes with phase:
+   - Idle: `opacity: 0.4`
+   - Work: `opacity: 0.9`
+   - Break: `opacity: 0.3`
+   - Complete: `opacity: 1.0`
+
+**What NOT to do**:
+- Don't use inline hex colors — CSS variables and rgba only
+- Don't use `console.log` or `any` types
+- Don't create separate component files — keep everything in `page.tsx` for now
+- Don't add responsive/mobile layout — desktop first, polish later
+
+**Acceptance criteria**:
+- [ ] Mode selector toggles between Endless Delve and Timed Raid
+- [ ] Time configuration inputs work with preset quick-select
+- [ ] Timer countdown displays in large Cinzel font with pulse animation
+- [ ] Phase labels show correct dark fantasy copy
+- [ ] All control buttons render with correct styling per phase
+- [ ] Hourglass opacity changes with timer phase
+- [ ] All colors use CSS variables, no inline hex
+- [ ] `npm run validate` passes
+
+---
+
+### TASK 4A-5: Dungeon Polish & Validation
+
+**Status**: `QUEUED`
+**Branch**: `feature/dungeon`
+**Files to modify**: `frontend/src/app/dungeon/page.tsx`, `frontend/src/app/globals.css`
+
+**What to do**:
+Final polish pass on the Dungeon page. Fix any visual issues, ensure the page matches the dark fantasy aesthetic of the rest of the app, and run full validation.
+
+**Specific changes**:
+1. Verify all text uses correct font families (Cinzel for headings/buttons/labels, Inter for body, Crimson Pro for subtitles/flavor text).
+2. Ensure the page has proper spacing and visual hierarchy — adequate gaps between hourglass, timer, controls.
+3. Add a subtle radial glow behind the hourglass:
+   ```typescript
+   <div style={{
+     position: "absolute",
+     width: "400px",
+     height: "400px",
+     background: "radial-gradient(ellipse at center, rgba(200,75,17,0.08) 0%, transparent 70%)",
+     pointerEvents: "none",
+     zIndex: 0,
+   }} />
+   ```
+4. Add a "Return to Hub" text link near the top of the content area: `<Link href="/dashboard">` styled with `color: var(--text-muted)`, hover `color: var(--text-secondary)`, Cinzel font, `fontSize: "0.6rem"`, `letterSpacing: "0.15em"`, `textTransform: "uppercase"`.
+5. Ensure the Navbar renders correctly with user session.
+6. Test all phase transitions: idle → work → break → work → stop, and idle → work → complete → delve again.
+7. Run `npm run validate` — must pass with zero errors.
+8. Run `npx tsc --noEmit` — must pass.
+
+**What NOT to do**:
+- Don't add new features beyond what's specified
+- Don't refactor timer logic
+- Don't add mobile responsiveness (future task)
+- Don't add sound effects or notifications
+
+**Acceptance criteria**:
+- [ ] All fonts match the design system
+- [ ] Radial glow behind hourglass visible
+- [ ] "Return to Hub" link works and navigates to `/dashboard`
+- [ ] Timer phase transitions all work correctly in both modes
+- [ ] No `console.log`, no `any` types, no inline hex colors
+- [ ] `npm run validate` passes
+- [ ] `npx tsc --noEmit` passes
+
+---
+
 ## Completed Tasks
 
 > Move tasks here when done, with completion date and any notes.
