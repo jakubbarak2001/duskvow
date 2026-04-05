@@ -117,7 +117,8 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 ### What's Built & Working
 - [x] **Landing page** — Full dark fantasy design with ember particles, noise overlay, Cinzel/Crimson Pro typography, hero with background image, anti-section, how-it-works, CTA, footer
 - [x] **Auth flow** — Supabase email/password login, auth guard on protected routes, middleware redirect
-- [x] **Dashboard (Hub)** — Hub scene with three door cards (Vow Chamber → `/vows`, Dungeon locked, Hearth locked), compact XP/Streak header, ember particles
+- [x] **Dashboard (Hub)** — Hub scene with three door cards (Vow Chamber → `/vows`, Dungeon → `/dungeon` (active, unlocked styling), Hearth → `/hearth`), compact XP/Streak header, ember particles
+- [x] **Favicon & Branding** — Ember drop favicon (ico, svg, 96x96 png, apple-touch-icon, webmanifest), generated via Leonardo.ai + realfavicongenerator.net
 - [x] **Vow Chamber (`/vows`)** — Full tree management page: "The Vow Chamber" heading, "← Return to Hub" link, Navbar, New Vow CTA, generation status, StatsBar, Brazier, tree list (active/finished), delete confirmation, empty state
 - [x] **Tree creation wizard** — 3-step flow: goal input → AI follow-up questions → generating animation → redirect to tree view
 - [x] **Interactive skill tree** — React Flow canvas with custom node shapes (circle/square/diamond/hexagon), Dagre auto-layout, zoom/pan, node state colors, tier glow effects
@@ -138,14 +139,23 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 - [ ] **No error boundaries** — CLAUDE.md specifies them but none are implemented. React Flow crashes can take down the whole page.
 
 ### What's Next (Priority Order)
-1. **Validation infrastructure** — Add `npm run validate` script that runs `tsc --noEmit` + `next build` + any tests. Claude must run this before declaring tasks done.
+1. **Sprint 4A — The Dungeon** — Pomodoro focus timer page with dark fantasy RPG theming (5 tasks queued in TASKS.md)
 2. **Visual polish on tree view** — Node completion particle burst, better node spacing, edge animation improvements
 3. **Error boundaries** — Wrap TreeCanvas and major sections
-4. **Landing page → App style consistency** — Dashboard and tree pages should feel as crafted as the landing page (currently functional but not polished)
+4. **Landing page → App style consistency** — Dashboard and tree pages should feel as crafted as the landing page
 5. **Streak tracking validation** — Verify daily_activity updates correctly on node completion
 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
+
+**Session: 2026-04-05 (Branding & Dungeon Sprint Planning)**
+- `frontend/src/app/page.tsx` — Changed "Make Your Vow" navbar CTA from `<a href="#vow">` to `<Link href="/auth">` for direct auth redirect.
+- `frontend/src/app/dashboard/page.tsx` — Dungeon card: swapped from `hub-door-locked` to `hub-door-unlocked` CSS class (ember glow, full opacity). Added hourglass image placeholder (`dungeon_clipped.webp` reference, to be updated to `dungeon_card.webp` in Sprint 4A).
+- `frontend/src/app/layout.tsx` — Added favicon metadata: `icons` (ico, svg, 96x96 png, apple-touch-icon), `manifest`, `appleWebApp.title`.
+- `frontend/src/app/favicon.ico` — Deleted old Next.js default favicon.
+- `frontend/public/` — User added: `favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png`, `site.webmanifest`, `web-app-manifest-192x192.png`, `web-app-manifest-512x512.png`, `images/fire.webp`, `images/dungeon_card.webp`.
+- `TASKS.md` — Added Sprint 4A (The Dungeon) with 5 tasks: 4A-1 (dashboard card polish), 4A-2 (dungeon page scaffold), 4A-3 (timer engine), 4A-4 (timer UI), 4A-5 (polish & validation).
+- `STATE.md` — Updated Layer 3 with branding, Dungeon sprint as next priority.
 
 **Session: 2026-04-03 (Fix — Remove Orange Glow Artifacts & Enlarge Hub Cards)**
 - `frontend/src/app/dashboard/page.tsx` — Removed `HUB_PARTICLES` array and all ember particle rendering. Removed central radial glow div (`rgba(200,75,17,0.12)`) and stone floor vignette div. Lightened dark overlay from `0.75→0.85` opacity to `0.55→0.70` so background image is more visible on 4K. Removed `hub-door-glow-ring` divs from Vow Chamber and Hearth cards. Removed `hub-door-ember-leak` divs from both unlocked cards. Increased all card image `maxHeight` from `140px` to `220px` with `flex: 1` and `paddingTop: "2rem"` on image containers for better space usage.
