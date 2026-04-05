@@ -201,7 +201,7 @@ Add a "Something else…" option to every follow-up question that expands into a
 
 ### TASK 2B-1: Google OAuth Implementation
 
-**Status**: `DONE`
+**Status**: `IN_PROGRESS`
 **Branch**: `feature/google-oauth`
 **Files to modify**: `frontend/src/components/auth/AuthForm.tsx`, possibly `frontend/src/app/auth/page.tsx`
 
@@ -825,7 +825,7 @@ Create a locked Hearth page at `/hearth` that shows the brazier and a "coming so
 
 ### TASK 2B-1: Asset Optimization
 
-**Status**: `QUEUED`
+**Status**: `DONE`
 **Branch**: `feature/dashboard-overhaul`
 **Files to modify**: `frontend/public/images/`
 

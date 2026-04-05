@@ -877,3 +877,63 @@ TASK 2B-8 complete. Here's what was done:
 --- End Output ---
 [2026-04-02T08:56:46.908Z] Running validation...
 [2026-04-02T08:57:03.417Z] ✅ Validation PASSED
+[2026-04-05T09:23:49.107Z] ╔══════════════════════════════════════════════╗
+[2026-04-05T09:23:49.111Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-04-05T09:23:49.111Z] ╚══════════════════════════════════════════════╝
+[2026-04-05T09:23:49.167Z] Current branch: main
+[2026-04-05T09:23:49.602Z] Found 32 total tasks, 6 queued.
+[2026-04-05T09:23:49.603Z] Running baseline validation...
+[2026-04-05T09:23:57.530Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:23:57.531Z] ❌ BASELINE VALIDATION FAILED
+[2026-04-05T09:23:57.532Z] Your codebase has pre-existing errors. Fix them BEFORE running tasks.
+[2026-04-05T09:23:57.532Z] 
+[2026-04-05T09:23:57.533Z]  or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  346:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+✖ 5 problems (0 errors, 5 warnings)
+--- end ESLint errors ---
+
+💀 Fix lint violations. No warnings allowed.
+
+
+══════════════════════════════════════
+❌ VALIDATION FAILED at step 2/3
+   Fix the errors above, then run: npm run validate
+══════════════════════════════════════
+
+
+[2026-04-05T09:23:57.533Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:23:57.534Z] Fix these errors, commit, then re-run the runner.
+[2026-04-05T09:23:57.534Z] Or use --skip-baseline to proceed anyway (not recommended).
+[2026-04-05T09:26:53.690Z] ╔══════════════════════════════════════════════╗
+[2026-04-05T09:26:53.694Z] ║   DUSKVOW OVERNIGHT RUNNER                  ║
+[2026-04-05T09:26:53.694Z] ╚══════════════════════════════════════════════╝
+[2026-04-05T09:26:53.755Z] Current branch: main
+[2026-04-05T09:26:53.947Z] Found 32 total tasks, 6 queued.
+[2026-04-05T09:26:53.948Z] Running baseline validation...
+[2026-04-05T09:27:11.871Z] ✅ Baseline clean — codebase passes validation.
+[2026-04-05T09:27:11.872Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:27:11.873Z] STARTING: TASK 2B-1 — Asset Optimization
+[2026-04-05T09:27:11.873Z] Branch: feature/dashboard-overhaul
+[2026-04-05T09:27:11.874Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:27:12.149Z] Checked out existing branch: feature/dashboard-overhaul
+[2026-04-05T09:27:12.151Z] Invoking Claude Code...
+[2026-04-05T09:27:12.152Z] Prompt length: 2510 chars
+[2026-04-05T09:29:35.435Z] Claude Code finished in 2m 23s (exit: OK)
+
+--- Claude Output for TASK 2B-1 ---
+TASK 2B-1 complete. Summary:
+
+**What was done:**
+- `brazier.jpg` — created (256x256, resized from `anvil.jpg` which is the actual brazier image)
+- `brazier.webp` — created (256x256, quality 80, ~4KB)
+- `anvil_video.mp4` — created (3-second still loop from `anvil.jpg`, ~11KB)
+- `anvil_video.webm` — created (VP9 encoded from the mp4, ~25KB)
+
+**All pre-existing `.webp` files were already present** from prior sessions (`card_texture.webp`, `entry_background.webp`, `sealed_door.webp`, `anvil.webp`).
+
+**Total new asset size: ~47KB** (well under the 500KB limit). All originals intact. `npm run validate` passes.
+
+--- End Output ---
+[2026-04-05T09:29:35.436Z] Running validation...
+[2026-04-05T09:29:52.144Z] ✅ Validation PASSED
