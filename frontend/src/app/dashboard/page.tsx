@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useUser } from "@/hooks/useUser";
 import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
@@ -14,7 +15,9 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeVowCount, setActiveVowCount] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [earnedXp, setEarnedXp] = useState<number>(0);
   const [dataLoading, setDataLoading] = useState(true);
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
@@ -291,10 +294,13 @@ export default function DashboardPage() {
           <Link href="/vows" className="hub-door hub-door-unlocked">
             {/* Anvil: video on desktop, static image on mobile */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <img
+              <Image
                 src="/images/anvil_clipped.webp"
                 alt="Anvil"
-                style={{ maxHeight: "320px", objectFit: "contain" }}
+                width={320}
+                height={320}
+                style={{ maxHeight: "320px", objectFit: "contain", width: "auto" }}
+                priority
               />
             </div>
 
@@ -317,11 +323,12 @@ export default function DashboardPage() {
           >
             {/* Dungeon image */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <img
+              <Image
                 src="/images/dungeon_clipped.webp"
                 alt="Dungeon"
-                loading="lazy"
-                style={{ maxHeight: "320px", objectFit: "contain" }}
+                width={320}
+                height={320}
+                style={{ maxHeight: "320px", objectFit: "contain", width: "auto" }}
               />
             </div>
 
@@ -343,7 +350,7 @@ export default function DashboardPage() {
           >
             {/* Brazier image */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
-              <img src="/images/brazier_clipped.webp" alt="Brazier" loading="lazy" style={{ maxHeight: "320px", objectFit: "contain", opacity: 0.5 }} />
+              <Image src="/images/brazier_clipped.webp" alt="Brazier" width={320} height={320} style={{ maxHeight: "320px", objectFit: "contain", opacity: 0.5, width: "auto" }} />
             </div>
 
             {/* Door content */}
