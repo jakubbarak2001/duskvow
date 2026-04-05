@@ -1,14 +1,115 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import Image from "next/image";
 import { Navbar } from "@/components/layout/Navbar";
 
+type TimerMode = "continuous" | "single";
+type TimerPhase = "idle" | "work" | "break" | "complete";
+
 export default function DungeonPage() {
   const { user, loading } = useUser();
   const router = useRouter();
+
+  const [mode, setMode] = useState<TimerMode>("continuous");
+  const [workMinutes, setWorkMinutes] = useState(45);
+  const [breakMinutes, setBreakMinutes] = useState(15);
+  const [singleMinutes, setSingleMinutes] = useState(60);
+  const [phase, setPhase] = useState<TimerPhase>("idle");
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [cycleCount, setCycleCount] = useState(0);
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Refs to avoid stale closures in the interval callback
+  const phaseRef = useRef<TimerPhase>("idle");
+  const modeRef = useRef<TimerMode>("continuous");
+  const workMinutesRef = useRef(45);
+  const breakMinutesRef = useRef(15);
+
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { workMinutesRef.current = workMinutes; }, [workMinutes]);
+  useEffect(() => { breakMinutesRef.current = breakMinutes; }, [breakMinutes]);
+
+  const handlePhaseEnd = () => {
+    const currentPhase = phaseRef.current;
+    const currentMode = modeRef.current;
+
+    if (currentMode === "continuous") {
+      if (currentPhase === "work") {
+        phaseRef.current = "break";
+        setPhase("break");
+        setSecondsLeft(breakMinutesRef.current * 60);
+        setCycleCount((prev) => prev + 1);
+      } else if (currentPhase === "break") {
+        phaseRef.current = "work";
+        setPhase("work");
+        setSecondsLeft(workMinutesRef.current * 60);
+      }
+    } else {
+      // single mode
+      if (currentPhase === "work") {
+        phaseRef.current = "complete";
+        setPhase("complete");
+        setIsRunning(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!isRunning) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      return;
+    }
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          handlePhaseEnd();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isRunning]);
+
+  const handleStart = () => {
+    const initialSeconds =
+      mode === "continuous" ? workMinutes * 60 : singleMinutes * 60;
+    setSecondsLeft(initialSeconds);
+    phaseRef.current = "work";
+    setPhase("work");
+    setIsRunning(true);
+    setCycleCount(0);
+  };
+
+  const handlePause = () => {
+    setIsRunning(false);
+  };
+
+  const handleResume = () => {
+    setIsRunning(true);
+  };
+
+  const handleStop = () => {
+    setIsRunning(false);
+    phaseRef.current = "idle";
+    setPhase("idle");
+    setSecondsLeft(0);
+    setCycleCount(0);
+  };
+
+  const formatTime = (totalSeconds: number): string => {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -76,7 +177,15 @@ export default function DungeonPage() {
       />
 
       {/* Content wrapper */}
-      <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+        }}
+      >
         <Navbar />
 
         <main
@@ -124,6 +233,158 @@ export default function DungeonPage() {
           >
             Steel your mind. Forge your focus.
           </p>
+
+          {/* Timer placeholder — full UI in Task 4A-4 */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "0.75rem",
+              color: "var(--text-primary)",
+            }}
+          >
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button
+                onClick={() => setMode("continuous")}
+                style={{
+                  background:
+                    mode === "continuous"
+                      ? "var(--accent-ember)"
+                      : "var(--bg-elevated)",
+                  color: "var(--text-primary)",
+                  border: "none",
+                  padding: "0.4rem 0.9rem",
+                  cursor: "pointer",
+                }}
+              >
+                Continuous
+              </button>
+              <button
+                onClick={() => setMode("single")}
+                style={{
+                  background:
+                    mode === "single"
+                      ? "var(--accent-ember)"
+                      : "var(--bg-elevated)",
+                  color: "var(--text-primary)",
+                  border: "none",
+                  padding: "0.4rem 0.9rem",
+                  cursor: "pointer",
+                }}
+              >
+                Single Delve
+              </button>
+            </div>
+
+            <p style={{ fontSize: "3rem", fontFamily: "monospace", margin: 0 }}>
+              {formatTime(secondsLeft)}
+            </p>
+
+            <p style={{ color: "var(--text-secondary)", margin: 0 }}>
+              Phase: {phase}
+              {phase === "work" || phase === "break"
+                ? ` | Cycles: ${cycleCount}`
+                : ""}
+            </p>
+
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              {phase === "idle" && (
+                <button
+                  onClick={handleStart}
+                  style={{
+                    background: "var(--accent-ember)",
+                    color: "var(--text-primary)",
+                    border: "none",
+                    padding: "0.4rem 1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Start
+                </button>
+              )}
+              {isRunning && (
+                <button
+                  onClick={handlePause}
+                  style={{
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-primary)",
+                    border: "none",
+                    padding: "0.4rem 1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Pause
+                </button>
+              )}
+              {!isRunning && phase !== "idle" && phase !== "complete" && (
+                <button
+                  onClick={handleResume}
+                  style={{
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-primary)",
+                    border: "none",
+                    padding: "0.4rem 1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Resume
+                </button>
+              )}
+              {phase !== "idle" && (
+                <button
+                  onClick={handleStop}
+                  style={{
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-primary)",
+                    border: "none",
+                    padding: "0.4rem 1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Stop
+                </button>
+              )}
+            </div>
+
+            {mode === "continuous" && phase === "idle" && (
+              <div style={{ display: "flex", gap: "1rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                <label>
+                  Work (min):
+                  <input
+                    type="number"
+                    value={workMinutes}
+                    min={1}
+                    onChange={(e) => setWorkMinutes(Number(e.target.value))}
+                    style={{ width: "3.5rem", marginLeft: "0.4rem", background: "var(--bg-elevated)", color: "var(--text-primary)", border: "none", padding: "0.2rem" }}
+                  />
+                </label>
+                <label>
+                  Break (min):
+                  <input
+                    type="number"
+                    value={breakMinutes}
+                    min={1}
+                    onChange={(e) => setBreakMinutes(Number(e.target.value))}
+                    style={{ width: "3.5rem", marginLeft: "0.4rem", background: "var(--bg-elevated)", color: "var(--text-primary)", border: "none", padding: "0.2rem" }}
+                  />
+                </label>
+              </div>
+            )}
+
+            {mode === "single" && phase === "idle" && (
+              <label style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                Duration (min):
+                <input
+                  type="number"
+                  value={singleMinutes}
+                  min={1}
+                  onChange={(e) => setSingleMinutes(Number(e.target.value))}
+                  style={{ width: "3.5rem", marginLeft: "0.4rem", background: "var(--bg-elevated)", color: "var(--text-primary)", border: "none", padding: "0.2rem" }}
+                />
+              </label>
+            )}
+          </div>
         </main>
       </div>
     </div>
