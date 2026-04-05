@@ -937,3 +937,28 @@ TASK 2B-1 complete. Summary:
 --- End Output ---
 [2026-04-05T09:29:35.436Z] Running validation...
 [2026-04-05T09:29:52.144Z] ✅ Validation PASSED
+[2026-04-05T09:29:52.351Z] Committed: feat: TASK 2B-1 — Asset Optimization
+[2026-04-05T09:29:52.353Z] ✅ TASK 2B-1 COMPLETED
+[2026-04-05T09:29:52.353Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:29:52.353Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:29:52.354Z] STARTING: TASK 4A-1 — Dashboard Card Polish — Image Sizes & Dungeon CTA
+[2026-04-05T09:29:52.354Z] Branch: feature/dungeon
+[2026-04-05T09:29:52.355Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:29:52.477Z] Created and checked out new branch: feature/dungeon
+[2026-04-05T09:29:52.479Z] Invoking Claude Code...
+[2026-04-05T09:29:52.479Z] Prompt length: 3129 chars
+[2026-04-05T09:32:31.556Z] Claude Code finished in 2m 39s (exit: OK)
+
+--- Claude Output for TASK 4A-1 ---
+All checks pass. Here's a summary of what was changed in `dashboard/page.tsx`:
+
+- **Removed** `shakingDoor` state and `handleLockedClick` function (no longer needed)
+- **Anvil images** (Vow Chamber): `maxHeight` 140px → 380px (video + static img)
+- **Dungeon card**: replaced locked `<div>` with `<Link href="/dungeon">`, using `hub-door-unlocked` class, `dungeon_card.webp` image at 380px, added glow ring, archway, ember leak, and `hub-door-status-unlocked` badge with text "Descend"
+- **Dungeon subtitle**: updated to "Face the darkness. Master your focus."
+- **Hearth glow ring**: removed `opacity: 0.5`
+- **Brazier image**: `maxHeight` 140px → 380px
+
+--- End Output ---
+[2026-04-05T09:32:31.557Z] Running validation...
+[2026-04-05T09:32:48.129Z] ✅ Validation PASSED

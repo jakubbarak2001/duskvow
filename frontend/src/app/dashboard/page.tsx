@@ -28,7 +28,6 @@ export default function DashboardPage() {
   const [activeVowCount, setActiveVowCount] = useState<number | null>(null);
   const [earnedXp, setEarnedXp] = useState<number>(0);
   const [dataLoading, setDataLoading] = useState(true);
-  const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
@@ -61,11 +60,6 @@ export default function DashboardPage() {
       setDataLoading(false);
     });
   }, [session]);
-
-  const handleLockedClick = (doorKey: string) => {
-    setShakingDoor(doorKey);
-    setTimeout(() => setShakingDoor(null), 500);
-  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -369,7 +363,7 @@ export default function DashboardPage() {
 
             {/* Anvil: video on desktop, static image on mobile */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <video autoPlay loop muted playsInline className="hub-anvil-desktop" style={{ maxHeight: "140px", objectFit: "contain" }}>
+              <video autoPlay loop muted playsInline className="hub-anvil-desktop" style={{ maxHeight: "380px", objectFit: "contain" }}>
                 <source src="/images/anvil_video.webm" type="video/webm" />
                 <source src="/images/anvil_video.mp4" type="video/mp4" />
               </video>
@@ -378,7 +372,7 @@ export default function DashboardPage() {
                   src="/images/anvil.webp"
                   alt="Anvil"
                   className="hub-anvil-mobile"
-                  style={{ maxHeight: "140px", objectFit: "contain" }}
+                  style={{ maxHeight: "380px", objectFit: "contain" }}
                 />
               </picture>
             </div>
@@ -426,47 +420,48 @@ export default function DashboardPage() {
             <div className="hub-door-ember-leak" />
           </Link>
 
-          {/* ── Door 2: The Dungeon (LOCKED) ── */}
-          <div
-            className={`hub-door hub-door-locked${shakingDoor === "dungeon" ? " hub-door-shake" : ""}`}
-            onClick={() => handleLockedClick("dungeon")}
-          >
-            {/* Sealed door image — the chains tell the story */}
+          {/* ── Door 2: The Dungeon (UNLOCKED) ── */}
+          <Link href="/dungeon" className="hub-door hub-door-unlocked">
+            <div className="hub-door-glow-ring" />
+
+            {/* Dungeon card image */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <picture>
-                <source srcSet="/images/sealed_door.webp" type="image/webp" />
                 <img
-                  src="/images/sealed_door.jpg"
-                  alt="Sealed Door"
+                  src="/images/dungeon_card.webp"
+                  alt="The Dungeon"
                   loading="lazy"
-                  style={{
-                    maxHeight: "140px",
-                    objectFit: "contain",
-                    animation: "ember-pulse 3s ease-in-out infinite",
-                  }}
+                  style={{ maxHeight: "380px", objectFit: "contain" }}
                 />
               </picture>
             </div>
 
-            {/* Chains overlay */}
-            <div className="hub-door-chains" />
+            {/* Archway frame */}
+            <div className="hub-door-arch hub-door-arch-unlocked" />
 
             {/* Door content */}
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Dungeon</h2>
-              <p className="hub-door-subtitle">Face the darkness. Earn your spoils.</p>
+              <p className="hub-door-subtitle">Face the darkness. Master your focus.</p>
+
+              <div className="hub-door-status hub-door-status-unlocked">
+                Descend
+              </div>
             </div>
-          </div>
+
+            {/* Ember leak at base */}
+            <div className="hub-door-ember-leak" />
+          </Link>
 
           {/* ── Door 3: The Hearth (UNLOCKED) ── */}
           <Link href="/hearth" className="hub-door hub-door-unlocked">
-            <div className="hub-door-glow-ring" style={{ opacity: 0.5 }} />
+            <div className="hub-door-glow-ring" />
 
             {/* Brazier image */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
               <picture>
                 <source srcSet="/images/brazier.webp" type="image/webp" />
-                <img src="/images/brazier.jpg" alt="Brazier" loading="lazy" style={{ maxHeight: "140px", objectFit: "contain" }} />
+                <img src="/images/brazier.jpg" alt="Brazier" loading="lazy" style={{ maxHeight: "380px", objectFit: "contain" }} />
               </picture>
             </div>
 
