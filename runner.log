@@ -1016,3 +1016,33 @@ Validation passes. Here's what was implemented in `frontend/src/app/dungeon/page
 --- End Output ---
 [2026-04-05T09:35:46.565Z] Running validation...
 [2026-04-05T09:36:03.902Z] ✅ Validation PASSED
+[2026-04-05T09:36:04.055Z] Committed: feat: TASK 4A-3 — Dungeon Timer Engine — Pomodoro Logic
+[2026-04-05T09:36:04.057Z] ✅ TASK 4A-3 COMPLETED
+[2026-04-05T09:36:04.058Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:36:04.058Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:36:04.058Z] STARTING: TASK 4A-4 — Dungeon Timer UI — Dark Fantasy Interface
+[2026-04-05T09:36:04.059Z] Branch: feature/dungeon
+[2026-04-05T09:36:04.059Z] ════════════════════════════════════════════════════════════
+[2026-04-05T09:36:04.168Z] Checked out existing branch: feature/dungeon
+[2026-04-05T09:36:04.170Z] Invoking Claude Code...
+[2026-04-05T09:36:04.170Z] Prompt length: 5794 chars
+[2026-04-05T09:38:21.725Z] Claude Code finished in 2m 18s (exit: OK)
+
+--- Claude Output for TASK 4A-4 ---
+All 3 checks pass. Here's what was built:
+
+**TASK 4A-4 complete** — `dungeon/page.tsx` and `globals.css` updated.
+
+Changes made:
+
+- **Mode selector**: "Endless Delve" / "Timed Raid" buttons with ember active state, only visible in `idle` phase
+- **Time configuration**: Separate UI per mode — continuous shows Battle + Rest inputs with 25/45/60 and 5/10/15 presets; single shows Delve Duration input with 25/45/60 presets. All inputs have ember border-on-focus, Cinzel font. Labels in Crimson Pro italic.
+- **Timer display**: Large 4rem Cinzel countdown with `dungeon-pulse` class applied when `isRunning`. Phase labels: "Delving..." (ember), "Resting at Campfire" (gold), "The Dungeon Yields" (gold). Cycle counter shown in continuous mode.
+- **Control buttons**: "Venture Forth" (idle), "Hold Position" + "Retreat" (running), "Press Onward" + "Retreat" (paused), "Delve Again" (complete) — all correctly styled per spec with hover effect on primary buttons.
+- **Hourglass opacity**: idle=0.4, work=0.9, break=0.3, complete=1.0 with 0.8s transition
+- **CSS**: `@keyframes dungeon-pulse` + `.dungeon-pulse` class added to `globals.css`
+- Zero inline hex colors — all CSS variables and `rgba()` only
+
+--- End Output ---
+[2026-04-05T09:38:21.726Z] Running validation...
+[2026-04-05T09:38:40.246Z] ✅ Validation PASSED

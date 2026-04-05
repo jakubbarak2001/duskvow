@@ -9,6 +9,41 @@ import { Navbar } from "@/components/layout/Navbar";
 type TimerMode = "continuous" | "single";
 type TimerPhase = "idle" | "work" | "break" | "complete";
 
+const WORK_PRESETS = [25, 45, 60];
+const BREAK_PRESETS = [5, 10, 15];
+
+const buttonBase: React.CSSProperties = {
+  fontFamily: "var(--font-cinzel)",
+  fontSize: "0.6rem",
+  letterSpacing: "0.2em",
+  textTransform: "uppercase",
+  padding: "0.6rem 1.5rem",
+  borderRadius: "2px",
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+};
+
+const primaryButtonStyle: React.CSSProperties = {
+  ...buttonBase,
+  color: "var(--accent-ember)",
+  background: "rgba(200,75,17,0.15)",
+  border: "1px solid rgba(200,75,17,0.35)",
+};
+
+const pauseButtonStyle: React.CSSProperties = {
+  ...buttonBase,
+  color: "var(--accent-gold)",
+  background: "rgba(255,215,0,0.1)",
+  border: "1px solid rgba(255,215,0,0.25)",
+};
+
+const stopButtonStyle: React.CSSProperties = {
+  ...buttonBase,
+  color: "var(--text-muted)",
+  background: "rgba(20,18,28,0.7)",
+  border: "1px solid rgba(224,216,200,0.1)",
+};
+
 export default function DungeonPage() {
   const { user, loading } = useUser();
   const router = useRouter();
@@ -21,6 +56,9 @@ export default function DungeonPage() {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [cycleCount, setCycleCount] = useState(0);
+
+  // Hover states for primary button
+  const [primaryHover, setPrimaryHover] = useState(false);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -51,7 +89,6 @@ export default function DungeonPage() {
         setSecondsLeft(workMinutesRef.current * 60);
       }
     } else {
-      // single mode
       if (currentPhase === "work") {
         phaseRef.current = "complete";
         setPhase("complete");
@@ -89,13 +126,8 @@ export default function DungeonPage() {
     setCycleCount(0);
   };
 
-  const handlePause = () => {
-    setIsRunning(false);
-  };
-
-  const handleResume = () => {
-    setIsRunning(true);
-  };
+  const handlePause = () => setIsRunning(false);
+  const handleResume = () => setIsRunning(true);
 
   const handleStop = () => {
     setIsRunning(false);
@@ -109,6 +141,20 @@ export default function DungeonPage() {
     const m = Math.floor(totalSeconds / 60);
     const s = totalSeconds % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const getHourglassOpacity = (): number => {
+    if (phase === "idle") return 0.4;
+    if (phase === "work") return 0.9;
+    if (phase === "break") return 0.3;
+    return 1.0; // complete
+  };
+
+  const getPhaseLabel = (): { text: string; color: string } => {
+    if (phase === "work") return { text: "Delving...", color: "var(--accent-ember)" };
+    if (phase === "break") return { text: "Resting at Campfire", color: "var(--accent-gold)" };
+    if (phase === "complete") return { text: "The Dungeon Yields", color: "var(--accent-gold)" };
+    return { text: "", color: "var(--text-muted)" };
   };
 
   useEffect(() => {
@@ -135,6 +181,8 @@ export default function DungeonPage() {
 
   if (!user) return null;
 
+  const phaseLabel = getPhaseLabel();
+
   return (
     <div
       style={{
@@ -155,8 +203,7 @@ export default function DungeonPage() {
         style={{
           position: "fixed",
           inset: 0,
-          background:
-            "linear-gradient(rgba(10,10,18,0.60), rgba(10,10,18,0.75))",
+          background: "linear-gradient(rgba(10,10,18,0.60), rgba(10,10,18,0.75))",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -199,12 +246,18 @@ export default function DungeonPage() {
             padding: "2rem 1.5rem",
           }}
         >
+          {/* Hourglass image — opacity changes with phase */}
           <Image
             src="/images/dungeon_card.webp"
             alt="Dungeon Hourglass"
             width={300}
             height={300}
-            style={{ maxHeight: "300px", objectFit: "contain", opacity: 0.6 }}
+            style={{
+              maxHeight: "300px",
+              objectFit: "contain",
+              opacity: getHourglassOpacity(),
+              transition: "opacity 0.8s ease",
+            }}
           />
 
           <h1
@@ -234,156 +287,392 @@ export default function DungeonPage() {
             Steel your mind. Forge your focus.
           </p>
 
-          {/* Timer placeholder — full UI in Task 4A-4 */}
+          {/* ── Timer UI ── */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "0.75rem",
-              color: "var(--text-primary)",
+              gap: "1.25rem",
+              width: "100%",
+              maxWidth: "420px",
             }}
           >
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <button
-                onClick={() => setMode("continuous")}
+
+            {/* ── Mode selector (idle only) ── */}
+            {phase === "idle" && (
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  onClick={() => setMode("continuous")}
+                  style={{
+                    fontFamily: "var(--font-cinzel)",
+                    textTransform: "uppercase",
+                    fontSize: "0.65rem",
+                    letterSpacing: "0.15em",
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: "2px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    color: mode === "continuous" ? "var(--accent-ember)" : "var(--text-muted)",
+                    border: mode === "continuous"
+                      ? "1px solid rgba(200,75,17,0.5)"
+                      : "1px solid var(--border-default)",
+                    background: mode === "continuous"
+                      ? "rgba(200,75,17,0.15)"
+                      : "transparent",
+                  }}
+                >
+                  Endless Delve
+                </button>
+                <button
+                  onClick={() => setMode("single")}
+                  style={{
+                    fontFamily: "var(--font-cinzel)",
+                    textTransform: "uppercase",
+                    fontSize: "0.65rem",
+                    letterSpacing: "0.15em",
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: "2px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    color: mode === "single" ? "var(--accent-ember)" : "var(--text-muted)",
+                    border: mode === "single"
+                      ? "1px solid rgba(200,75,17,0.5)"
+                      : "1px solid var(--border-default)",
+                    background: mode === "single"
+                      ? "rgba(200,75,17,0.15)"
+                      : "transparent",
+                  }}
+                >
+                  Timed Raid
+                </button>
+              </div>
+            )}
+
+            {/* ── Time configuration (idle only) ── */}
+            {phase === "idle" && mode === "continuous" && (
+              <div
                 style={{
-                  background:
-                    mode === "continuous"
-                      ? "var(--accent-ember)"
-                      : "var(--bg-elevated)",
-                  color: "var(--text-primary)",
-                  border: "none",
-                  padding: "0.4rem 0.9rem",
-                  cursor: "pointer",
+                  display: "flex",
+                  gap: "2rem",
+                  alignItems: "flex-start",
                 }}
               >
-                Continuous
-              </button>
-              <button
-                onClick={() => setMode("single")}
-                style={{
-                  background:
-                    mode === "single"
-                      ? "var(--accent-ember)"
-                      : "var(--bg-elevated)",
-                  color: "var(--text-primary)",
-                  border: "none",
-                  padding: "0.4rem 0.9rem",
-                  cursor: "pointer",
-                }}
-              >
-                Single Delve
-              </button>
-            </div>
-
-            <p style={{ fontSize: "3rem", fontFamily: "monospace", margin: 0 }}>
-              {formatTime(secondsLeft)}
-            </p>
-
-            <p style={{ color: "var(--text-secondary)", margin: 0 }}>
-              Phase: {phase}
-              {phase === "work" || phase === "break"
-                ? ` | Cycles: ${cycleCount}`
-                : ""}
-            </p>
-
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              {phase === "idle" && (
-                <button
-                  onClick={handleStart}
-                  style={{
-                    background: "var(--accent-ember)",
-                    color: "var(--text-primary)",
-                    border: "none",
-                    padding: "0.4rem 1rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Start
-                </button>
-              )}
-              {isRunning && (
-                <button
-                  onClick={handlePause}
-                  style={{
-                    background: "var(--bg-elevated)",
-                    color: "var(--text-primary)",
-                    border: "none",
-                    padding: "0.4rem 1rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Pause
-                </button>
-              )}
-              {!isRunning && phase !== "idle" && phase !== "complete" && (
-                <button
-                  onClick={handleResume}
-                  style={{
-                    background: "var(--bg-elevated)",
-                    color: "var(--text-primary)",
-                    border: "none",
-                    padding: "0.4rem 1rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Resume
-                </button>
-              )}
-              {phase !== "idle" && (
-                <button
-                  onClick={handleStop}
-                  style={{
-                    background: "var(--bg-elevated)",
-                    color: "var(--text-primary)",
-                    border: "none",
-                    padding: "0.4rem 1rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Stop
-                </button>
-              )}
-            </div>
-
-            {mode === "continuous" && phase === "idle" && (
-              <div style={{ display: "flex", gap: "1rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                <label>
-                  Work (min):
+                {/* Battle (work) input */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
+                  <label
+                    style={{
+                      fontFamily: "var(--font-crimson)",
+                      fontStyle: "italic",
+                      color: "var(--text-secondary)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Battle
+                  </label>
                   <input
                     type="number"
                     value={workMinutes}
                     min={1}
                     onChange={(e) => setWorkMinutes(Number(e.target.value))}
-                    style={{ width: "3.5rem", marginLeft: "0.4rem", background: "var(--bg-elevated)", color: "var(--text-primary)", border: "none", padding: "0.2rem" }}
+                    style={{
+                      width: "4rem",
+                      background: "var(--bg-elevated)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-default)",
+                      borderRadius: "2px",
+                      padding: "0.35rem 0.5rem",
+                      fontFamily: "var(--font-cinzel)",
+                      fontSize: "0.85rem",
+                      textAlign: "center",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent-ember)"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; }}
                   />
-                </label>
-                <label>
-                  Break (min):
+                  {/* Work presets */}
+                  <div style={{ display: "flex", gap: "0.35rem" }}>
+                    {WORK_PRESETS.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setWorkMinutes(p)}
+                        style={{
+                          fontFamily: "var(--font-cinzel)",
+                          fontSize: "0.55rem",
+                          letterSpacing: "0.1em",
+                          padding: "0.25rem 0.45rem",
+                          borderRadius: "2px",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          color: workMinutes === p ? "var(--accent-ember)" : "var(--text-muted)",
+                          border: workMinutes === p
+                            ? "1px solid rgba(200,75,17,0.5)"
+                            : "1px solid var(--border-default)",
+                          background: workMinutes === p ? "rgba(200,75,17,0.15)" : "transparent",
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Rest (break) input */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
+                  <label
+                    style={{
+                      fontFamily: "var(--font-crimson)",
+                      fontStyle: "italic",
+                      color: "var(--text-secondary)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Rest
+                  </label>
                   <input
                     type="number"
                     value={breakMinutes}
                     min={1}
                     onChange={(e) => setBreakMinutes(Number(e.target.value))}
-                    style={{ width: "3.5rem", marginLeft: "0.4rem", background: "var(--bg-elevated)", color: "var(--text-primary)", border: "none", padding: "0.2rem" }}
+                    style={{
+                      width: "4rem",
+                      background: "var(--bg-elevated)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-default)",
+                      borderRadius: "2px",
+                      padding: "0.35rem 0.5rem",
+                      fontFamily: "var(--font-cinzel)",
+                      fontSize: "0.85rem",
+                      textAlign: "center",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent-ember)"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; }}
                   />
-                </label>
+                  {/* Break presets */}
+                  <div style={{ display: "flex", gap: "0.35rem" }}>
+                    {BREAK_PRESETS.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setBreakMinutes(p)}
+                        style={{
+                          fontFamily: "var(--font-cinzel)",
+                          fontSize: "0.55rem",
+                          letterSpacing: "0.1em",
+                          padding: "0.25rem 0.45rem",
+                          borderRadius: "2px",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          color: breakMinutes === p ? "var(--accent-ember)" : "var(--text-muted)",
+                          border: breakMinutes === p
+                            ? "1px solid rgba(200,75,17,0.5)"
+                            : "1px solid var(--border-default)",
+                          background: breakMinutes === p ? "rgba(200,75,17,0.15)" : "transparent",
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {mode === "single" && phase === "idle" && (
-              <label style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                Duration (min):
+            {phase === "idle" && mode === "single" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
+                <label
+                  style={{
+                    fontFamily: "var(--font-crimson)",
+                    fontStyle: "italic",
+                    color: "var(--text-secondary)",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  Delve Duration
+                </label>
                 <input
                   type="number"
                   value={singleMinutes}
                   min={1}
                   onChange={(e) => setSingleMinutes(Number(e.target.value))}
-                  style={{ width: "3.5rem", marginLeft: "0.4rem", background: "var(--bg-elevated)", color: "var(--text-primary)", border: "none", padding: "0.2rem" }}
+                  style={{
+                    width: "4rem",
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-default)",
+                    borderRadius: "2px",
+                    padding: "0.35rem 0.5rem",
+                    fontFamily: "var(--font-cinzel)",
+                    fontSize: "0.85rem",
+                    textAlign: "center",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent-ember)"; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; }}
                 />
-              </label>
+                {/* Single mode presets */}
+                <div style={{ display: "flex", gap: "0.35rem" }}>
+                  {WORK_PRESETS.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setSingleMinutes(p)}
+                      style={{
+                        fontFamily: "var(--font-cinzel)",
+                        fontSize: "0.55rem",
+                        letterSpacing: "0.1em",
+                        padding: "0.25rem 0.45rem",
+                        borderRadius: "2px",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                        color: singleMinutes === p ? "var(--accent-ember)" : "var(--text-muted)",
+                        border: singleMinutes === p
+                          ? "1px solid rgba(200,75,17,0.5)"
+                          : "1px solid var(--border-default)",
+                        background: singleMinutes === p ? "rgba(200,75,17,0.15)" : "transparent",
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
+
+            {/* ── Timer display (non-idle phases) ── */}
+            {phase !== "idle" && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <p
+                  className={isRunning ? "dungeon-pulse" : ""}
+                  style={{
+                    fontFamily: "var(--font-cinzel)",
+                    fontSize: "4rem",
+                    color: "var(--text-primary)",
+                    letterSpacing: "0.1em",
+                    margin: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  {formatTime(secondsLeft)}
+                </p>
+
+                <p
+                  style={{
+                    fontFamily: "var(--font-cinzel)",
+                    fontSize: "0.7rem",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: phaseLabel.color,
+                    margin: 0,
+                  }}
+                >
+                  {phaseLabel.text}
+                </p>
+
+                {mode === "continuous" && cycleCount > 0 && (
+                  <p
+                    style={{
+                      color: "var(--text-muted)",
+                      fontSize: "0.7rem",
+                      fontFamily: "var(--font-cinzel)",
+                      letterSpacing: "0.1em",
+                      margin: 0,
+                    }}
+                  >
+                    Cycle {cycleCount}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ── Control buttons ── */}
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
+              {/* Idle: Venture Forth */}
+              {phase === "idle" && (
+                <button
+                  onClick={handleStart}
+                  onMouseEnter={() => setPrimaryHover(true)}
+                  onMouseLeave={() => setPrimaryHover(false)}
+                  style={{
+                    ...primaryButtonStyle,
+                    ...(primaryHover
+                      ? {
+                          background: "rgba(200,75,17,0.28)",
+                          borderColor: "rgba(200,75,17,0.7)",
+                          boxShadow: "0 0 12px rgba(200,75,17,0.3)",
+                        }
+                      : {}),
+                  }}
+                >
+                  Venture Forth
+                </button>
+              )}
+
+              {/* Running: Hold Position + Retreat */}
+              {isRunning && (
+                <>
+                  <button onClick={handlePause} style={pauseButtonStyle}>
+                    Hold Position
+                  </button>
+                  <button onClick={handleStop} style={stopButtonStyle}>
+                    Retreat
+                  </button>
+                </>
+              )}
+
+              {/* Paused: Press Onward + Retreat */}
+              {!isRunning && phase !== "idle" && phase !== "complete" && (
+                <>
+                  <button
+                    onClick={handleResume}
+                    onMouseEnter={() => setPrimaryHover(true)}
+                    onMouseLeave={() => setPrimaryHover(false)}
+                    style={{
+                      ...primaryButtonStyle,
+                      ...(primaryHover
+                        ? {
+                            background: "rgba(200,75,17,0.28)",
+                            borderColor: "rgba(200,75,17,0.7)",
+                            boxShadow: "0 0 12px rgba(200,75,17,0.3)",
+                          }
+                        : {}),
+                    }}
+                  >
+                    Press Onward
+                  </button>
+                  <button onClick={handleStop} style={stopButtonStyle}>
+                    Retreat
+                  </button>
+                </>
+              )}
+
+              {/* Complete: Delve Again */}
+              {phase === "complete" && (
+                <button
+                  onClick={handleStop}
+                  onMouseEnter={() => setPrimaryHover(true)}
+                  onMouseLeave={() => setPrimaryHover(false)}
+                  style={{
+                    ...primaryButtonStyle,
+                    ...(primaryHover
+                      ? {
+                          background: "rgba(200,75,17,0.28)",
+                          borderColor: "rgba(200,75,17,0.7)",
+                          boxShadow: "0 0 12px rgba(200,75,17,0.3)",
+                        }
+                      : {}),
+                  }}
+                >
+                  Delve Again
+                </button>
+              )}
+            </div>
           </div>
         </main>
       </div>
