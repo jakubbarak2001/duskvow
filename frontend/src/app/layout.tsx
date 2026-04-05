@@ -26,6 +26,18 @@ const crimsonPro = Crimson_Pro({
 export const metadata: Metadata = {
   title: "Duskvow — Forge Your Path",
   description: "AI-powered RPG skill trees for real-world self-improvement. Turn your goals into epic talent trees.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
+  appleWebApp: {
+    title: "Duskvow",
+  },
 };
 
 export default function RootLayout({

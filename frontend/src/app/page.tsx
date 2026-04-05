@@ -43,7 +43,7 @@ export default function LandingPage() {
           <button onClick={scrollToTop} className="lp-nav-logo">
             Dusk<span>vow</span>
           </button>
-          <a href="#vow" className="lp-nav-cta">Make Your Vow</a>
+          <Link href="/auth" className="lp-nav-cta">Make Your Vow</Link>
         </nav>
 
         {/* Hero */}
