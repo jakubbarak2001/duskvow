@@ -65,14 +65,6 @@ export interface FollowUpQuestionsResponse {
   questions: FollowUpQuestion[];
 }
 
-export interface GenerateTreeRequest {
-  goal_prompt: string;
-}
-
-export interface FollowUpRequest {
-  session_id: string;
-  answers: Record<string, string>;
-}
 
 export interface TreeGenerationResult {
   tree: TalentTree;

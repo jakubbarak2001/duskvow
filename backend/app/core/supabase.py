@@ -123,7 +123,10 @@ async def upsert_profile(user_id: str, data: dict[str, Any]) -> dict[str, Any]:
 
 
 async def add_xp_to_profile(user_id: str, xp: int) -> int:
-    """Add XP to a user's profile, returning the new total.
+    """Add XP to a user's profile atomically, returning the new total.
+
+    Uses a direct SQL increment (total_xp + N) to avoid the read-modify-write
+    race condition where two concurrent completions could clobber each other's XP.
 
     Args:
         user_id: Authenticated user's UUID.
@@ -132,16 +135,15 @@ async def add_xp_to_profile(user_id: str, xp: int) -> int:
     Returns:
         New total_xp value.
     """
-    profile = await get_profile(user_id)
-    new_total = (profile["total_xp"] if profile else 0) + xp
-    await upsert_profile(
-        user_id,
-        {
-            "total_xp": new_total,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        },
-    )
-    return new_total
+    async with httpx.AsyncClient() as client:
+        res = await client.post(
+            f"{settings.supabase_url}/rest/v1/rpc/increment_profile_xp",
+            headers=_SERVICE_HEADERS,
+            json={"p_user_id": user_id, "p_xp": xp},
+        )
+        res.raise_for_status()
+        result = res.json()
+        return result if isinstance(result, int) else (result or 0)
 
 
 async def update_streak(user_id: str) -> None:
@@ -253,7 +255,11 @@ async def get_daily_generation_count(user_id: str) -> int:
 
 
 async def increment_daily_generation(user_id: str) -> int:
-    """Increment today's generation count, upserting the row if needed.
+    """Atomically increment today's generation count, returning the new value.
+
+    Delegates to a Postgres function that does the upsert + increment in a
+    single statement, preventing the TOCTOU race where two concurrent requests
+    both read count=0 and both insert a new row (count=1 each).
 
     Args:
         user_id: Authenticated user's UUID.
@@ -261,26 +267,15 @@ async def increment_daily_generation(user_id: str) -> int:
     Returns:
         New count after increment.
     """
-    today = date.today().isoformat()
-    rows = await _get(
-        "daily_tree_generations",
-        {"user_id": f"eq.{user_id}", "generation_date": f"eq.{today}", "select": "*"},
-    )
-    if rows:
-        existing = rows[0]
-        new_count = existing["count"] + 1
-        await _patch(
-            "daily_tree_generations",
-            {"id": f"eq.{existing['id']}"},
-            {"count": new_count},
+    async with httpx.AsyncClient() as client:
+        res = await client.post(
+            f"{settings.supabase_url}/rest/v1/rpc/increment_daily_generation",
+            headers=_SERVICE_HEADERS,
+            json={"p_user_id": user_id, "p_date": date.today().isoformat()},
         )
-        return new_count
-    else:
-        await _insert_one(
-            "daily_tree_generations",
-            {"user_id": user_id, "generation_date": today, "count": 1},
-        )
-        return 1
+        res.raise_for_status()
+        result = res.json()
+        return result if isinstance(result, int) else 1
 
 
 async def count_active_trees(user_id: str) -> int:

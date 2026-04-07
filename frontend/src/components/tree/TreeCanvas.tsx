@@ -10,6 +10,7 @@ import {
   type NodeTypes,
   type EdgeTypes,
 } from "@xyflow/react";
+import { useMemo } from "react";
 import "@xyflow/react/dist/style.css";
 
 import { SkillNodeComponent } from "@/components/tree/SkillNodeComponent";
@@ -88,11 +89,14 @@ interface TreeCanvasProps {
 }
 
 export function TreeCanvas({ nodes, onNodeClick, selectedNodeId }: TreeCanvasProps) {
-  const flowNodes = toFlowNodes(nodes).map((n) => ({
-    ...n,
-    selected: n.id === selectedNodeId,
-  }));
-  const flowEdges = toFlowEdges(nodes);
+  // Memoize layout computation — Dagre is expensive and only needs to rerun
+  // when node data changes, not on every render (e.g. selectedNodeId changes).
+  const baseFlowNodes = useMemo(() => toFlowNodes(nodes), [nodes]);
+  const flowEdges = useMemo(() => toFlowEdges(nodes), [nodes]);
+  const flowNodes = useMemo(
+    () => baseFlowNodes.map((n) => ({ ...n, selected: n.id === selectedNodeId })),
+    [baseFlowNodes, selectedNodeId],
+  );
 
   return (
     <ReactFlow

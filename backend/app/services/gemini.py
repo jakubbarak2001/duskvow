@@ -8,12 +8,84 @@ from pathlib import Path
 from google import genai
 from google.genai import types
 from fastapi import HTTPException, status
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
 
 _PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
-_jinja = Environment(loader=FileSystemLoader(str(_PROMPTS_DIR)), autoescape=False)
+# ---------------------------------------------------------------------------
+# AI response validation schemas
+# ---------------------------------------------------------------------------
+
+class _AIFollowUpQuestion(BaseModel):
+    id: str
+    text: str
+    options: list[str]
+
+
+class _AIFollowUpResponse(BaseModel):
+    questions: list[_AIFollowUpQuestion]
+
+
+class _AINodePosition(BaseModel):
+    x: float = 0.0
+    y: float = 0.0
+
+
+class _AINode(BaseModel):
+    id: str
+    title: str
+    description: str
+    type: str = "action"
+    tier: str = "common"
+    prerequisites: list[str] = []
+    optional: bool = False
+    xp_reward: int = 10
+    estimated_time: str | None = None
+    position: _AINodePosition = _AINodePosition()
+
+
+class _AIEdge(BaseModel):
+    source: str = ""
+    target: str = ""
+
+
+class _AITreeResponse(BaseModel):
+    title: str
+    description: str
+    nodes: list[_AINode]
+    edges: list[_AIEdge] = []
+
+
+def _validate_followup(data: dict) -> dict:
+    """Validate AI follow-up response against schema."""
+    try:
+        return _AIFollowUpResponse.model_validate(data).model_dump()
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI returned unexpected structure: {exc}",
+        )
+
+
+def _validate_tree(data: dict) -> dict:
+    """Validate AI tree response against schema."""
+    try:
+        return _AITreeResponse.model_validate(data).model_dump()
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI returned unexpected structure: {exc}",
+        )
+
+
+# ---------------------------------------------------------------------------
+
+_jinja = Environment(
+    loader=FileSystemLoader(str(_PROMPTS_DIR)),
+    autoescape=select_autoescape(["html", "xml"]),
+)
 
 
 def _parse_json(text: str) -> dict:
@@ -104,7 +176,8 @@ class GeminiService:
         """
         tmpl = _jinja.get_template("followup_questions.txt")
         prompt = tmpl.render(goal_prompt=goal_prompt)
-        return await self._call(settings.gemini_model_fast, self._fast_config, prompt)
+        raw = await self._call(settings.gemini_model_fast, self._fast_config, prompt)
+        return _validate_followup(raw)
 
     async def generate_tree(
         self,
@@ -122,7 +195,8 @@ class GeminiService:
         """
         tmpl = _jinja.get_template("generate_tree.txt")
         prompt = tmpl.render(goal_prompt=goal_prompt, answers=answers)
-        return await self._call(settings.gemini_model_quality, self._quality_config, prompt)
+        raw = await self._call(settings.gemini_model_quality, self._quality_config, prompt)
+        return _validate_tree(raw)
 
 
 gemini_service = GeminiService()
