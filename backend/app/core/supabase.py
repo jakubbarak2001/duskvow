@@ -147,43 +147,22 @@ async def add_xp_to_profile(user_id: str, xp: int) -> int:
 
 
 async def update_streak(user_id: str) -> None:
-    """Update current_streak and longest_streak based on today's activity.
+    """Update current_streak and longest_streak atomically via Postgres RPC.
 
-    Increments streak if last activity was yesterday; resets to 1 if the
-    streak was broken; does nothing if already active today.
+    Delegates to update_streak_atomic() which does the read + conditional
+    increment in a single transaction, preventing two concurrent completions
+    from clobbering each other's streak.
 
     Args:
         user_id: Authenticated user's UUID.
     """
-    profile = await get_profile(user_id)
-    if not profile:
-        return
-
-    today = date.today()
-    last_str: str | None = profile.get("last_activity_date")
-    current: int = profile.get("current_streak", 0)
-    longest: int = profile.get("longest_streak", 0)
-
-    if last_str is None:
-        new_streak = 1
-    else:
-        last = date.fromisoformat(last_str)
-        if last == today:
-            return  # already recorded today
-        elif last == today - timedelta(days=1):
-            new_streak = current + 1
-        else:
-            new_streak = 1
-
-    await upsert_profile(
-        user_id,
-        {
-            "current_streak": new_streak,
-            "longest_streak": max(longest, new_streak),
-            "last_activity_date": today.isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        },
-    )
+    async with httpx.AsyncClient() as client:
+        res = await client.post(
+            f"{settings.supabase_url}/rest/v1/rpc/update_streak_atomic",
+            headers=_SERVICE_HEADERS,
+            json={"p_user_id": user_id},
+        )
+        res.raise_for_status()
 
 
 # ---------------------------------------------------------------------------
@@ -537,6 +516,21 @@ async def update_node(node_id: str, data: dict[str, Any]) -> dict[str, Any]:
     """
     rows = await _patch("skill_nodes", {"id": f"eq.{node_id}"}, data)
     return rows[0]
+
+
+async def batch_update_nodes_state(node_ids: list[str], state: str) -> None:
+    """Update multiple skill nodes to the same state in a single query.
+
+    Uses PostgREST's `id=in.(id1,id2,...)` filter to avoid N individual UPDATEs.
+
+    Args:
+        node_ids: List of node UUIDs to update.
+        state: New state value for all nodes.
+    """
+    if not node_ids:
+        return
+    id_list = f"in.({','.join(node_ids)})"
+    await _patch("skill_nodes", {"id": id_list}, {"state": state})
 
 
 # ---------------------------------------------------------------------------

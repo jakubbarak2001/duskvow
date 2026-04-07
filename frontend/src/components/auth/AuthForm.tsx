@@ -65,7 +65,7 @@ export function AuthForm() {
             colors: {
               brand: "#C84B11",
               brandAccent: "#a03a28",
-              brandButtonText: "#ffffff",
+              brandButtonText: "#E0D8C8",
               defaultButtonBackground: "#242430",
               defaultButtonBackgroundHover: "#2E2E3A",
               defaultButtonBorder: "rgba(224, 216, 200, 0.1)",

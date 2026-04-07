@@ -103,15 +103,18 @@ async def complete_node(
     all_nodes = await supa.get_all_tree_nodes(node["tree_id"])
     node_map = {n["id"]: n for n in all_nodes}
 
-    # Unlock any node whose all prerequisites are now completed
-    for n in all_nodes:
-        if n["state"] == "locked" and node_id in (n.get("prerequisites") or []):
-            all_prereqs_done = all(
-                node_map.get(p, {}).get("state") == "completed"
-                for p in (n.get("prerequisites") or [])
-            )
-            if all_prereqs_done:
-                await supa.update_node(n["id"], {"state": "available"})
+    # Collect all nodes to unlock, then batch in a single UPDATE
+    to_unlock = [
+        n["id"]
+        for n in all_nodes
+        if n["state"] == "locked"
+        and node_id in (n.get("prerequisites") or [])
+        and all(
+            node_map.get(p, {}).get("state") == "completed"
+            for p in (n.get("prerequisites") or [])
+        )
+    ]
+    await supa.batch_update_nodes_state(to_unlock, "available")
 
     # Recompute counters from live node data — avoids the stale-read race where
     # two concurrent completions each read the same old tree["earned_xp"] and

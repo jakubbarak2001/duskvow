@@ -327,7 +327,7 @@ const landingStyles = `
   .lp-nav-cta:hover {
     background: var(--ember);
     border-color: var(--ember);
-    color: #fff;
+    color: var(--text);
     box-shadow: 0 0 30px rgba(196, 85, 58, 0.3);
   }
 
@@ -459,7 +459,7 @@ const landingStyles = `
     font-weight: 600;
     letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--text);
     background: linear-gradient(135deg, var(--ember), #a03a28);
     border: none;
     padding: 1.1rem 3.5rem;
