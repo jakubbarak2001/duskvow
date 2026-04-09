@@ -1,12 +1,7 @@
-"use client";
-
 import Link from "next/link";
+import ScrollToTopLogo from "@/components/ScrollToTopLogo";
 
 export default function LandingPage() {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
     <>
       <style>{landingStyles}</style>
@@ -40,9 +35,7 @@ export default function LandingPage() {
 
         {/* Navigation */}
         <nav className="lp-nav">
-          <button onClick={scrollToTop} className="lp-nav-logo">
-            Dusk<span>vow</span>
-          </button>
+          <ScrollToTopLogo />
           <Link href="/auth" className="lp-nav-cta">Make Your Vow</Link>
         </nav>
 
