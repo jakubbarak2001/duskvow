@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
+import { HeroNamingModal } from "@/components/ui/HeroNamingModal";
 import type { UserProfile } from "@/types";
 
 
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [showNaming, setShowNaming] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -35,8 +37,12 @@ export default function DashboardPage() {
       api.getProfile(token),
       api.listTrees(token),
     ]).then(([profileResult, treesResult]) => {
-      if (profileResult.status === "fulfilled" && profileResult.value.data)
+      if (profileResult.status === "fulfilled" && profileResult.value.data) {
         setProfile(profileResult.value.data);
+        if (!profileResult.value.data.hero_name) {
+          setShowNaming(true);
+        }
+      }
       if (treesResult.status === "fulfilled" && treesResult.value.data) {
         const activeTrees = treesResult.value.data.filter(
           (t: { status: string; earned_xp: number }) => t.status === "active"
@@ -53,6 +59,18 @@ export default function DashboardPage() {
     });
   }, [session]);
 
+  const handleNamingSubmit = async (heroName: string) => {
+    if (!session?.access_token) return;
+    const res = await api.updateProfile(heroName, session.access_token);
+    if (res.error) {
+      throw new Error(res.error.message);
+    }
+    if (res.data) {
+      setProfile(res.data);
+    }
+    setShowNaming(false);
+  };
+
   const handleLockedClick = (doorKey: string) => {
     setShakingDoor(doorKey);
     setTimeout(() => setShakingDoor(null), 500);
@@ -67,23 +85,73 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading || (!user && loading)) {
+  if (loading || dataLoading || (!user && loading)) {
     return (
       <div
         style={{
           minHeight: "100vh",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "var(--bg-abyss)",
+          gap: "1.2rem",
         }}
       >
-        <p style={{ color: "var(--text-muted)" }}>Loading…</p>
+        {/* Radial glow */}
+        <div
+          style={{
+            position: "absolute",
+            width: "400px",
+            height: "400px",
+            background: "radial-gradient(ellipse at center, rgba(200,75,17,0.06) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            fontFamily: "var(--font-heading)",
+            fontSize: "1.4rem",
+            fontWeight: 700,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+          }}
+        >
+          <span style={{ color: "var(--text-primary)" }}>Dusk</span>
+          <span style={{ color: "var(--accent-ember)" }}>vow</span>
+        </div>
+        <div
+          className="dungeon-pulse"
+          style={{
+            fontFamily: "var(--font-heading)",
+            fontSize: "0.55rem",
+            letterSpacing: "0.35em",
+            textTransform: "uppercase",
+            color: "var(--text-muted)",
+          }}
+        >
+          Entering the sanctum
+        </div>
       </div>
     );
   }
 
   if (!user) return null;
+
+  // Gate: show naming modal on a clean background before rendering the hub
+  if (showNaming) {
+    return (
+      <div
+        style={{
+          backgroundColor: "var(--bg-abyss)",
+          minHeight: "100vh",
+          position: "relative",
+        }}
+      >
+        <HeroNamingModal onSubmit={handleNamingSubmit} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -155,7 +223,7 @@ export default function DashboardPage() {
           <span style={{ color: "var(--logo-ember)" }}>vow</span>
         </Link>
 
-        {/* Compact XP + Streak */}
+        {/* Hero Level + Streak */}
         {!dataLoading && profile && (
           <div
             style={{
@@ -164,6 +232,47 @@ export default function DashboardPage() {
               gap: "1.5rem",
             }}
           >
+            {/* Hero name (if set) */}
+            {profile.hero_name && (
+              <>
+                <div style={{ textAlign: "center" }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      letterSpacing: "0.1em",
+                      display: "block",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {profile.hero_name}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      fontSize: "0.5rem",
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    {profile.hero_title}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    width: "1px",
+                    height: "2rem",
+                    backgroundColor: "rgba(224,216,200,0.1)",
+                  }}
+                />
+              </>
+            )}
+
+            {/* Level */}
             <div style={{ textAlign: "center" }}>
               <span
                 style={{
@@ -177,7 +286,7 @@ export default function DashboardPage() {
                   lineHeight: 1,
                 }}
               >
-                {profile.total_xp.toLocaleString()}
+                Lv.{profile.hero_level}
               </span>
               <span
                 style={{
@@ -188,7 +297,7 @@ export default function DashboardPage() {
                   color: "var(--text-muted)",
                 }}
               >
-                XP
+                Level
               </span>
             </div>
 
@@ -200,6 +309,7 @@ export default function DashboardPage() {
               }}
             />
 
+            {/* Streak */}
             <div style={{ textAlign: "center" }}>
               <span
                 style={{
@@ -360,6 +470,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
     </div>
   );
 }

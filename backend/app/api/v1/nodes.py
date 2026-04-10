@@ -1,5 +1,6 @@
 """Node API routes — manage skill node states and award XP."""
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
@@ -124,17 +125,23 @@ async def complete_node(
     new_status = "completed" if completed_count >= tree["total_nodes"] else "active"
     await supa.update_tree_progress(node["tree_id"], completed_count, earned_xp, new_status)
 
-    # Award XP and update streak
-    new_total_xp = await supa.add_xp_to_profile(user_id, node["xp_reward"])
-    await supa.record_daily_activity(user_id, 1, node["xp_reward"])
-    await supa.update_streak(user_id)
+    # Award XP, record activity, and update streak in parallel
+    xp_result, _, _ = await asyncio.gather(
+        supa.add_xp_to_profile(user_id, node["xp_reward"]),
+        supa.record_daily_activity(user_id, 1, node["xp_reward"]),
+        supa.update_streak(user_id),
+    )
 
     return {
         "data": {
             "node_id": node_id,
             "new_state": "completed",
             "xp_earned": node["xp_reward"],
-            "total_xp": new_total_xp,
+            "total_xp": xp_result.get("new_total_xp", 0),
+            "leveled_up": xp_result.get("leveled_up", False),
+            "new_level": xp_result.get("new_level", 1),
+            "previous_level": xp_result.get("previous_level", 1),
+            "new_title": xp_result.get("new_title", "Wanderer"),
         },
         "error": None,
     }

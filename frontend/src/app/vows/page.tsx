@@ -260,6 +260,8 @@ export default function VowChamberPage() {
               <StatsBar
                 totalXp={profile.total_xp}
                 currentStreak={profile.current_streak}
+                heroLevel={profile.hero_level}
+                heroTitle={profile.hero_title}
               />
             </div>
           )}

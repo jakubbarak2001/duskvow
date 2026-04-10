@@ -42,12 +42,26 @@ export interface TalentTree {
 export interface UserProfile {
   id: string;
   display_name: string | null;
+  hero_name: string | null;
+  hero_level: number;
+  hero_title: string;
   total_xp: number;
   current_streak: number;
   longest_streak: number;
   last_activity_date: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface NodeCompletionResult {
+  node_id: string;
+  new_state: string;
+  xp_earned: number;
+  total_xp: number;
+  leveled_up: boolean;
+  new_level: number;
+  previous_level: number;
+  new_title: string;
 }
 
 // ============================================================

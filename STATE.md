@@ -130,6 +130,12 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 - [x] **Hub page** — `/dashboard` rewritten as atmospheric hub: three door cards (Vow Chamber unlocked → `/vows`, Dungeon locked, Hearth unlocked → `/hearth`), custom hub header (logo + compact XP/Streak stats + sign-out), ember particles, central radial glow, noise overlay, responsive mobile stack
 - [x] **Hearth (`/hearth`)** — Atmospheric sanctum page: "The Hearth" Cinzel heading, "← Return to Hub" link, Navbar, `<Brazier>` with real user embers (API connected), `<AddEmberForm>` below, "coming soon" banner for trophy room/customization, auth guard, warmer dual-glow atmosphere (ember radial from top + firelight from bottom), 8 ember particles
 - [x] **Database** — Supabase PostgreSQL with profiles, talent_trees, skill_nodes, daily_activity tables, all with RLS
+- [x] **Hero & Level System** — hero_name, hero_level, hero_title on profiles. Level computed from XP via `compute_level_from_xp()`. Titles progress: Wanderer → Oath-Bound → Ironsworn → Flamewarden → Duskwalker → Shadowforged → Mythbreaker → Vow Eternal. Level-up detected atomically in `increment_profile_xp` RPC (returns JSONB with leveled_up flag). Node completion response includes level-up data.
+- [x] **Level-Up Modal** — Full-screen overlay with gold Cinzel level number, title change display, ember glow, and Continue button. Triggered in TreeViewPage when node completion returns `leveled_up: true`.
+- [x] **Hero Naming Flow** — HeroNamingModal shown on first dashboard visit when hero_name is null. Input validated (letters/spaces/hyphens, 1-30 chars). Saves via PATCH /api/v1/profile.
+- [x] **Dashboard Level Badge** — Hub header shows hero name + title + Lv.N instead of raw XP.
+- [x] **StatsBar Level-Centric** — Shows hero level + title + XP progress to next level instead of arbitrary XP milestones.
+- [x] **Dungeon Timer** — Pomodoro focus timer page with dark fantasy theming, continuous/single modes, work/break phases. Functional but no rewards/integration yet.
 
 ### What's Broken / Known Issues
 - [ ] **Tree UI quality inconsistency** — AI-generated trees sometimes produce ugly layouts despite Dagre. Node spacing can be too tight with 25+ nodes. Needs investigation into Dagre `nodesep`/`ranksep` tuning.
@@ -139,14 +145,32 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 - [ ] **No error boundaries** — CLAUDE.md specifies them but none are implemented. React Flow crashes can take down the whole page.
 
 ### What's Next (Priority Order)
-1. **Sprint 4A — The Dungeon** — Pomodoro focus timer page with dark fantasy RPG theming (5 tasks queued in TASKS.md)
-2. **Visual polish on tree view** — Node completion particle burst, better node spacing, edge animation improvements
-3. **Error boundaries** — Wrap TreeCanvas and major sections
-4. **Landing page → App style consistency** — Dashboard and tree pages should feel as crafted as the landing page
-5. **Streak tracking validation** — Verify daily_activity updates correctly on node completion
+1. **Sprint B — Daily Quests** — AI-generated recurring daily tasks per tree, dashboard integration, tree view quest log overlay (6 tasks queued in TASKS.md)
+2. **Sprint C — Dungeon AFK Combat Overhaul** — Template-based combat sim, battle reports, loot drops, XP awards, hero stats integration
+3. **Sprint D — Hearth Page + Ember Economy** — Loot inventory, Ember spend mechanics, Vow completion ceremony
+4. **Visual polish on tree view** — Node completion particle burst, better node spacing, edge animation improvements
+5. **DB Migration** — Push `20260410_hero_level_system.sql` to remote Supabase via `npx supabase db push`
 
 ### File Change Log (Last 3 Sessions)
 > Update this with what you changed each session.
+
+**Session: 2026-04-10 (Sprint A — Hero & Level System)**
+- `supabase/migrations/20260410_hero_level_system.sql` — New migration: hero_name, hero_level, hero_title columns, compute_level_from_xp() and title_for_level() functions, modified increment_profile_xp to return JSONB with level-up detection, backfill query
+- `backend/app/schemas/profile.py` — NEW: ProfileUpdateRequest schema for PATCH /profile
+- `backend/app/api/v1/profile.py` — Added PATCH endpoint for hero_name update
+- `backend/app/core/supabase.py` — add_xp_to_profile now returns dict (JSONB) instead of int
+- `backend/app/api/v1/nodes.py` — complete_node response now includes leveled_up, new_level, previous_level, new_title
+- `frontend/src/types/index.ts` — Extended UserProfile with hero fields, added NodeCompletionResult interface
+- `frontend/src/lib/api.ts` — Added updateProfile method, updated completeNode return type
+- `frontend/src/stores/userStore.ts` — Added setHeroName, setLevel actions
+- `frontend/src/components/ui/StatsBar.tsx` — Redesigned: level-centric display with real XP→level thresholds
+- `frontend/src/components/ui/LevelUpModal.tsx` — NEW: full-screen level-up celebration overlay
+- `frontend/src/components/ui/HeroNamingModal.tsx` — NEW: hero naming flow modal
+- `frontend/src/components/tree/NodeDetailPanel.tsx` — Added onLevelUp callback, LevelUpEvent type
+- `frontend/src/components/tree/TreeViewPage.tsx` — Integrated level-up modal + hero level state + titleForLevel helper
+- `frontend/src/app/dashboard/page.tsx` — Hero name + level badge in header, HeroNamingModal integration
+- `frontend/src/app/vows/page.tsx` — StatsBar now receives heroLevel/heroTitle props
+- `TASKS.md` — Sprint A tasks all DONE, Sprint B fully specced (6 tasks)
 
 **Session: 2026-04-05 (Branding & Dungeon Sprint Planning)**
 - `frontend/src/app/page.tsx` — Changed "Make Your Vow" navbar CTA from `<a href="#vow">` to `<Link href="/auth">` for direct auth redirect.

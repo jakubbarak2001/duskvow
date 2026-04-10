@@ -10,7 +10,20 @@ import { TreeCanvas } from "@/components/tree/TreeCanvas";
 import { NodeDetailPanel } from "@/components/tree/NodeDetailPanel";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { api } from "@/lib/api";
+import type { LevelUpEvent } from "@/components/tree/NodeDetailPanel";
+import { LevelUpModal } from "@/components/ui/LevelUpModal";
 import type { SkillNode, TalentTree } from "@/types";
+
+function titleForLevel(level: number): string {
+  if (level >= 50) return "Vow Eternal";
+  if (level >= 40) return "Mythbreaker";
+  if (level >= 30) return "Shadowforged";
+  if (level >= 20) return "Duskwalker";
+  if (level >= 15) return "Flamewarden";
+  if (level >= 10) return "Ironsworn";
+  if (level >= 5) return "Oath-Bound";
+  return "Wanderer";
+}
 
 export function TreeViewPage() {
   const params = useParams<{ id: string }>();
@@ -27,6 +40,10 @@ export function TreeViewPage() {
 
   const [loadingTree, setLoadingTree] = useState(true);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [heroLevel, setHeroLevel] = useState(1);
+  const [heroTitle, setHeroTitle] = useState("Wanderer");
+  const [profileTotalXp, setProfileTotalXp] = useState(0);
+  const [levelUpEvent, setLevelUpEvent] = useState<LevelUpEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Auth guard
@@ -54,6 +71,9 @@ export function TreeViewPage() {
       }
       if (profileResult.status === "fulfilled" && profileResult.value.data) {
         setCurrentStreak(profileResult.value.data.current_streak);
+        setHeroLevel(profileResult.value.data.hero_level);
+        setHeroTitle(profileResult.value.data.hero_title);
+        setProfileTotalXp(profileResult.value.data.total_xp);
       }
       setLoadingTree(false);
     });
@@ -105,6 +125,16 @@ export function TreeViewPage() {
     },
     [updateNodeState, setSelectedNode, selectedNode, activeTree, incrementCompleted, decrementCompleted],
   );
+
+  const handleXpEarned = useCallback((xp: number) => {
+    setProfileTotalXp((prev) => prev + xp);
+  }, []);
+
+  const handleLevelUp = useCallback((event: LevelUpEvent) => {
+    setLevelUpEvent(event);
+    setHeroLevel(event.newLevel);
+    setHeroTitle(event.newTitle);
+  }, []);
 
   if (authLoading || (!user && authLoading)) {
     return (
@@ -159,8 +189,10 @@ export function TreeViewPage() {
 
         {tree && (
           <StatsBar
-            totalXp={tree.earned_xp}
+            totalXp={profileTotalXp}
             currentStreak={currentStreak}
+            heroLevel={heroLevel}
+            heroTitle={heroTitle}
             nodesCompleted={tree.completed_nodes}
             totalNodes={tree.total_nodes}
           />
@@ -196,8 +228,19 @@ export function TreeViewPage() {
                 node={selectedNode}
                 token={session.access_token}
                 onNodeUpdate={handleNodeUpdate}
-                onXpEarned={() => {}}
+                onXpEarned={(xp) => handleXpEarned(xp)}
+                onLevelUp={handleLevelUp}
                 onClose={() => setSelectedNode(null)}
+              />
+            )}
+
+            {levelUpEvent && (
+              <LevelUpModal
+                level={levelUpEvent.newLevel}
+                title={levelUpEvent.newTitle}
+                previousTitle={titleForLevel(levelUpEvent.previousLevel)}
+                xpEarned={levelUpEvent.xpEarned}
+                onClose={() => setLevelUpEvent(null)}
               />
             )}
           </>

@@ -19,6 +19,9 @@ _SERVICE_HEADERS: dict[str, str] = {
     "Prefer": "return=representation",
 }
 
+# Shared HTTP client — reuses TCP connections instead of opening a new one per call.
+_client = httpx.AsyncClient(timeout=30.0)
+
 
 def _url(table: str) -> str:
     """PostgREST table endpoint URL."""
@@ -31,26 +34,23 @@ def _url(table: str) -> str:
 
 async def _get(table: str, params: dict[str, str]) -> list[dict[str, Any]]:
     """SELECT rows matching params."""
-    async with httpx.AsyncClient() as client:
-        res = await client.get(_url(table), headers=_SERVICE_HEADERS, params=params)
-        res.raise_for_status()
-        return res.json()
+    res = await _client.get(_url(table), headers=_SERVICE_HEADERS, params=params)
+    res.raise_for_status()
+    return res.json()
 
 
 async def _insert_one(table: str, data: dict[str, Any]) -> dict[str, Any]:
     """INSERT one row, returning it."""
-    async with httpx.AsyncClient() as client:
-        res = await client.post(_url(table), headers=_SERVICE_HEADERS, json=data)
-        res.raise_for_status()
-        return res.json()[0]
+    res = await _client.post(_url(table), headers=_SERVICE_HEADERS, json=data)
+    res.raise_for_status()
+    return res.json()[0]
 
 
 async def _bulk_insert(table: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """INSERT multiple rows, returning them all."""
-    async with httpx.AsyncClient() as client:
-        res = await client.post(_url(table), headers=_SERVICE_HEADERS, json=rows)
-        res.raise_for_status()
-        return res.json()
+    res = await _client.post(_url(table), headers=_SERVICE_HEADERS, json=rows)
+    res.raise_for_status()
+    return res.json()
 
 
 async def _patch(
@@ -59,26 +59,24 @@ async def _patch(
     data: dict[str, Any],
 ) -> list[dict[str, Any]]:
     """UPDATE rows matching params, returning updated rows."""
-    async with httpx.AsyncClient() as client:
-        res = await client.patch(
-            _url(table),
-            headers=_SERVICE_HEADERS,
-            params=params,
-            json=data,
-        )
-        res.raise_for_status()
-        return res.json()
+    res = await _client.patch(
+        _url(table),
+        headers=_SERVICE_HEADERS,
+        params=params,
+        json=data,
+    )
+    res.raise_for_status()
+    return res.json()
 
 
 async def _delete(table: str, params: dict[str, str]) -> None:
     """DELETE rows matching params."""
-    async with httpx.AsyncClient() as client:
-        res = await client.delete(
-            _url(table),
-            headers={**_SERVICE_HEADERS, "Prefer": "return=minimal"},
-            params=params,
-        )
-        res.raise_for_status()
+    res = await _client.delete(
+        _url(table),
+        headers={**_SERVICE_HEADERS, "Prefer": "return=minimal"},
+        params=params,
+    )
+    res.raise_for_status()
 
 
 # ---------------------------------------------------------------------------
@@ -109,41 +107,50 @@ async def upsert_profile(user_id: str, data: dict[str, Any]) -> dict[str, Any]:
         The upserted profile dict.
     """
     payload = {"id": user_id, **data}
-    async with httpx.AsyncClient() as client:
-        res = await client.post(
-            _url("profiles"),
-            headers={
-                **_SERVICE_HEADERS,
-                "Prefer": "return=representation,resolution=merge-duplicates",
-            },
-            json=payload,
-        )
-        res.raise_for_status()
-        return res.json()[0]
+    res = await _client.post(
+        _url("profiles"),
+        headers={
+            **_SERVICE_HEADERS,
+            "Prefer": "return=representation,resolution=merge-duplicates",
+        },
+        json=payload,
+    )
+    res.raise_for_status()
+    return res.json()[0]
 
 
-async def add_xp_to_profile(user_id: str, xp: int) -> int:
-    """Add XP to a user's profile atomically, returning the new total.
+async def add_xp_to_profile(user_id: str, xp: int) -> dict[str, Any]:
+    """Add XP to a user's profile atomically, with level-up detection.
 
     Uses a direct SQL increment (total_xp + N) to avoid the read-modify-write
     race condition where two concurrent completions could clobber each other's XP.
+    The RPC function also computes the new level, updates hero_level/hero_title
+    if a level-up occurred, and returns full level context.
 
     Args:
         user_id: Authenticated user's UUID.
         xp: Amount of XP to add.
 
     Returns:
-        New total_xp value.
+        Dict with new_total_xp, new_level, previous_level, leveled_up, new_title.
     """
-    async with httpx.AsyncClient() as client:
-        res = await client.post(
-            f"{settings.supabase_url}/rest/v1/rpc/increment_profile_xp",
-            headers=_SERVICE_HEADERS,
-            json={"p_user_id": user_id, "p_xp": xp},
-        )
-        res.raise_for_status()
-        result = res.json()
-        return result if isinstance(result, int) else (result or 0)
+    res = await _client.post(
+        f"{settings.supabase_url}/rest/v1/rpc/increment_profile_xp",
+        headers=_SERVICE_HEADERS,
+        json={"p_user_id": user_id, "p_xp": xp},
+    )
+    res.raise_for_status()
+    result = res.json()
+    if isinstance(result, dict):
+        return result
+    # Fallback for unexpected return shape
+    return {
+        "new_total_xp": result if isinstance(result, int) else 0,
+        "new_level": 1,
+        "previous_level": 1,
+        "leveled_up": False,
+        "new_title": "Wanderer",
+    }
 
 
 async def update_streak(user_id: str) -> None:
@@ -156,13 +163,12 @@ async def update_streak(user_id: str) -> None:
     Args:
         user_id: Authenticated user's UUID.
     """
-    async with httpx.AsyncClient() as client:
-        res = await client.post(
-            f"{settings.supabase_url}/rest/v1/rpc/update_streak_atomic",
-            headers=_SERVICE_HEADERS,
-            json={"p_user_id": user_id},
-        )
-        res.raise_for_status()
+    res = await _client.post(
+        f"{settings.supabase_url}/rest/v1/rpc/update_streak_atomic",
+        headers=_SERVICE_HEADERS,
+        json={"p_user_id": user_id},
+    )
+    res.raise_for_status()
 
 
 # ---------------------------------------------------------------------------
@@ -246,15 +252,14 @@ async def increment_daily_generation(user_id: str) -> int:
     Returns:
         New count after increment.
     """
-    async with httpx.AsyncClient() as client:
-        res = await client.post(
-            f"{settings.supabase_url}/rest/v1/rpc/increment_daily_generation",
-            headers=_SERVICE_HEADERS,
-            json={"p_user_id": user_id, "p_date": date.today().isoformat()},
-        )
-        res.raise_for_status()
-        result = res.json()
-        return result if isinstance(result, int) else 1
+    res = await _client.post(
+        f"{settings.supabase_url}/rest/v1/rpc/increment_daily_generation",
+        headers=_SERVICE_HEADERS,
+        json={"p_user_id": user_id, "p_date": date.today().isoformat()},
+    )
+    res.raise_for_status()
+    result = res.json()
+    return result if isinstance(result, int) else 1
 
 
 async def count_active_trees(user_id: str) -> int:

@@ -3,17 +3,35 @@
 interface StatsBarProps {
   totalXp: number;
   currentStreak: number;
+  heroLevel?: number;
+  heroTitle?: string;
   nodesCompleted?: number;
   totalNodes?: number;
 }
 
-const XP_MILESTONE = 500;
+/** XP required to reach a given level: 25 * level^2 */
+function xpForLevel(level: number): number {
+  return 25 * level * level;
+}
 
-export function StatsBar({ totalXp, currentStreak, nodesCompleted, totalNodes }: StatsBarProps) {
+export function StatsBar({
+  totalXp,
+  currentStreak,
+  heroLevel,
+  heroTitle,
+  nodesCompleted,
+  totalNodes,
+}: StatsBarProps) {
   const showNodes = nodesCompleted !== undefined && totalNodes !== undefined;
-  const xpInMilestone = totalXp % XP_MILESTONE;
-  const xpProgress = xpInMilestone / XP_MILESTONE;
-  const xpToNext = XP_MILESTONE - xpInMilestone;
+  const level = heroLevel ?? 1;
+  const title = heroTitle ?? "Wanderer";
+
+  const currentLevelXp = xpForLevel(level);
+  const nextLevelXp = xpForLevel(level + 1);
+  const xpIntoLevel = totalXp - currentLevelXp;
+  const xpNeeded = nextLevelXp - currentLevelXp;
+  const xpProgress = xpNeeded > 0 ? Math.min(1, Math.max(0, xpIntoLevel / xpNeeded)) : 1;
+  const xpToNext = Math.max(0, nextLevelXp - totalXp);
 
   return (
     <div
@@ -25,26 +43,27 @@ export function StatsBar({ totalXp, currentStreak, nodesCompleted, totalNodes }:
       }}
     >
       <div className="flex items-stretch">
-        {/* XP */}
+        {/* Level + Title */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-6">
           <div
             className="text-5xl font-bold mb-1 dash-stat-xp"
             style={{
               fontFamily: "var(--font-heading)",
               color: "var(--accent-gold)",
+              textShadow: "0 0 18px rgba(255,215,0,0.35)",
             }}
           >
-            {totalXp.toLocaleString()}
+            {level}
           </div>
           <div
             className="text-xs uppercase mb-3"
-            style={{ color: "var(--text-muted)", letterSpacing: "0.25em" }}
+            style={{ color: "var(--text-secondary)", letterSpacing: "0.2em", fontFamily: "var(--font-heading)" }}
           >
-            Total XP
+            {title}
           </div>
-          {/* Mini XP progress bar */}
+          {/* XP progress to next level */}
           <div
-            className="h-1 rounded-full overflow-hidden w-20"
+            className="h-1 rounded-full overflow-hidden w-24"
             style={{ backgroundColor: "var(--bg-highlight)" }}
           >
             <div
@@ -60,7 +79,7 @@ export function StatsBar({ totalXp, currentStreak, nodesCompleted, totalNodes }:
             className="mt-1"
             style={{ color: "var(--text-muted)", fontSize: "0.6rem", letterSpacing: "0.1em" }}
           >
-            {xpToNext} XP to milestone
+            {xpToNext} XP to next level
           </div>
         </div>
 

@@ -6,6 +6,7 @@ import type {
   TreeGenerationResult,
   GenerationStatus,
   Ember,
+  NodeCompletionResult,
 } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -115,9 +116,17 @@ export const api = {
       headers: authHeader(token),
     }),
 
+  // Profile
+  updateProfile: (heroName: string, token: string) =>
+    request<UserProfile>("/api/v1/profile", {
+      method: "PATCH",
+      headers: authHeader(token),
+      body: JSON.stringify({ hero_name: heroName }),
+    }),
+
   // Nodes
   completeNode: (nodeId: string, token: string) =>
-    request<{ node_id: string; new_state: string; xp_earned: number; total_xp: number }>(
+    request<NodeCompletionResult>(
       `/api/v1/nodes/${nodeId}/complete`,
       { method: "PATCH", headers: authHeader(token) },
     ),

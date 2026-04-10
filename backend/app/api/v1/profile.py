@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import get_current_user_id
 from app.core import supabase as supa
+from app.schemas.profile import ProfileUpdateRequest
 
 router = APIRouter()
 
@@ -33,4 +34,22 @@ async def get_profile(
             detail="Profile not found — the auth trigger may not have fired yet.",
         )
 
+    return {"data": profile, "error": None}
+
+
+@router.patch("", response_model=dict)
+async def update_profile(
+    body: ProfileUpdateRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> dict[str, Any]:
+    """Update the authenticated user's hero name.
+
+    Args:
+        body: Request body containing hero_name.
+        user_id: Authenticated user's UUID, injected by the auth dependency.
+
+    Returns:
+        Envelope with the updated profile.
+    """
+    profile = await supa.upsert_profile(user_id, {"hero_name": body.hero_name})
     return {"data": profile, "error": None}

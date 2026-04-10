@@ -14,11 +14,19 @@ const TIER_COLOR: Record<string, string> = {
   mythic: "var(--rarity-mythic)",
 };
 
+export interface LevelUpEvent {
+  newLevel: number;
+  previousLevel: number;
+  newTitle: string;
+  xpEarned: number;
+}
+
 interface NodeDetailPanelProps {
   node: SkillNode | null;
   token: string;
   onNodeUpdate: (nodeId: string, newState: SkillNode["state"]) => void;
   onXpEarned: (xp: number, totalXp: number) => void;
+  onLevelUp?: (event: LevelUpEvent) => void;
   onClose: () => void;
 }
 
@@ -27,6 +35,7 @@ export function NodeDetailPanel({
   token,
   onNodeUpdate,
   onXpEarned,
+  onLevelUp,
   onClose,
 }: NodeDetailPanelProps) {
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +69,14 @@ export function NodeDetailPanel({
       setError(res.error.message);
     } else if (res.data) {
       onXpEarned(res.data.xp_earned, res.data.total_xp);
+      if (res.data.leveled_up && onLevelUp) {
+        onLevelUp({
+          newLevel: res.data.new_level,
+          previousLevel: res.data.previous_level,
+          newTitle: res.data.new_title,
+          xpEarned: res.data.xp_earned,
+        });
+      }
     }
   };
 
