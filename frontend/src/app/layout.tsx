@@ -27,7 +27,7 @@ const crimsonPro = Crimson_Pro({
 
 export const metadata: Metadata = {
   title: "Duskvow — Forge Your Path",
-  description: "AI-powered RPG skill trees for real-world self-improvement. Turn your goals into epic talent trees.",
+  description: "Dark fantasy self-improvement for adults who take their goals seriously. AI-generated talent trees, character arcs, and immersive progression — no cute mascots, no hand-holding.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
