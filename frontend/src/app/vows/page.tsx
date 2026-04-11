@@ -7,7 +7,8 @@ import { useUser } from "@/hooks/useUser";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { Navbar } from "@/components/layout/Navbar";
 import { api } from "@/lib/api";
-import type { UserProfile, TalentTree, GenerationStatus } from "@/types";
+import { LevelUpModal } from "@/components/ui/LevelUpModal";
+import type { UserProfile, TalentTree, GenerationStatus, DailyQuest } from "@/types";
 
 const PARTICLES = [
   { left: "8%",  delay: "0s",   dur: "9s",  anim: "wiz-float-a", size: 3 },
@@ -17,6 +18,17 @@ const PARTICLES = [
   { left: "78%", delay: "3.5s", dur: "12s", anim: "wiz-float-b", size: 2 },
   { left: "91%", delay: "7s",   dur: "9s",  anim: "wiz-float-c", size: 2 },
 ];
+
+function titleForLevel(level: number): string {
+  if (level >= 50) return "Vow Eternal";
+  if (level >= 40) return "Mythbreaker";
+  if (level >= 30) return "Shadowforged";
+  if (level >= 20) return "Duskwalker";
+  if (level >= 15) return "Flamewarden";
+  if (level >= 10) return "Ironsworn";
+  if (level >= 5) return "Oath-Bound";
+  return "Wanderer";
+}
 
 export default function VowChamberPage() {
   const { user, session, loading } = useUser();
@@ -28,7 +40,13 @@ export default function VowChamberPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-
+  const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
+  const [levelUpEvent, setLevelUpEvent] = useState<{
+    level: number;
+    title: string;
+    previousTitle: string;
+    xpEarned: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,13 +62,16 @@ export default function VowChamberPage() {
       api.getProfile(token),
       api.listTrees(token),
       api.getGenerationStatus(token),
-    ]).then(([profileResult, treesResult, genResult]) => {
+      api.getTodayQuests(token),
+    ]).then(([profileResult, treesResult, genResult, questsResult]) => {
       if (profileResult.status === "fulfilled" && profileResult.value.data)
         setProfile(profileResult.value.data);
       if (treesResult.status === "fulfilled" && treesResult.value.data)
         setTrees(treesResult.value.data);
       if (genResult.status === "fulfilled" && genResult.value.data)
         setGenStatus(genResult.value.data);
+      if (questsResult.status === "fulfilled" && questsResult.value.data)
+        setDailyQuests(questsResult.value.data);
       setDataLoading(false);
     });
   }, [session]);
@@ -90,6 +111,69 @@ export default function VowChamberPage() {
 
   const activeTrees = trees.filter((t) => t.status === "active");
   const finishedTrees = trees.filter((t) => t.status === "completed");
+
+  // Group quests by tree_id
+  const questsByTree = dailyQuests.reduce<Record<string, DailyQuest[]>>((acc, q) => {
+    (acc[q.tree_id] ??= []).push(q);
+    return acc;
+  }, {});
+
+  const handleQuestToggle = async (quest: DailyQuest) => {
+    if (!session?.access_token) return;
+    const token = session.access_token;
+
+    // Optimistic update
+    setDailyQuests((prev) =>
+      prev.map((q) =>
+        q.id === quest.id ? { ...q, completed_today: !q.completed_today } : q,
+      ),
+    );
+
+    if (!quest.completed_today) {
+      const res = await api.completeQuest(quest.id, token);
+      if (res.error) {
+        // Revert on failure
+        setDailyQuests((prev) =>
+          prev.map((q) =>
+            q.id === quest.id ? { ...q, completed_today: false } : q,
+          ),
+        );
+      } else if (res.data) {
+        // Update profile XP
+        if (profile) {
+          setProfile({ ...profile, total_xp: res.data.total_xp });
+        }
+        // Show level-up modal
+        if (res.data.leveled_up) {
+          const prevTitle = titleForLevel(res.data.previous_level);
+          setLevelUpEvent({
+            level: res.data.new_level,
+            title: res.data.new_title,
+            previousTitle: prevTitle,
+            xpEarned: res.data.xp_earned,
+          });
+          if (profile) {
+            setProfile({
+              ...profile,
+              total_xp: res.data.total_xp,
+              hero_level: res.data.new_level,
+              hero_title: res.data.new_title,
+            });
+          }
+        }
+      }
+    } else {
+      const res = await api.uncompleteQuest(quest.id, token);
+      if (res.error) {
+        // Revert on failure
+        setDailyQuests((prev) =>
+          prev.map((q) =>
+            q.id === quest.id ? { ...q, completed_today: true } : q,
+          ),
+        );
+      }
+    }
+  };
   const atActiveCap = (genStatus?.active_trees ?? 0) >= (genStatus?.active_tree_cap ?? 5);
   const outOfGenerations = (genStatus?.generations_remaining ?? 1) === 0;
   const ctaDisabled = atActiveCap || outOfGenerations;
@@ -338,6 +422,8 @@ export default function VowChamberPage() {
                       <TreeCard
                         key={tree.id}
                         tree={tree}
+                        dailyQuests={questsByTree[tree.id]}
+                        onQuestToggle={handleQuestToggle}
                         confirmDeleteId={confirmDeleteId}
                         deleting={deleting}
                         onDeleteRequest={(id) => setConfirmDeleteId(id)}
@@ -372,6 +458,16 @@ export default function VowChamberPage() {
           )}
         </main>
       </div>
+
+      {levelUpEvent && (
+        <LevelUpModal
+          level={levelUpEvent.level}
+          title={levelUpEvent.title}
+          previousTitle={levelUpEvent.previousTitle}
+          xpEarned={levelUpEvent.xpEarned}
+          onClose={() => setLevelUpEvent(null)}
+        />
+      )}
     </div>
   );
 }
@@ -420,6 +516,8 @@ function SectionHeader({ label }: { label: string }) {
 
 interface TreeCardProps {
   tree: TalentTree;
+  dailyQuests?: DailyQuest[];
+  onQuestToggle?: (quest: DailyQuest) => void;
   confirmDeleteId: string | null;
   deleting: boolean;
   onDeleteRequest: (id: string) => void;
@@ -429,6 +527,8 @@ interface TreeCardProps {
 
 function TreeCard({
   tree,
+  dailyQuests,
+  onQuestToggle,
   confirmDeleteId,
   deleting,
   onDeleteRequest,
@@ -565,6 +665,141 @@ function TreeCard({
           }}
         />
       </div>
+
+      {/* Daily quests checklist */}
+      {dailyQuests && dailyQuests.length > 0 && !isFinished && (
+        <div className="mt-4 pt-3" style={{ borderTop: "1px solid var(--border-muted)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontSize: "0.55rem",
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+              }}
+            >
+              Daily Quests
+            </span>
+            <ResetTimer />
+          </div>
+          <div className="space-y-1">
+            {dailyQuests.map((quest) => (
+              <button
+                key={quest.id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onQuestToggle?.(quest);
+                }}
+                className="w-full flex items-center gap-2 py-1 px-1 rounded transition-colors"
+                style={{ textAlign: "left" }}
+              >
+                {/* Checkbox */}
+                <div
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    borderRadius: "3px",
+                    border: `1.5px solid ${quest.completed_today ? "var(--accent-gold)" : "var(--accent-ember)"}`,
+                    backgroundColor: quest.completed_today ? "var(--accent-gold)" : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {quest.completed_today && (
+                    <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6L5 9L10 3" stroke="var(--bg-abyss)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Title */}
+                <span
+                  className="flex-1 text-xs"
+                  style={{
+                    color: quest.completed_today ? "var(--text-muted)" : "var(--text-secondary)",
+                    textDecoration: quest.completed_today ? "line-through" : "none",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {quest.title}
+                </span>
+
+                {/* XP reward */}
+                <span
+                  className="text-xs shrink-0"
+                  style={{
+                    color: quest.completed_today ? "var(--text-muted)" : "var(--accent-gold)",
+                    fontSize: "0.65rem",
+                    opacity: quest.completed_today ? 0.5 : 0.8,
+                  }}
+                >
+                  +{quest.xp_reward} XP
+                </span>
+
+                {/* Dungeon link for timed quests */}
+                {quest.estimated_minutes && !quest.completed_today && (
+                  <Link
+                    href={`/dungeon?quest=${quest.id}&duration=${quest.estimated_minutes}&tree=${quest.tree_id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0"
+                    style={{
+                      fontSize: "0.9rem",
+                      textDecoration: "none",
+                      opacity: 0.6,
+                      transition: "opacity 0.2s",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.6"; }}
+                    title={`Enter dungeon (${quest.estimated_minutes} min)`}
+                  >
+                    &#x2694;
+                  </Link>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ResetTimer — shows "Resets in Xh Ym" until midnight UTC
+// ---------------------------------------------------------------------------
+
+function ResetTimer() {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    function computeTimeLeft() {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setUTCHours(24, 0, 0, 0);
+      const diffMs = midnight.getTime() - now.getTime();
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
+    }
+
+    setTimeLeft(computeTimeLeft());
+    const interval = setInterval(() => setTimeLeft(computeTimeLeft()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span
+      style={{
+        fontSize: "0.55rem",
+        color: "var(--text-muted)",
+        letterSpacing: "0.1em",
+      }}
+    >
+      Resets in {timeLeft}
+    </span>
   );
 }

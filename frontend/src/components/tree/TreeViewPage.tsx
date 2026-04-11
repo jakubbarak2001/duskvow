@@ -8,11 +8,12 @@ import { useTreeStore } from "@/stores/treeStore";
 import { Navbar } from "@/components/layout/Navbar";
 import { TreeCanvas } from "@/components/tree/TreeCanvas";
 import { NodeDetailPanel } from "@/components/tree/NodeDetailPanel";
+import { QuestLogPanel } from "@/components/tree/QuestLogPanel";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { api } from "@/lib/api";
 import type { LevelUpEvent } from "@/components/tree/NodeDetailPanel";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
-import type { SkillNode, TalentTree } from "@/types";
+import type { SkillNode, TalentTree, DailyQuest } from "@/types";
 
 function titleForLevel(level: number): string {
   if (level >= 50) return "Vow Eternal";
@@ -44,6 +45,7 @@ export function TreeViewPage() {
   const [heroTitle, setHeroTitle] = useState("Wanderer");
   const [profileTotalXp, setProfileTotalXp] = useState(0);
   const [levelUpEvent, setLevelUpEvent] = useState<LevelUpEvent | null>(null);
+  const [treeQuests, setTreeQuests] = useState<DailyQuest[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Auth guard
@@ -59,7 +61,8 @@ export function TreeViewPage() {
     Promise.allSettled([
       api.getTree(treeId, token),
       api.getProfile(token),
-    ]).then(([treeResult, profileResult]) => {
+      api.getTodayQuests(token),
+    ]).then(([treeResult, profileResult, questsResult]) => {
       if (treeResult.status === "fulfilled" && treeResult.value.data) {
         setActiveTree(treeResult.value.data);
       } else {
@@ -74,6 +77,10 @@ export function TreeViewPage() {
         setHeroLevel(profileResult.value.data.hero_level);
         setHeroTitle(profileResult.value.data.hero_title);
         setProfileTotalXp(profileResult.value.data.total_xp);
+      }
+      if (questsResult.status === "fulfilled" && questsResult.value.data) {
+        // Only keep quests for this specific tree
+        setTreeQuests(questsResult.value.data.filter((q) => q.tree_id === treeId));
       }
       setLoadingTree(false);
     });
@@ -135,6 +142,53 @@ export function TreeViewPage() {
     setHeroLevel(event.newLevel);
     setHeroTitle(event.newTitle);
   }, []);
+
+  const handleQuestToggle = useCallback(
+    async (quest: DailyQuest) => {
+      if (!session?.access_token) return;
+      const token = session.access_token;
+
+      // Optimistic update
+      setTreeQuests((prev) =>
+        prev.map((q) =>
+          q.id === quest.id ? { ...q, completed_today: !q.completed_today } : q,
+        ),
+      );
+
+      if (!quest.completed_today) {
+        const res = await api.completeQuest(quest.id, token);
+        if (res.error) {
+          setTreeQuests((prev) =>
+            prev.map((q) =>
+              q.id === quest.id ? { ...q, completed_today: false } : q,
+            ),
+          );
+        } else if (res.data) {
+          setProfileTotalXp(res.data.total_xp);
+          if (res.data.leveled_up) {
+            setLevelUpEvent({
+              newLevel: res.data.new_level,
+              previousLevel: res.data.previous_level,
+              newTitle: res.data.new_title,
+              xpEarned: res.data.xp_earned,
+            });
+            setHeroLevel(res.data.new_level);
+            setHeroTitle(res.data.new_title);
+          }
+        }
+      } else {
+        const res = await api.uncompleteQuest(quest.id, token);
+        if (res.error) {
+          setTreeQuests((prev) =>
+            prev.map((q) =>
+              q.id === quest.id ? { ...q, completed_today: true } : q,
+            ),
+          );
+        }
+      }
+    },
+    [session],
+  );
 
   if (authLoading || (!user && authLoading)) {
     return (
@@ -222,6 +276,13 @@ export function TreeViewPage() {
               onNodeClick={handleNodeClick}
               selectedNodeId={selectedNode?.id}
             />
+
+            {treeQuests.length > 0 && (
+              <QuestLogPanel
+                quests={treeQuests}
+                onToggle={handleQuestToggle}
+              />
+            )}
 
             {selectedNode && session?.access_token && (
               <NodeDetailPanel

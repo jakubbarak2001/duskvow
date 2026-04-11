@@ -51,11 +51,19 @@ class _AIEdge(BaseModel):
     target: str = ""
 
 
+class _AIDailyQuest(BaseModel):
+    id: str
+    title: str
+    description: str
+    xp_reward: int = 15
+
+
 class _AITreeResponse(BaseModel):
     title: str
     description: str
     nodes: list[_AINode]
     edges: list[_AIEdge] = []
+    daily_quests: list[_AIDailyQuest] = []
 
 
 def _validate_followup(data: dict) -> dict:
