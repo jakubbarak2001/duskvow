@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [showNaming, setShowNaming] = useState(false);
+  const [unclaimedLoot, setUnclaimedLoot] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -38,7 +39,8 @@ export default function DashboardPage() {
       api.getProfile(token),
       api.listTrees(token),
       api.getActiveDungeon(token),
-    ]).then(([profileResult, treesResult, dungeonResult]) => {
+      api.getUnclaimedLootCount(token),
+    ]).then(([profileResult, treesResult, dungeonResult, lootResult]) => {
       if (profileResult.status === "fulfilled" && profileResult.value.data) {
         setProfile(profileResult.value.data);
         if (!profileResult.value.data.hero_name) {
@@ -59,6 +61,9 @@ export default function DashboardPage() {
       }
       if (dungeonResult.status === "fulfilled" && dungeonResult.value.data) {
         setActiveDungeon(dungeonResult.value.data);
+      }
+      if (lootResult.status === "fulfilled" && lootResult.value.data) {
+        setUnclaimedLoot(lootResult.value.data.count);
       }
       setDataLoading(false);
     });
@@ -237,10 +242,19 @@ export default function DashboardPage() {
               gap: "1.5rem",
             }}
           >
-            {/* Hero name (if set) */}
+            {/* Hero name (if set) — links to profile */}
             {profile.hero_name && (
               <>
-                <div style={{ textAlign: "center" }}>
+                <Link
+                  href="/profile"
+                  style={{
+                    textAlign: "center",
+                    textDecoration: "none",
+                    transition: "opacity 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                >
                   <span
                     style={{
                       fontFamily: "var(--font-heading)",
@@ -265,7 +279,7 @@ export default function DashboardPage() {
                   >
                     {profile.hero_title}
                   </span>
-                </div>
+                </Link>
 
                 <div
                   style={{
@@ -341,6 +355,43 @@ export default function DashboardPage() {
               >
                 Day Streak
               </span>
+              {profile.streak_multiplier > 1.0 && (
+                <span
+                  style={{
+                    display: "inline-block",
+                    marginTop: "0.2rem",
+                    fontFamily: "var(--font-heading)",
+                    fontSize: "0.5rem",
+                    letterSpacing: "0.1em",
+                    color: "var(--accent-gold)",
+                    backgroundColor: "rgba(255,215,0,0.1)",
+                    border: "1px solid rgba(255,215,0,0.2)",
+                    borderRadius: "2px",
+                    padding: "0.1rem 0.35rem",
+                  }}
+                  title="Streak XP bonus"
+                >
+                  +{Math.round((profile.streak_multiplier - 1) * 100)}%
+                </span>
+              )}
+              {profile.current_streak >= 3 &&
+                profile.last_activity_date &&
+                profile.last_activity_date !== new Date().toISOString().slice(0, 10) && (
+                <span
+                  className="dungeon-pulse"
+                  style={{
+                    display: "block",
+                    marginTop: "0.2rem",
+                    fontFamily: "var(--font-crimson)",
+                    fontStyle: "italic",
+                    fontSize: "0.5rem",
+                    color: "var(--accent-ember)",
+                    opacity: 0.8,
+                  }}
+                >
+                  Your flame dims...
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -401,6 +452,38 @@ export default function DashboardPage() {
         >
           ◆&nbsp;&nbsp;Choose Your Path&nbsp;&nbsp;◆
         </div>
+
+        {/* Unclaimed loot reminder */}
+        {unclaimedLoot > 0 && (
+          <Link
+            href="/profile"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.6rem 1.2rem",
+              background: "rgba(255,215,0,0.06)",
+              border: "1px solid rgba(255,215,0,0.15)",
+              borderRadius: "4px",
+              textDecoration: "none",
+              transition: "border-color 0.2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,215,0,0.35)")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,215,0,0.15)")}
+          >
+            <span style={{ fontSize: "0.9rem" }}>&#x2728;</span>
+            <span
+              style={{
+                fontFamily: "var(--font-crimson)",
+                fontStyle: "italic",
+                fontSize: "0.85rem",
+                color: "var(--accent-gold)",
+              }}
+            >
+              Unclaimed spoils await — {unclaimedLoot} run{unclaimedLoot !== 1 ? "s" : ""} with loot
+            </span>
+          </Link>
+        )}
 
         {/* Three Doors */}
         <div className="hub-doors-grid">

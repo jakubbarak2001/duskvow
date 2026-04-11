@@ -13,6 +13,7 @@ import { StatsBar } from "@/components/ui/StatsBar";
 import { api } from "@/lib/api";
 import type { LevelUpEvent } from "@/components/tree/NodeDetailPanel";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
+import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import type { SkillNode, TalentTree, DailyQuest } from "@/types";
 
 function titleForLevel(level: number): string {
@@ -39,11 +40,14 @@ export function TreeViewPage() {
     updateNodeState, incrementCompleted, decrementCompleted,
   } = useTreeStore();
 
+  const { showAchievements, showStreakMilestone } = useAchievementToast();
+
   const [loadingTree, setLoadingTree] = useState(true);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [heroLevel, setHeroLevel] = useState(1);
   const [heroTitle, setHeroTitle] = useState("Wanderer");
   const [profileTotalXp, setProfileTotalXp] = useState(0);
+  const [streakMultiplier, setStreakMultiplier] = useState(1);
   const [levelUpEvent, setLevelUpEvent] = useState<LevelUpEvent | null>(null);
   const [treeQuests, setTreeQuests] = useState<DailyQuest[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +81,7 @@ export function TreeViewPage() {
         setHeroLevel(profileResult.value.data.hero_level);
         setHeroTitle(profileResult.value.data.hero_title);
         setProfileTotalXp(profileResult.value.data.total_xp);
+        setStreakMultiplier(profileResult.value.data.streak_multiplier);
       }
       if (questsResult.status === "fulfilled" && questsResult.value.data) {
         // Only keep quests for this specific tree
@@ -175,6 +180,12 @@ export function TreeViewPage() {
             setHeroLevel(res.data.new_level);
             setHeroTitle(res.data.new_title);
           }
+          if (res.data.new_achievements?.length) {
+            showAchievements(res.data.new_achievements);
+          }
+          if (res.data.streak_milestone) {
+            showStreakMilestone(res.data.streak_milestone);
+          }
         }
       } else {
         const res = await api.uncompleteQuest(quest.id, token);
@@ -249,6 +260,7 @@ export function TreeViewPage() {
             heroTitle={heroTitle}
             nodesCompleted={tree.completed_nodes}
             totalNodes={tree.total_nodes}
+            streakMultiplier={streakMultiplier}
           />
         )}
       </div>

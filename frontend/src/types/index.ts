@@ -48,20 +48,31 @@ export interface UserProfile {
   total_xp: number;
   current_streak: number;
   longest_streak: number;
+  streak_multiplier: number;
+  achievements_count: number;
   last_activity_date: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface StreakMilestone {
+  days: number;
+  multiplier: number;
 }
 
 export interface NodeCompletionResult {
   node_id: string;
   new_state: string;
   xp_earned: number;
+  base_xp: number;
+  streak_bonus_xp: number;
   total_xp: number;
   leveled_up: boolean;
   new_level: number;
   previous_level: number;
   new_title: string;
+  new_achievements: Achievement[];
+  streak_milestone: StreakMilestone | null;
 }
 
 // ============================================================
@@ -92,6 +103,7 @@ export interface GenerationStatus {
   generations_limit: number;
   active_trees: number;
   active_tree_cap: number;
+  next_unlock_level: number | null;
 }
 
 // ============================================================
@@ -126,11 +138,15 @@ export interface DailyQuest {
 export interface DailyQuestCompletionResult {
   quest_id: string;
   xp_earned: number;
+  base_xp: number;
+  streak_bonus_xp: number;
   total_xp: number;
   leveled_up: boolean;
   new_level: number;
   previous_level: number;
   new_title: string;
+  new_achievements: Achievement[];
+  streak_milestone: StreakMilestone | null;
 }
 
 // ============================================================
@@ -211,6 +227,8 @@ export interface DungeonCompleteResult {
   cleared_floors: number;
   total_floors: number;
   xp_earned: number;
+  base_xp: number;
+  streak_bonus_xp: number;
   total_xp: number;
   leveled_up: boolean;
   new_level: number;
@@ -219,6 +237,74 @@ export interface DungeonCompleteResult {
   loot: DungeonLootItem[];
   quest_auto_completed?: boolean;
   linked_quest_id?: string | null;
+  new_achievements: Achievement[];
+  streak_milestone: StreakMilestone | null;
+}
+
+// ============================================================
+// Achievement Types
+// ============================================================
+
+export interface Achievement {
+  key: string;
+  name: string;
+  description: string;
+  category: "tree" | "dungeon" | "quest" | "meta";
+  icon: string;
+  unlocked: boolean;
+  unlocked_at: string | null;
+}
+
+// ============================================================
+// Inventory Types
+// ============================================================
+
+export interface InventoryItem {
+  id: string;
+  user_id: string;
+  item_type: string;
+  item_name: string;
+  description: string;
+  effect: string;
+  source_run_id: string | null;
+  used: boolean;
+  used_at: string | null;
+  created_at: string;
+}
+
+// ============================================================
+// Level Unlock Types
+// ============================================================
+
+export interface LevelUnlock {
+  feature: string;
+  description: string;
+  required_level: number;
+  unlocked: boolean;
+}
+
+// ============================================================
+// Profile Stats Types
+// ============================================================
+
+export interface ProfileStats {
+  trees_completed: number;
+  trees_active: number;
+  nodes_completed: number;
+  dungeons_completed: number;
+  total_dungeon_minutes: number;
+  quests_completed: number;
+  total_loot_collected: number;
+}
+
+// ============================================================
+// Loot Claim Result
+// ============================================================
+
+export interface LootClaimResult {
+  claimed_count: number;
+  items: InventoryItem[];
+  new_achievements: Achievement[];
 }
 
 // ============================================================

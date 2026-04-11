@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { Navbar } from "@/components/layout/Navbar";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
+import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import { BattleReport } from "@/components/dungeon/BattleReport";
 import { api } from "@/lib/api";
 import type {
@@ -52,6 +53,7 @@ function DungeonPageInner() {
   const { user, session, loading } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showAchievements, showStreakMilestone } = useAchievementToast();
 
   // Data
   const [tiers, setTiers] = useState<DungeonTier[]>([]);
@@ -73,6 +75,7 @@ function DungeonPageInner() {
     result: DungeonCompleteResult;
     events: DungeonEvent[];
     durationMinutes: number;
+    runId: string;
   } | null>(null);
   const [levelUpEvent, setLevelUpEvent] = useState<{
     level: number;
@@ -254,11 +257,13 @@ function DungeonPageInner() {
     if (res.data) {
       const runEvents = activeRun.events ?? [];
       const runDuration = activeRun.duration_minutes;
+      const completedRunId = activeRun.id;
       setActiveRun(null);
       setReportData({
         result: res.data,
         events: runEvents,
         durationMinutes: runDuration,
+        runId: completedRunId,
       });
       if (res.data.leveled_up) {
         setLevelUpEvent({
@@ -268,8 +273,14 @@ function DungeonPageInner() {
           xpEarned: res.data.xp_earned,
         });
       }
+      if (res.data.new_achievements?.length) {
+        showAchievements(res.data.new_achievements);
+      }
+      if (res.data.streak_milestone) {
+        showStreakMilestone(res.data.streak_milestone);
+      }
     }
-  }, [session, activeRun]);
+  }, [session, activeRun, showAchievements, showStreakMilestone]);
 
   const handleRetreat = useCallback(async () => {
     if (!session?.access_token || !activeRun) return;
@@ -277,11 +288,13 @@ function DungeonPageInner() {
     if (res.data) {
       const runEvents = activeRun.events ?? [];
       const runDuration = activeRun.duration_minutes;
+      const retreatedRunId = activeRun.id;
       setActiveRun(null);
       setReportData({
         result: res.data,
         events: runEvents,
         durationMinutes: runDuration,
+        runId: retreatedRunId,
       });
       if (res.data.leveled_up) {
         setLevelUpEvent({
@@ -453,6 +466,8 @@ function DungeonPageInner() {
               result={reportData.result}
               events={reportData.events}
               durationMinutes={reportData.durationMinutes}
+              runId={reportData.runId}
+              token={session?.access_token ?? ""}
               onDelveAgain={handleDelveAgain}
               onReturnToHub={handleReturnToHub}
             />
@@ -908,9 +923,13 @@ function TierCard({
               color: "var(--accent-blood)",
               fontFamily: "var(--font-cinzel)",
               letterSpacing: "0.1em",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.3em",
             }}
           >
-            Lv. {tier.min_level}
+            <span style={{ fontSize: "0.55rem" }}>&#x1F512;</span>
+            Unlocks at Lv.{tier.min_level}
           </span>
         )}
       </div>

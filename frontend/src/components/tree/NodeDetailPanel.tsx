@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { SkillNode } from "@/types";
 import { api } from "@/lib/api";
 import { useTreeStore } from "@/stores/treeStore";
+import { useAchievementToast } from "@/components/ui/AchievementProvider";
 
 const TIER_COLOR: Record<string, string> = {
   common: "var(--rarity-common)",
@@ -39,7 +40,9 @@ export function NodeDetailPanel({
   onClose,
 }: NodeDetailPanelProps) {
   const [error, setError] = useState<string | null>(null);
+  const [lastEarned, setLastEarned] = useState<{ base: number; bonus: number } | null>(null);
   const { completionPending, setCompletionPending } = useTreeStore();
+  const { showAchievements, showStreakMilestone } = useAchievementToast();
 
   if (!node) return null;
 
@@ -69,6 +72,7 @@ export function NodeDetailPanel({
       setError(res.error.message);
     } else if (res.data) {
       onXpEarned(res.data.xp_earned, res.data.total_xp);
+      setLastEarned({ base: res.data.base_xp, bonus: res.data.streak_bonus_xp });
       if (res.data.leveled_up && onLevelUp) {
         onLevelUp({
           newLevel: res.data.new_level,
@@ -76,6 +80,12 @@ export function NodeDetailPanel({
           newTitle: res.data.new_title,
           xpEarned: res.data.xp_earned,
         });
+      }
+      if (res.data.new_achievements?.length) {
+        showAchievements(res.data.new_achievements);
+      }
+      if (res.data.streak_milestone) {
+        showStreakMilestone(res.data.streak_milestone);
       }
     }
   };
@@ -200,6 +210,25 @@ export function NodeDetailPanel({
           >
             {error}
           </p>
+        )}
+
+        {lastEarned && node.state === "completed" && (
+          <div
+            className="text-xs mb-4 p-3 rounded text-center"
+            style={{
+              backgroundColor: "rgba(255,215,0,0.06)",
+              border: "1px solid rgba(255,215,0,0.15)",
+            }}
+          >
+            <span style={{ color: "var(--accent-gold)", fontWeight: 600 }}>
+              +{lastEarned.base} XP
+            </span>
+            {lastEarned.bonus > 0 && (
+              <span style={{ color: "var(--accent-ember)" }}>
+                {" "}(+{lastEarned.bonus} streak bonus)
+              </span>
+            )}
+          </div>
         )}
       </div>
 

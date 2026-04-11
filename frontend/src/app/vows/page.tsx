@@ -8,6 +8,7 @@ import { StatsBar } from "@/components/ui/StatsBar";
 import { Navbar } from "@/components/layout/Navbar";
 import { api } from "@/lib/api";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
+import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import type { UserProfile, TalentTree, GenerationStatus, DailyQuest } from "@/types";
 
 const PARTICLES = [
@@ -33,6 +34,7 @@ function titleForLevel(level: number): string {
 export default function VowChamberPage() {
   const { user, session, loading } = useUser();
   const router = useRouter();
+  const { showAchievements, showStreakMilestone } = useAchievementToast();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trees, setTrees] = useState<TalentTree[]>([]);
@@ -160,6 +162,13 @@ export default function VowChamberPage() {
               hero_title: res.data.new_title,
             });
           }
+        }
+        // Show achievement toasts
+        if (res.data.new_achievements?.length) {
+          showAchievements(res.data.new_achievements);
+        }
+        if (res.data.streak_milestone) {
+          showStreakMilestone(res.data.streak_milestone);
         }
       }
     } else {
@@ -335,6 +344,14 @@ export default function VowChamberPage() {
                   /{genStatus.active_tree_cap} active trees
                 </p>
               )}
+              {genStatus?.next_unlock_level && (
+                <p className="text-xs" style={{ color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                  Next generation slot unlocks at{" "}
+                  <span style={{ color: "var(--accent-gold)", fontWeight: 600 }}>
+                    Lv.{genStatus.next_unlock_level}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -346,6 +363,7 @@ export default function VowChamberPage() {
                 currentStreak={profile.current_streak}
                 heroLevel={profile.hero_level}
                 heroTitle={profile.hero_title}
+                streakMultiplier={profile.streak_multiplier}
               />
             </div>
           )}

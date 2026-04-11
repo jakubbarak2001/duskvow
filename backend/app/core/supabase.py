@@ -153,15 +153,19 @@ async def add_xp_to_profile(user_id: str, xp: int) -> dict[str, Any]:
     }
 
 
-async def update_streak(user_id: str) -> None:
+async def update_streak(user_id: str) -> dict[str, Any]:
     """Update current_streak and longest_streak atomically via Postgres RPC.
 
     Delegates to update_streak_atomic() which does the read + conditional
     increment in a single transaction, preventing two concurrent completions
-    from clobbering each other's streak.
+    from clobbering each other's streak. Also computes and persists the
+    streak_multiplier.
 
     Args:
         user_id: Authenticated user's UUID.
+
+    Returns:
+        Dict with new_streak, streak_multiplier, streak_milestone, streak_broken.
     """
     res = await _client.post(
         f"{settings.supabase_url}/rest/v1/rpc/update_streak_atomic",
@@ -169,6 +173,15 @@ async def update_streak(user_id: str) -> None:
         json={"p_user_id": user_id},
     )
     res.raise_for_status()
+    result = res.json()
+    if isinstance(result, dict):
+        return result
+    return {
+        "new_streak": 0,
+        "streak_multiplier": 1.0,
+        "streak_milestone": None,
+        "streak_broken": False,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -286,21 +299,47 @@ async def count_active_trees(user_id: str) -> int:
 async def get_generation_status(user_id: str) -> dict[str, Any]:
     """Return the user's current generation limits and active tree count.
 
+    Limits are dynamic based on hero level (via progression service).
+
     Args:
         user_id: Authenticated user's UUID.
 
     Returns:
         Dict with generations_used, generations_remaining, generations_limit,
-        active_trees, and active_tree_cap.
+        active_trees, active_tree_cap, and next_unlock_level.
     """
+    from app.services.progression import get_generation_limit, get_active_tree_cap
+
+    profile = await get_profile(user_id)
+    hero_level = profile["hero_level"] if profile else 1
+
+    gen_limit = get_generation_limit(hero_level)
+    tree_cap = get_active_tree_cap(hero_level)
+
     daily_count = await get_daily_generation_count(user_id)
     active_count = await count_active_trees(user_id)
+
+    # Find next level where either limit increases
+    from app.services.progression import _load_config
+    cfg = _load_config()
+    next_unlock_level: int | None = None
+    for level_str in sorted(cfg["generation_limits"], key=lambda x: int(x)):
+        if int(level_str) > hero_level:
+            next_unlock_level = int(level_str)
+            break
+    if next_unlock_level is None:
+        for level_str in sorted(cfg["active_tree_cap"], key=lambda x: int(x)):
+            if int(level_str) > hero_level:
+                next_unlock_level = int(level_str)
+                break
+
     return {
         "generations_used": daily_count,
-        "generations_remaining": max(0, DAILY_GENERATION_LIMIT - daily_count),
-        "generations_limit": DAILY_GENERATION_LIMIT,
+        "generations_remaining": max(0, gen_limit - daily_count),
+        "generations_limit": gen_limit,
         "active_trees": active_count,
-        "active_tree_cap": ACTIVE_TREE_CAP,
+        "active_tree_cap": tree_cap,
+        "next_unlock_level": next_unlock_level,
     }
 
 
@@ -864,6 +903,299 @@ async def get_dungeon_history(user_id: str, limit: int = 10) -> list[dict[str, A
             "limit": str(limit),
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Profile stats (aggregated counts for hero profile page)
+# ---------------------------------------------------------------------------
+
+
+async def get_profile_stats(user_id: str) -> dict[str, Any]:
+    """Return aggregated hero stats for the profile page.
+
+    Counts trees, nodes, dungeons, quests, and loot across all time.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Dict with trees_completed, trees_active, nodes_completed,
+        dungeons_completed, total_dungeon_minutes, quests_completed,
+        total_loot_collected.
+    """
+    import asyncio
+
+    async def _count(table: str, params: dict[str, str]) -> int:
+        rows = await _get(table, {**params, "select": "id"})
+        return len(rows)
+
+    async def _sum_minutes() -> int:
+        rows = await _get(
+            "dungeon_runs",
+            {
+                "user_id": f"eq.{user_id}",
+                "status": "in.(completed,retreated)",
+                "select": "duration_minutes",
+            },
+        )
+        return sum(r["duration_minutes"] for r in rows)
+
+    (
+        trees_completed,
+        trees_active,
+        nodes_completed,
+        dungeons_completed,
+        total_dungeon_minutes,
+        quests_completed,
+        total_loot,
+    ) = await asyncio.gather(
+        _count("talent_trees", {"user_id": f"eq.{user_id}", "status": "eq.completed", "deleted_at": "is.null"}),
+        _count("talent_trees", {"user_id": f"eq.{user_id}", "status": "eq.active", "deleted_at": "is.null"}),
+        _count("skill_nodes", {"state": "eq.completed", "tree_id": f"not.is.null"}),  # filtered below
+        _count("dungeon_runs", {"user_id": f"eq.{user_id}", "status": "eq.completed"}),
+        _sum_minutes(),
+        _count("daily_quest_completions", {"user_id": f"eq.{user_id}"}),
+        _count("hero_inventory", {"user_id": f"eq.{user_id}"}),
+    )
+
+    # For nodes_completed, we need to count only nodes belonging to user's trees.
+    # Re-do with a proper approach: get user's tree IDs, then count completed nodes.
+    tree_rows = await _get(
+        "talent_trees",
+        {"user_id": f"eq.{user_id}", "deleted_at": "is.null", "select": "id"},
+    )
+    if tree_rows:
+        tree_ids = ",".join(t["id"] for t in tree_rows)
+        node_rows = await _get(
+            "skill_nodes",
+            {"tree_id": f"in.({tree_ids})", "state": "eq.completed", "select": "id"},
+        )
+        nodes_completed = len(node_rows)
+    else:
+        nodes_completed = 0
+
+    return {
+        "trees_completed": trees_completed,
+        "trees_active": trees_active,
+        "nodes_completed": nodes_completed,
+        "dungeons_completed": dungeons_completed,
+        "total_dungeon_minutes": total_dungeon_minutes,
+        "quests_completed": quests_completed,
+        "total_loot_collected": total_loot,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Inventory & Achievements
+# ---------------------------------------------------------------------------
+
+
+async def get_user_achievement_keys(user_id: str) -> list[str]:
+    """Return list of achievement keys already earned by the user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        List of achievement key strings.
+    """
+    rows = await _get(
+        "hero_achievements",
+        {"user_id": f"eq.{user_id}", "select": "achievement_key"},
+    )
+    return [r["achievement_key"] for r in rows]
+
+
+async def get_user_achievements(user_id: str) -> list[dict[str, Any]]:
+    """Return all achievement rows for a user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        List of achievement dicts.
+    """
+    return await _get(
+        "hero_achievements",
+        {"user_id": f"eq.{user_id}", "select": "*", "order": "unlocked_at.asc"},
+    )
+
+
+async def award_achievement(user_id: str, achievement_key: str) -> dict[str, Any]:
+    """Insert an achievement row and increment the profile counter.
+
+    Args:
+        user_id: Authenticated user's UUID.
+        achievement_key: The achievement identifier.
+
+    Returns:
+        The inserted achievement dict.
+    """
+    row = await _insert_one(
+        "hero_achievements",
+        {"user_id": user_id, "achievement_key": achievement_key},
+    )
+    # Increment the denormalized count
+    profile = await get_profile(user_id)
+    if profile:
+        new_count = profile.get("achievements_count", 0) + 1
+        await _patch(
+            "profiles",
+            {"id": f"eq.{user_id}"},
+            {"achievements_count": new_count},
+        )
+    return row
+
+
+async def get_user_inventory(
+    user_id: str,
+    used: bool | None = None,
+) -> list[dict[str, Any]]:
+    """Return inventory items for a user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+        used: Filter by used status. None returns all.
+
+    Returns:
+        List of inventory item dicts.
+    """
+    params: dict[str, str] = {
+        "user_id": f"eq.{user_id}",
+        "select": "*",
+        "order": "created_at.desc",
+    }
+    if used is not None:
+        params["used"] = f"eq.{str(used).lower()}"
+    return await _get("hero_inventory", params)
+
+
+async def get_user_inventory_count(user_id: str, used: bool = False) -> int:
+    """Count inventory items for a user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+        used: Filter by used status.
+
+    Returns:
+        Integer count.
+    """
+    rows = await _get(
+        "hero_inventory",
+        {
+            "user_id": f"eq.{user_id}",
+            "used": f"eq.{str(used).lower()}",
+            "select": "id",
+        },
+    )
+    return len(rows)
+
+
+async def count_completed_trees(user_id: str) -> int:
+    """Count completed (non-deleted) trees for a user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Integer count.
+    """
+    rows = await _get(
+        "talent_trees",
+        {
+            "user_id": f"eq.{user_id}",
+            "status": "eq.completed",
+            "deleted_at": "is.null",
+            "select": "id",
+        },
+    )
+    return len(rows)
+
+
+async def count_completed_dungeons(user_id: str) -> int:
+    """Count completed (not retreated) dungeon runs for a user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Integer count.
+    """
+    rows = await _get(
+        "dungeon_runs",
+        {
+            "user_id": f"eq.{user_id}",
+            "status": "eq.completed",
+            "select": "id",
+        },
+    )
+    return len(rows)
+
+
+async def claim_dungeon_loot_rpc(user_id: str, run_id: str) -> int:
+    """Claim unclaimed dungeon loot via RPC, moving items to hero_inventory.
+
+    Args:
+        user_id: Authenticated user's UUID.
+        run_id: Dungeon run UUID.
+
+    Returns:
+        Number of items claimed.
+    """
+    res = await _client.post(
+        f"{settings.supabase_url}/rest/v1/rpc/claim_dungeon_loot",
+        headers=_SERVICE_HEADERS,
+        json={"p_user_id": user_id, "p_run_id": run_id},
+    )
+    res.raise_for_status()
+    result = res.json()
+    return result if isinstance(result, int) else 0
+
+
+async def use_inventory_item_rpc(user_id: str, item_id: str) -> dict[str, Any]:
+    """Use an inventory item via RPC.
+
+    Args:
+        user_id: Authenticated user's UUID.
+        item_id: Inventory item UUID.
+
+    Returns:
+        The used item dict.
+    """
+    res = await _client.post(
+        f"{settings.supabase_url}/rest/v1/rpc/use_inventory_item",
+        headers=_SERVICE_HEADERS,
+        json={"p_user_id": user_id, "p_item_id": item_id},
+    )
+    res.raise_for_status()
+    return res.json()
+
+
+async def get_unclaimed_loot_runs(user_id: str) -> list[dict[str, Any]]:
+    """Return dungeon runs that have unclaimed loot.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        List of run IDs with unclaimed loot.
+    """
+    rows = await _get(
+        "dungeon_loot",
+        {
+            "user_id": f"eq.{user_id}",
+            "claimed": "eq.false",
+            "select": "run_id",
+        },
+    )
+    # Deduplicate run IDs
+    seen: set[str] = set()
+    result = []
+    for r in rows:
+        if r["run_id"] not in seen:
+            seen.add(r["run_id"])
+            result.append({"run_id": r["run_id"]})
+    return result
 
 
 async def delete_ember(ember_id: str, user_id: str) -> bool:

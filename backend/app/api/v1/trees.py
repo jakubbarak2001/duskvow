@@ -14,6 +14,7 @@ from app.schemas.trees import (
     GenerateTreeRequest,
 )
 from app.services.gemini import gemini_service
+from app.services.progression import get_active_tree_cap, get_generation_limit
 
 router = APIRouter()
 
@@ -56,20 +57,26 @@ async def generate_tree(
     Returns:
         Envelope with session_id and list of follow-up questions.
     """
+    # Fetch hero level for dynamic limits
+    profile = await supa.get_profile(user_id)
+    hero_level = profile["hero_level"] if profile else 1
+    tree_cap = get_active_tree_cap(hero_level)
+    gen_limit = get_generation_limit(hero_level)
+
     # 1. Active tree cap check (runs first per spec)
     active_count = await supa.count_active_trees(user_id)
-    if active_count >= supa.ACTIVE_TREE_CAP:
+    if active_count >= tree_cap:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="You have 5 active trees. Finish or delete a tree to create a new one.",
+            detail=f"You have {tree_cap} active trees. Finish or delete a tree to create a new one.",
         )
 
     # 2. Daily generation limit check
     daily_count = await supa.get_daily_generation_count(user_id)
-    if daily_count >= supa.DAILY_GENERATION_LIMIT:
+    if daily_count >= gen_limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="You've used all 3 daily generations. Come back tomorrow to create more.",
+            detail=f"You've used all {gen_limit} daily generations. Come back tomorrow to create more.",
         )
 
     result = await gemini_service.generate_followup_questions(body.goal_prompt)
@@ -131,9 +138,12 @@ async def submit_followup(
     # Session consumed — remove it
     del _sessions[body.session_id]
 
-    # Increment daily count and compute remaining
+    # Increment daily count and compute remaining (dynamic limit)
+    profile = await supa.get_profile(user_id)
+    hero_level = profile["hero_level"] if profile else 1
+    gen_limit = get_generation_limit(hero_level)
     new_count = await supa.increment_daily_generation(user_id)
-    remaining = max(0, supa.DAILY_GENERATION_LIMIT - new_count)
+    remaining = max(0, gen_limit - new_count)
 
     return {
         "data": {

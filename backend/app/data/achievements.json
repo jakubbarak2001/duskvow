@@ -1,0 +1,93 @@
+{
+  "first_vow": {
+    "name": "First Vow",
+    "description": "Complete your first talent tree.",
+    "category": "tree",
+    "icon": "scroll",
+    "condition": { "type": "trees_completed", "count": 1 }
+  },
+  "oath_keeper": {
+    "name": "Oath Keeper",
+    "description": "Complete 3 talent trees.",
+    "category": "tree",
+    "icon": "scroll",
+    "condition": { "type": "trees_completed", "count": 3 }
+  },
+  "vow_collector": {
+    "name": "Vow Collector",
+    "description": "Have 5 active trees simultaneously.",
+    "category": "tree",
+    "icon": "shield",
+    "condition": { "type": "active_trees", "count": 5 }
+  },
+  "the_long_road": {
+    "name": "The Long Road",
+    "description": "Complete a tree with 20 or more nodes.",
+    "category": "tree",
+    "icon": "road",
+    "condition": { "type": "tree_nodes_completed", "count": 20 }
+  },
+  "first_descent": {
+    "name": "First Descent",
+    "description": "Complete your first dungeon delve.",
+    "category": "dungeon",
+    "icon": "sword",
+    "condition": { "type": "dungeons_completed", "count": 1 }
+  },
+  "iron_will": {
+    "name": "Iron Will",
+    "description": "Complete 10 dungeons without retreating.",
+    "category": "dungeon",
+    "icon": "shield",
+    "condition": { "type": "dungeons_completed", "count": 10 }
+  },
+  "deep_diver": {
+    "name": "Deep Diver",
+    "description": "Complete a 90-minute dungeon delve.",
+    "category": "dungeon",
+    "icon": "abyss",
+    "condition": { "type": "dungeon_duration_completed", "minutes": 90 }
+  },
+  "loot_hoarder": {
+    "name": "Loot Hoarder",
+    "description": "Collect 50 items from dungeon runs.",
+    "category": "dungeon",
+    "icon": "chest",
+    "condition": { "type": "total_loot_collected", "count": 50 }
+  },
+  "consistent": {
+    "name": "Consistent",
+    "description": "Maintain a 7-day activity streak.",
+    "category": "quest",
+    "icon": "flame",
+    "condition": { "type": "streak_reached", "days": 7 }
+  },
+  "relentless": {
+    "name": "Relentless",
+    "description": "Maintain a 30-day activity streak.",
+    "category": "quest",
+    "icon": "flame",
+    "condition": { "type": "streak_reached", "days": 30 }
+  },
+  "the_summit": {
+    "name": "The Summit",
+    "description": "Reach hero level 25.",
+    "category": "meta",
+    "icon": "mountain",
+    "condition": { "type": "level_reached", "level": 25 }
+  },
+  "vow_eternal": {
+    "name": "Vow Eternal",
+    "description": "Reach hero level 50.",
+    "category": "meta",
+    "icon": "crown",
+    "condition": { "type": "level_reached", "level": 50 }
+  },
+  "well_rounded": {
+    "name": "Well Rounded",
+    "description": "Complete a tree node, a dungeon, and all daily quests in one day.",
+    "category": "meta",
+    "icon": "star",
+    "condition": { "type": "daily_trifecta" }
+  }
+}

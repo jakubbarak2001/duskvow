@@ -1,6 +1,7 @@
 """Node API routes — manage skill node states and award XP."""
 
 import asyncio
+import math
 from datetime import datetime, timezone
 from typing import Any
 
@@ -8,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core import supabase as supa
 from app.core.dependencies import get_current_user_id
+from app.services.achievements import check_and_award
+from app.services.progression import get_user_streak_multiplier
 
 router = APIRouter()
 
@@ -125,23 +128,48 @@ async def complete_node(
     new_status = "completed" if completed_count >= tree["total_nodes"] else "active"
     await supa.update_tree_progress(node["tree_id"], completed_count, earned_xp, new_status)
 
+    # Apply streak multiplier to XP
+    base_xp = node["xp_reward"]
+    streak_mult = await get_user_streak_multiplier(user_id)
+    adjusted_xp = math.floor(base_xp * streak_mult)
+    streak_bonus_xp = adjusted_xp - base_xp
+
     # Award XP, record activity, and update streak in parallel
-    xp_result, _, _ = await asyncio.gather(
-        supa.add_xp_to_profile(user_id, node["xp_reward"]),
-        supa.record_daily_activity(user_id, 1, node["xp_reward"]),
+    xp_result, _, streak_result = await asyncio.gather(
+        supa.add_xp_to_profile(user_id, adjusted_xp),
+        supa.record_daily_activity(user_id, 1, adjusted_xp),
         supa.update_streak(user_id),
     )
+
+    # Check achievements (node_complete + possible tree_complete)
+    achievement_context = {"tree_id": node["tree_id"]}
+    new_achievements = await check_and_award(user_id, "node_complete", achievement_context)
+
+    if new_status == "completed":
+        tree_achievements = await check_and_award(user_id, "tree_complete", achievement_context)
+        new_achievements.extend(tree_achievements)
+
+    # Check level-up achievements
+    if xp_result.get("leveled_up"):
+        level_achievements = await check_and_award(
+            user_id, "level_up", {"level": xp_result.get("new_level", 1)}
+        )
+        new_achievements.extend(level_achievements)
 
     return {
         "data": {
             "node_id": node_id,
             "new_state": "completed",
-            "xp_earned": node["xp_reward"],
+            "xp_earned": adjusted_xp,
+            "base_xp": base_xp,
+            "streak_bonus_xp": streak_bonus_xp,
             "total_xp": xp_result.get("new_total_xp", 0),
             "leveled_up": xp_result.get("leveled_up", False),
             "new_level": xp_result.get("new_level", 1),
             "previous_level": xp_result.get("previous_level", 1),
             "new_title": xp_result.get("new_title", "Wanderer"),
+            "new_achievements": new_achievements,
+            "streak_milestone": streak_result.get("streak_milestone") if isinstance(streak_result, dict) else None,
         },
         "error": None,
     }

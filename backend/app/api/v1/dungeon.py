@@ -1,6 +1,7 @@
 """Dungeon API routes — start runs, track progress, complete/retreat."""
 
 import asyncio
+import math
 from datetime import datetime, timezone
 from typing import Any
 
@@ -14,6 +15,8 @@ from app.services.dungeon import (
     generate_dungeon_run,
     get_all_tiers,
 )
+from app.services.achievements import check_and_award
+from app.services.progression import get_user_streak_multiplier
 
 router = APIRouter()
 
@@ -182,7 +185,7 @@ async def complete_run(
         )
 
     total_floors = run["total_floors"]
-    xp = compute_xp_reward(
+    base_xp = compute_xp_reward(
         tier=run["tier"],
         cleared_floors=total_floors,
         total_floors=total_floors,
@@ -191,6 +194,11 @@ async def complete_run(
         linked_quest=bool(run.get("linked_quest_id")),
     )
 
+    # Apply streak multiplier
+    streak_mult = await get_user_streak_multiplier(user_id)
+    adjusted_xp = math.floor(base_xp * streak_mult)
+    streak_bonus_xp = adjusted_xp - base_xp
+
     now = datetime.now(timezone.utc).isoformat()
 
     # Update run status and award XP/activity/streak in parallel
@@ -198,11 +206,11 @@ async def complete_run(
         supa.complete_dungeon_run(run["id"], {
             "status": "completed",
             "cleared_floors": total_floors,
-            "xp_earned": xp,
+            "xp_earned": adjusted_xp,
             "completed_at": now,
         }),
-        supa.add_xp_to_profile(user_id, xp),
-        supa.record_daily_activity(user_id, 0, xp),
+        supa.add_xp_to_profile(user_id, adjusted_xp),
+        supa.record_daily_activity(user_id, 0, adjusted_xp),
         supa.update_streak(user_id),
     ]
 
@@ -211,7 +219,7 @@ async def complete_run(
     quest_auto_completed = False
 
     results = await asyncio.gather(*completion_ops)
-    _updated_run, xp_result, _, _ = results
+    _updated_run, xp_result, _, streak_result = results
 
     if linked_quest_id:
         quest = await supa.get_daily_quest(linked_quest_id)
@@ -219,15 +227,28 @@ async def complete_run(
             today_completions = await supa.get_today_completions(user_id)
             already_done = any(c["quest_id"] == linked_quest_id for c in today_completions)
             if not already_done:
+                quest_base_xp = quest["xp_reward"]
+                quest_adjusted_xp = math.floor(quest_base_xp * streak_mult)
                 await asyncio.gather(
                     supa.complete_daily_quest(linked_quest_id, user_id),
-                    supa.add_xp_to_profile(user_id, quest["xp_reward"]),
-                    supa.record_daily_activity(user_id, 0, quest["xp_reward"]),
+                    supa.add_xp_to_profile(user_id, quest_adjusted_xp),
+                    supa.record_daily_activity(user_id, 0, quest_adjusted_xp),
                 )
                 quest_auto_completed = True
 
     # Fetch loot for the response
     loot = await supa.get_dungeon_loot(run["id"])
+
+    # Check achievements
+    new_achievements = await check_and_award(
+        user_id, "dungeon_complete",
+        {"duration_minutes": run["duration_minutes"]},
+    )
+    if xp_result.get("leveled_up"):
+        level_achievements = await check_and_award(
+            user_id, "level_up", {"level": xp_result.get("new_level", 1)}
+        )
+        new_achievements.extend(level_achievements)
 
     return {
         "data": {
@@ -235,7 +256,9 @@ async def complete_run(
             "status": "completed",
             "cleared_floors": total_floors,
             "total_floors": total_floors,
-            "xp_earned": xp,
+            "xp_earned": adjusted_xp,
+            "base_xp": base_xp,
+            "streak_bonus_xp": streak_bonus_xp,
             "total_xp": xp_result.get("new_total_xp", 0),
             "leveled_up": xp_result.get("leveled_up", False),
             "new_level": xp_result.get("new_level", 1),
@@ -244,6 +267,8 @@ async def complete_run(
             "loot": loot,
             "quest_auto_completed": quest_auto_completed,
             "linked_quest_id": linked_quest_id,
+            "new_achievements": new_achievements,
+            "streak_milestone": streak_result.get("streak_milestone") if isinstance(streak_result, dict) else None,
         },
         "error": None,
     }
@@ -288,7 +313,7 @@ async def retreat_run(
 
     cleared_floors = max(0, cleared_floors)
 
-    xp = compute_xp_reward(
+    base_xp = compute_xp_reward(
         tier=run["tier"],
         cleared_floors=cleared_floors,
         total_floors=total_floors,
@@ -297,18 +322,23 @@ async def retreat_run(
         linked_quest=False,
     )
 
+    # Apply streak multiplier even on retreat (you still worked)
+    streak_mult = await get_user_streak_multiplier(user_id)
+    adjusted_xp = math.floor(base_xp * streak_mult)
+    streak_bonus_xp = adjusted_xp - base_xp
+
     now_iso = now.isoformat()
 
     # Update run and award partial XP in parallel
-    _, xp_result, _, _ = await asyncio.gather(
+    _, xp_result, _, streak_result = await asyncio.gather(
         supa.complete_dungeon_run(run["id"], {
             "status": "retreated",
             "cleared_floors": cleared_floors,
-            "xp_earned": xp,
+            "xp_earned": adjusted_xp,
             "completed_at": now_iso,
         }),
-        supa.add_xp_to_profile(user_id, xp),
-        supa.record_daily_activity(user_id, 0, xp),
+        supa.add_xp_to_profile(user_id, adjusted_xp),
+        supa.record_daily_activity(user_id, 0, adjusted_xp),
         supa.update_streak(user_id),
     )
 
@@ -318,11 +348,14 @@ async def retreat_run(
             "status": "retreated",
             "cleared_floors": cleared_floors,
             "total_floors": total_floors,
-            "xp_earned": xp,
+            "xp_earned": adjusted_xp,
+            "base_xp": base_xp,
+            "streak_bonus_xp": streak_bonus_xp,
             "total_xp": xp_result.get("new_total_xp", 0),
             "leveled_up": xp_result.get("leveled_up", False),
             "new_level": xp_result.get("new_level", 1),
             "loot": [],  # No loot on retreat
+            "streak_milestone": streak_result.get("streak_milestone") if isinstance(streak_result, dict) else None,
         },
         "error": None,
     }

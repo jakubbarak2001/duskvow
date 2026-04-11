@@ -43,6 +43,12 @@
 
 [2026-04-11] DECISION: Loot items are simple consumable buffs, not a full inventory RPG — REASON: Keep scope manageable. 6 item types, all consumable, stored in a flat table. No equipment slots, no crafting, no trading. Can expand later without schema changes.
 
+[2026-04-11] DECISION: Level unlocks and streak bonuses configured in JSON, not DB — REASON: `backend/app/data/level_unlocks.json` is the single source of truth for all progression thresholds. Easy to tune without migrations. Backend services load and cache it.
+
+[2026-04-11] DECISION: Achievement evaluation is trigger-based, not polling — REASON: `check_and_award()` only runs relevant checks based on the trigger type (node_complete, dungeon_complete, etc.), preventing unnecessary DB queries. Each trigger maps to a subset of achievements.
+
+[2026-04-11] DECISION: Streak milestone toasts reuse AchievementToast with ember variant — REASON: Avoids a separate component. The queue system in AchievementProvider handles both achievement and streak milestone toasts sequentially.
+
 ---
 
 ## CURRENT STATE
@@ -50,50 +56,66 @@
 ### What's Built & Working
 - [x] **Landing page** — Full dark fantasy design with ember particles, noise overlay, Cinzel/Crimson Pro typography
 - [x] **Auth flow** — Supabase email/password + Google OAuth, auth guard on protected routes
-- [x] **Hub (`/dashboard`)** — Three door cards: Vow Chamber (unlocked), Dungeon (unlocked, shows active run status), Hearth (locked). Hero name + level badge header.
-- [x] **Vow Chamber (`/vows`)** — Tree management: New Vow CTA, generation status, StatsBar, tree list (active/finished), delete confirmation, daily quest checklists per tree with dungeon links for timed quests
+- [x] **Hub (`/dashboard`)** — Three door cards: Vow Chamber (unlocked), Dungeon (unlocked, shows active run status), Hearth (locked). Hero name links to profile. Level badge. Streak with multiplier badge + "flame dims" at-risk indicator. Unclaimed loot reminder banner.
+- [x] **Vow Chamber (`/vows`)** — Tree management: New Vow CTA, dynamic generation limits with next unlock hint, StatsBar with streak multiplier + milestone hints, tree list (active/finished), delete confirmation, daily quest checklists per tree with dungeon links
 - [x] **Tree creation wizard** — 3-step flow: goal input → AI follow-up → generating → tree view
 - [x] **Interactive skill tree** — React Flow canvas, custom nodes (circle/square/diamond/hexagon), Dagre layout, zoom/pan, node states, tier glows
-- [x] **Node detail panel** — Slide-in panel: description/type/tier/XP/status, Start/Complete/Reset with optimistic updates
-- [x] **Node completion flow** — Optimistic update, XP tracking, prerequisite auto-unlock, completion pending lock
+- [x] **Node detail panel** — Slide-in panel: description/type/tier/XP/status, Start/Complete/Reset with optimistic updates, XP breakdown with streak bonus after completion
+- [x] **Node completion flow** — Optimistic update, XP tracking, prerequisite auto-unlock, completion pending lock, streak milestone toast
 - [x] **Hero & Level System** — hero_name, hero_level, hero_title. Titles: Wanderer→Vow Eternal. Level-up modal. Hero naming flow.
-- [x] **Daily Quest System** — AI generates 3-5 per tree (now with `estimated_minutes` for timed quests). Backend: GET/POST/DELETE. Frontend: Vow Chamber checklist + Tree View QuestLogPanel overlay.
-- [x] **Dungeon AFK Combat** — Full dungeon system: 4 tiers (Shallow Crypts → Abyssal Rift), tier selection cards, duration picker, optional quest/node linking, pre-rolled event generation from curated JSON pools, real-time event feed, floor progress bar, retreat confirmation, battle report with loot display, XP/streak awards, quest auto-completion, browser notifications, level-up integration, page visibility handling.
+- [x] **Hero Profile (`/profile`)** — Full character sheet: Hero Identity (level badge, XP bar, streak info), Stats Grid (8 stat cards), Achievement Grid (earned vs locked), Inventory (items with Use button, rarity colors), Path of Ascension (level unlock timeline)
+- [x] **Daily Quest System** — AI generates 3-5 per tree (with `estimated_minutes`). Backend: GET/POST/DELETE. Frontend: Vow Chamber checklist + Tree View QuestLogPanel overlay. Streak milestone toasts on threshold crossings.
+- [x] **Dungeon AFK Combat** — Full dungeon system: 4 tiers (Shallow Crypts → Abyssal Rift) with "Unlocks at Lv.N" on locked tiers, duration picker, optional quest/node linking, pre-rolled event generation, real-time event feed, floor progress bar, retreat confirmation, battle report with loot display + Collect All button → inventory, XP breakdown with streak bonus, quest auto-completion, browser notifications, level-up integration.
+- [x] **Progression System** — Level-gated features: dynamic generation limits (2→5), active tree caps (5→10), dungeon tier access. Streak XP multiplier (3-day=+5%, 7-day=+10%, 14-day=+15%, 30-day=+20%). All configured in `level_unlocks.json`.
+- [x] **Achievement System** — 13 one-time badges across 4 categories (tree/dungeon/quest/meta). Trigger-based evaluation. Toast notifications with sequential queue. Profile grid shows earned vs locked.
+- [x] **Inventory System** — Dungeon loot → claim to hero_inventory. Consumable items with Use button. Ember Shard streak protection. Profile inventory section.
 - [x] **Embers/Brazier** — `embers` table + CRUD API. Brazier component with add/delete/glow.
 - [x] **Hearth (`/hearth`)** — Atmospheric page with Brazier. "Coming soon" for trophy room/customization.
-- [x] **Backend API** — FastAPI: profile, trees CRUD, nodes, AI generation, rate limiting, embers, quests, dungeon (6 endpoints)
-- [x] **Database** — Supabase PostgreSQL: profiles, talent_trees, skill_nodes, daily_activity, embers, daily_quests, daily_quest_completions, dungeon_runs, dungeon_events, dungeon_loot. All with RLS.
+- [x] **Backend API** — FastAPI: profile (with stats/unlocks), trees CRUD, nodes, AI generation, rate limiting, embers, quests, dungeon, achievements, inventory (with claim/use/unclaimed)
+- [x] **Database** — Supabase PostgreSQL: profiles (with streak_multiplier, achievements_count), talent_trees, skill_nodes, daily_activity, embers, daily_quests, daily_quest_completions, dungeon_runs, dungeon_events, dungeon_loot, hero_inventory, hero_achievements. All with RLS.
 
 ### Known Issues
 - [ ] Tree layout can be ugly with 25+ nodes (Dagre nodesep/ranksep tuning needed)
 - [ ] Node completion visual feedback is flat (no particle burst yet)
 - [ ] No automated tests (backend has minimal scaffolding only)
 - [ ] No error boundaries (React Flow crashes can take down the page)
-- [ ] Unpushed migrations: `20260410_hero_level_system.sql`, `20260411_daily_quests.sql`, `20260412_dungeon_system.sql`
+- [ ] Unpushed migrations: `20260410_hero_level_system.sql`, `20260411_daily_quests.sql`, `20260412_dungeon_system.sql`, `20260413_progression_system.sql`, `20260413_streak_multiplier_in_rpc.sql`
 
 ### What's Next
-1. Sprint D — Progression & Unlocks (levels gate features, achievements, hero profile)
-2. Sprint E — Daily Quest Enhancement (quest pools, rotation, streak bonuses)
-3. Sprint F — Tree Experience Polish (celebrations, fog of war, choice branching)
+1. Sprint E — Daily Quest Enhancement (quest pools, rotation, streak bonuses)
+2. Sprint F — Tree Experience Polish (celebrations, fog of war, choice branching)
+3. Sprint G — Hearth Page + Ember Economy (ember buffs, journal → XP, loot spending)
 
 ### File Change Log (Current Session)
 
-**Session: 2026-04-11 (Sprint C — Dungeon AFK Combat)**
-- `supabase/migrations/20260412_dungeon_system.sql` — Dungeon tables: dungeon_runs, dungeon_events, dungeon_loot + RLS + indexes
-- `backend/app/data/dungeon_pools.json` — Curated content: 4 tiers, 26 monsters, 24+ events, 4 bosses, 6 loot items
-- `backend/app/services/dungeon.py` — Generation service: pre-roll events + loot, XP computation
-- `backend/app/schemas/dungeon.py` — DungeonStartRequest schema
-- `backend/app/core/supabase.py` — 7 dungeon helper functions + estimated_minutes in save_generated_tree
-- `backend/app/api/v1/dungeon.py` — 6 REST endpoints: tiers, active, start, complete, retreat, history
-- `backend/app/api/v1/__init__.py` — Registered dungeon router
-- `backend/app/prompts/generate_tree.txt` — Added estimated_minutes to daily quest schema
-- `frontend/src/types/index.ts` — Dungeon types: DungeonTier, DungeonEvent, DungeonLootItem, DungeonRun, DungeonStartResult, DungeonCompleteResult + estimated_minutes on DailyQuest
-- `frontend/src/lib/api.ts` — 6 dungeon API methods
-- `frontend/src/app/dungeon/page.tsx` — Full rewrite: pre-delve tier selection, active run timer+events, battle report, notifications
-- `frontend/src/components/dungeon/BattleReport.tsx` — Post-dungeon reward screen with stats, loot, expandable log
-- `frontend/src/app/globals.css` — fadeIn keyframe for event/loot animations
-- `frontend/src/app/vows/page.tsx` — Quest-to-dungeon sword icon links for timed quests
-- `frontend/src/app/dashboard/page.tsx` — Active dungeon run status on hub card
+**Session: 2026-04-11 (Sprint D — Progression & Unlocks)**
+- `supabase/migrations/20260413_progression_system.sql` — hero_inventory, hero_achievements tables + profile columns + RPCs
+- `supabase/migrations/20260413_streak_multiplier_in_rpc.sql` — Updated update_streak_atomic to return JSONB with milestone info
+- `backend/app/data/level_unlocks.json` — Level-gated features, generation limits, tree caps, streak bonuses
+- `backend/app/data/achievements.json` — 13 achievement definitions across 4 categories
+- `backend/app/services/progression.py` — Level unlock logic, streak multiplier, generation/tree cap helpers
+- `backend/app/services/achievements.py` — Achievement tracking: check_and_award with trigger-based evaluation
+- `backend/app/api/v1/achievements.py` — GET /api/v1/achievements endpoint
+- `backend/app/api/v1/inventory.py` — CRUD + claim + use + unclaimed count endpoints
+- `backend/app/api/v1/profile.py` — Added /unlocks and /stats endpoints
+- `backend/app/api/v1/__init__.py` — Registered achievements + inventory routers
+- `backend/app/api/v1/nodes.py` — Streak multiplier on XP, achievement checks, streak_milestone in response
+- `backend/app/api/v1/quests.py` — Streak multiplier on XP, achievement checks, streak_milestone in response
+- `backend/app/api/v1/dungeon.py` — Streak multiplier on XP, achievement checks, streak_milestone in response
+- `backend/app/core/supabase.py` — Many new helpers: achievements, inventory, profile stats, unclaimed loot
+- `frontend/src/types/index.ts` — StreakMilestone, Achievement, InventoryItem, LevelUnlock, ProfileStats, LootClaimResult + updated completion results
+- `frontend/src/lib/api.ts` — 8 new API methods for achievements, inventory, unlocks, stats, unclaimed loot
+- `frontend/src/components/ui/AchievementToast.tsx` — Toast with variant support (achievement=gold, streak=ember)
+- `frontend/src/components/ui/AchievementProvider.tsx` — Queue-based toast context with showStreakMilestone
+- `frontend/src/components/ui/StatsBar.tsx` — Streak multiplier badge + next milestone hint
+- `frontend/src/components/tree/NodeDetailPanel.tsx` — XP breakdown display after completion, streak milestone toast
+- `frontend/src/components/tree/TreeViewPage.tsx` — Streak multiplier in StatsBar, streak milestone toasts
+- `frontend/src/components/dungeon/BattleReport.tsx` — Collect All button with real claim API, XP streak breakdown
+- `frontend/src/app/layout.tsx` — AchievementProvider wrapping app
+- `frontend/src/app/profile/page.tsx` — Full hero profile page
+- `frontend/src/app/dashboard/page.tsx` — Hero name→profile link, streak multiplier badge, flame dims indicator, unclaimed loot banner
+- `frontend/src/app\vows/page.tsx` — Next generation unlock hint, streak milestone toasts
+- `frontend/src/app/dungeon/page.tsx` — Lock icon on locked tiers, streak milestone toasts, runId passed to BattleReport
 
 > Older session logs archived in git history. See `git log --oneline` for file-level diffs.
 
@@ -119,3 +141,9 @@
 | Dungeon service | `backend/app/services/dungeon.py` |
 | Dungeon API | `backend/app/api/v1/dungeon.py` |
 | Battle Report | `frontend/src/components/dungeon/BattleReport.tsx` |
+| Level unlocks config | `backend/app/data/level_unlocks.json` |
+| Achievements config | `backend/app/data/achievements.json` |
+| Progression service | `backend/app/services/progression.py` |
+| Achievement service | `backend/app/services/achievements.py` |
+| Hero Profile | `frontend/src/app/profile/page.tsx` |
+| Achievement toast | `frontend/src/components/ui/AchievementProvider.tsx` |

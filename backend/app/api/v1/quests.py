@@ -1,12 +1,15 @@
 """Daily Quest API routes — list today's quests, complete, and uncomplete."""
 
 import asyncio
+import math
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core import supabase as supa
 from app.core.dependencies import get_current_user_id
+from app.services.achievements import check_and_award
+from app.services.progression import get_user_streak_multiplier
 
 router = APIRouter()
 
@@ -69,23 +72,43 @@ async def complete_quest(
             detail="Quest already completed today.",
         )
 
+    # Apply streak multiplier to XP
+    base_xp = quest["xp_reward"]
+    streak_mult = await get_user_streak_multiplier(user_id)
+    adjusted_xp = math.floor(base_xp * streak_mult)
+    streak_bonus_xp = adjusted_xp - base_xp
+
     # Record completion, award XP, record activity, update streak in parallel
-    _, xp_result, _, _ = await asyncio.gather(
+    _, xp_result, _, streak_result = await asyncio.gather(
         supa.complete_daily_quest(quest_id, user_id),
-        supa.add_xp_to_profile(user_id, quest["xp_reward"]),
-        supa.record_daily_activity(user_id, 0, quest["xp_reward"]),
+        supa.add_xp_to_profile(user_id, adjusted_xp),
+        supa.record_daily_activity(user_id, 0, adjusted_xp),
         supa.update_streak(user_id),
     )
+
+    # Check achievements
+    new_achievements = await check_and_award(user_id, "quest_complete", {})
+
+    # Check level-up achievements
+    if xp_result.get("leveled_up"):
+        level_achievements = await check_and_award(
+            user_id, "level_up", {"level": xp_result.get("new_level", 1)}
+        )
+        new_achievements.extend(level_achievements)
 
     return {
         "data": {
             "quest_id": quest_id,
-            "xp_earned": quest["xp_reward"],
+            "xp_earned": adjusted_xp,
+            "base_xp": base_xp,
+            "streak_bonus_xp": streak_bonus_xp,
             "total_xp": xp_result.get("new_total_xp", 0),
             "leveled_up": xp_result.get("leveled_up", False),
             "new_level": xp_result.get("new_level", 1),
             "previous_level": xp_result.get("previous_level", 1),
             "new_title": xp_result.get("new_title", "Wanderer"),
+            "new_achievements": new_achievements,
+            "streak_milestone": streak_result.get("streak_milestone") if isinstance(streak_result, dict) else None,
         },
         "error": None,
     }

@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import type { DungeonCompleteResult, DungeonEvent } from "@/types";
+import { api } from "@/lib/api";
+import { useAchievementToast } from "@/components/ui/AchievementProvider";
 
 interface BattleReportProps {
   result: DungeonCompleteResult;
   events: DungeonEvent[];
   durationMinutes: number;
+  runId: string;
+  token: string;
   onDelveAgain: () => void;
   onReturnToHub: () => void;
 }
@@ -32,12 +36,17 @@ export function BattleReport({
   result,
   events,
   durationMinutes,
+  runId,
+  token,
   onDelveAgain,
   onReturnToHub,
 }: BattleReportProps) {
   const [showLog, setShowLog] = useState(false);
   const [delveHover, setDelveHover] = useState(false);
   const [hubHover, setHubHover] = useState(false);
+  const [lootClaimed, setLootClaimed] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const { showAchievements } = useAchievementToast();
 
   const isCompleted = result.status === "completed";
   const fullClear = result.cleared_floors === result.total_floors;
@@ -51,6 +60,19 @@ export function BattleReport({
   const visibleEvents = events.filter(
     (e) => e.floor_number <= result.cleared_floors,
   );
+
+  const handleClaimLoot = async () => {
+    if (claiming || lootClaimed) return;
+    setClaiming(true);
+    const res = await api.claimLoot(runId, token);
+    setClaiming(false);
+    if (res.data) {
+      setLootClaimed(true);
+      if (res.data.new_achievements?.length) {
+        showAchievements(res.data.new_achievements);
+      }
+    }
+  };
 
   return (
     <div
@@ -144,7 +166,7 @@ export function BattleReport({
       </div>
 
       {/* XP bonus breakdown */}
-      {(result.xp_earned > 0) && (
+      {result.xp_earned > 0 && (
         <p
           style={{
             fontSize: "0.65rem",
@@ -153,7 +175,16 @@ export function BattleReport({
             textAlign: "center",
           }}
         >
-          Total XP: {result.total_xp}
+          {result.streak_bonus_xp > 0 ? (
+            <>
+              +{result.base_xp} XP{" "}
+              <span style={{ color: "var(--accent-ember)" }}>
+                (+{result.streak_bonus_xp} streak bonus)
+              </span>
+            </>
+          ) : (
+            <>Total XP: {result.total_xp}</>
+          )}
         </p>
       )}
 
@@ -279,6 +310,44 @@ export function BattleReport({
               );
             })}
           </div>
+        )}
+
+        {/* Collect All button */}
+        {result.loot.length > 0 && (
+          <button
+            onClick={handleClaimLoot}
+            disabled={claiming || lootClaimed}
+            style={{
+              marginTop: "0.75rem",
+              fontFamily: "var(--font-cinzel)",
+              fontSize: "0.6rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              padding: "0.5rem 1.5rem",
+              borderRadius: "2px",
+              cursor: claiming || lootClaimed ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease",
+              color: lootClaimed ? "var(--accent-gold)" : "var(--text-primary)",
+              background: lootClaimed
+                ? "rgba(255,215,0,0.08)"
+                : "rgba(255,215,0,0.12)",
+              border: lootClaimed
+                ? "1px solid rgba(255,215,0,0.3)"
+                : "1px solid rgba(255,215,0,0.2)",
+              opacity: claiming ? 0.5 : 1,
+            }}
+          >
+            {lootClaimed ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "0.4em" }}>
+                <span style={{ color: "var(--accent-gold)" }}>&#10003;</span>
+                Collected!
+              </span>
+            ) : claiming ? (
+              "Claiming..."
+            ) : (
+              "Collect All"
+            )}
+          </button>
         )}
       </div>
 

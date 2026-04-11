@@ -13,6 +13,11 @@ import type {
   DungeonRun,
   DungeonStartResult,
   DungeonCompleteResult,
+  Achievement,
+  InventoryItem,
+  LevelUnlock,
+  ProfileStats,
+  LootClaimResult,
 } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -227,6 +232,52 @@ export const api = {
 
   getDungeonHistory: (token: string) =>
     request<DungeonRun[]>("/api/v1/dungeon/history", {
+      headers: authHeader(token),
+    }),
+
+  // Achievements
+  getAchievements: (token: string) =>
+    request<Achievement[]>("/api/v1/achievements", {
+      headers: authHeader(token),
+    }),
+
+  // Inventory
+  getInventory: (token: string, used?: boolean) =>
+    request<InventoryItem[]>(
+      `/api/v1/inventory${used !== undefined ? `?used=${used}` : ""}`,
+      { headers: authHeader(token) },
+    ),
+
+  getInventoryCount: (token: string) =>
+    request<{ count: number }>("/api/v1/inventory/count", {
+      headers: authHeader(token),
+    }),
+
+  getUnclaimedLootCount: (token: string) =>
+    request<{ count: number }>("/api/v1/inventory/unclaimed", {
+      headers: authHeader(token),
+    }),
+
+  claimLoot: (runId: string, token: string) =>
+    request<LootClaimResult>(`/api/v1/inventory/claim/${runId}`, {
+      method: "POST",
+      headers: authHeader(token),
+    }),
+
+  useItem: (itemId: string, token: string) =>
+    request<InventoryItem>(`/api/v1/inventory/${itemId}/use`, {
+      method: "POST",
+      headers: authHeader(token),
+    }),
+
+  // Profile — unlocks & stats
+  getLevelUnlocks: (token: string) =>
+    request<LevelUnlock[]>("/api/v1/profile/unlocks", {
+      headers: authHeader(token),
+    }),
+
+  getProfileStats: (token: string) =>
+    request<ProfileStats>("/api/v1/profile/stats", {
       headers: authHeader(token),
     }),
 };
