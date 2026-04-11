@@ -98,7 +98,8 @@ async def uncomplete_quest(
 ) -> dict:
     """Un-complete a daily quest for today (undo a misclick).
 
-    Note: XP awarded from the completion is NOT clawed back.
+    Deducts the XP that was awarded on completion to prevent
+    farming XP by toggling complete/uncomplete repeatedly.
 
     Args:
         quest_id: UUID of the quest to uncomplete.
@@ -114,7 +115,17 @@ async def uncomplete_quest(
             detail="Quest not found.",
         )
 
-    await supa.uncomplete_daily_quest(quest_id, user_id)
+    # Verify it was actually completed today before deducting
+    today_completions = await supa.get_today_completions(user_id)
+    was_completed = any(c["quest_id"] == quest_id for c in today_completions)
+
+    if was_completed:
+        await asyncio.gather(
+            supa.uncomplete_daily_quest(quest_id, user_id),
+            supa.add_xp_to_profile(user_id, -quest["xp_reward"]),
+        )
+    else:
+        await supa.uncomplete_daily_quest(quest_id, user_id)
 
     return {
         "data": {"quest_id": quest_id, "uncompleted": True},
