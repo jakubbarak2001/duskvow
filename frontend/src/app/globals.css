@@ -787,3 +787,9 @@ h1, h2, h3, h4, h5, h6 {
 .dungeon-pulse {
   animation: dungeon-pulse 2.5s ease-in-out infinite;
 }
+
+/* ── Dungeon Event Feed: fade-in for new events ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

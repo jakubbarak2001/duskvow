@@ -7,7 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { HeroNamingModal } from "@/components/ui/HeroNamingModal";
-import type { UserProfile } from "@/types";
+import type { DungeonRun, UserProfile } from "@/types";
 
 
 export default function DashboardPage() {
@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [activeVowCount, setActiveVowCount] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [earnedXp, setEarnedXp] = useState<number>(0);
+  const [activeDungeon, setActiveDungeon] = useState<DungeonRun | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -36,7 +37,8 @@ export default function DashboardPage() {
     Promise.allSettled([
       api.getProfile(token),
       api.listTrees(token),
-    ]).then(([profileResult, treesResult]) => {
+      api.getActiveDungeon(token),
+    ]).then(([profileResult, treesResult, dungeonResult]) => {
       if (profileResult.status === "fulfilled" && profileResult.value.data) {
         setProfile(profileResult.value.data);
         if (!profileResult.value.data.hero_name) {
@@ -54,6 +56,9 @@ export default function DashboardPage() {
             0
           )
         );
+      }
+      if (dungeonResult.status === "fulfilled" && dungeonResult.value.data) {
+        setActiveDungeon(dungeonResult.value.data);
       }
       setDataLoading(false);
     });
@@ -402,12 +407,12 @@ export default function DashboardPage() {
           {/* ── Door 1: The Vow Chamber (UNLOCKED) ── */}
           <Link href="/vows" className="hub-door hub-door-unlocked">
             {/* Anvil: video on desktop, static image on mobile */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "320px", paddingTop: "2rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/anvil_clipped.webp"
                 alt="Anvil"
-                style={{ maxHeight: "380px", objectFit: "contain" }}
+                style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
               />
             </div>
 
@@ -426,13 +431,13 @@ export default function DashboardPage() {
           {/* ── Door 2: The Dungeon (UNLOCKED) ── */}
           <Link href="/dungeon" className="hub-door hub-door-unlocked">
             {/* Dungeon image */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "320px", paddingTop: "2rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/dungeon_card.webp"
                 alt="Dungeon"
                 loading="lazy"
-                style={{ maxHeight: "380px", objectFit: "contain" }}
+                style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
               />
             </div>
 
@@ -442,7 +447,13 @@ export default function DashboardPage() {
               <p className="hub-door-subtitle">Face the darkness. Master your focus.</p>
 
               <div className="hub-door-status hub-door-status-unlocked">
-                Descend
+                {activeDungeon ? (
+                  <span className="dungeon-pulse" style={{ color: "var(--accent-ember)" }}>
+                    In progress — Floor {Math.min(activeDungeon.events?.length ?? 0, activeDungeon.total_floors)} of {activeDungeon.total_floors}
+                  </span>
+                ) : (
+                  "Descend"
+                )}
               </div>
             </div>
           </Link>
@@ -453,9 +464,9 @@ export default function DashboardPage() {
             onClick={() => handleLockedClick("hearth")}
           >
             {/* Brazier image */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, paddingTop: "2rem" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "320px", paddingTop: "2rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/brazier_clipped.webp" alt="Brazier" loading="lazy" style={{ maxHeight: "380px", objectFit: "contain", opacity: 0.5 }} />
+              <img src="/images/brazier_clipped.webp" alt="Brazier" loading="lazy" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", opacity: 0.5 }} />
             </div>
 
             {/* Door content */}

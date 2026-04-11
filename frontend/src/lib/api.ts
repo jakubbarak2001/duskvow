@@ -7,6 +7,12 @@ import type {
   GenerationStatus,
   Ember,
   NodeCompletionResult,
+  DailyQuest,
+  DailyQuestCompletionResult,
+  DungeonTier,
+  DungeonRun,
+  DungeonStartResult,
+  DungeonCompleteResult,
 } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -157,6 +163,70 @@ export const api = {
   deleteEmber: (emberId: string, token: string) =>
     request<{ deleted: boolean }>(`/api/v1/embers/${emberId}`, {
       method: "DELETE",
+      headers: authHeader(token),
+    }),
+
+  // Daily Quests
+  getTodayQuests: (token: string) =>
+    request<DailyQuest[]>("/api/v1/quests/today", {
+      headers: authHeader(token),
+    }),
+
+  completeQuest: (questId: string, token: string) =>
+    request<DailyQuestCompletionResult>(`/api/v1/quests/${questId}/complete`, {
+      method: "POST",
+      headers: authHeader(token),
+    }),
+
+  uncompleteQuest: (questId: string, token: string) =>
+    request<{ quest_id: string; uncompleted: boolean }>(
+      `/api/v1/quests/${questId}/complete`,
+      { method: "DELETE", headers: authHeader(token) },
+    ),
+
+  // Dungeon
+  getDungeonTiers: (token: string) =>
+    request<DungeonTier[]>("/api/v1/dungeon/tiers", {
+      headers: authHeader(token),
+    }),
+
+  getActiveDungeon: (token: string) =>
+    request<DungeonRun | null>("/api/v1/dungeon/active", {
+      headers: authHeader(token),
+    }),
+
+  startDungeon: (
+    tier: string,
+    durationMinutes: number,
+    linkedNodeId: string | null,
+    linkedQuestId: string | null,
+    token: string,
+  ) =>
+    request<DungeonStartResult>("/api/v1/dungeon/start", {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify({
+        tier,
+        duration_minutes: durationMinutes,
+        linked_node_id: linkedNodeId,
+        linked_quest_id: linkedQuestId,
+      }),
+    }),
+
+  completeDungeon: (token: string) =>
+    request<DungeonCompleteResult>("/api/v1/dungeon/complete", {
+      method: "POST",
+      headers: authHeader(token),
+    }),
+
+  retreatDungeon: (token: string) =>
+    request<DungeonCompleteResult>("/api/v1/dungeon/retreat", {
+      method: "POST",
+      headers: authHeader(token),
+    }),
+
+  getDungeonHistory: (token: string) =>
+    request<DungeonRun[]>("/api/v1/dungeon/history", {
       headers: authHeader(token),
     }),
 };

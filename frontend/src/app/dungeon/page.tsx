@@ -1,141 +1,307 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { Navbar } from "@/components/layout/Navbar";
+import { LevelUpModal } from "@/components/ui/LevelUpModal";
+import { BattleReport } from "@/components/dungeon/BattleReport";
+import { api } from "@/lib/api";
+import type {
+  DungeonTier,
+  DungeonRun,
+  DungeonEvent,
+  DungeonCompleteResult,
+  TalentTree,
+  DailyQuest,
+  SkillNode,
+} from "@/types";
 
-type TimerMode = "continuous" | "single";
-type TimerPhase = "idle" | "work" | "break" | "complete";
+const DURATION_PRESETS = [25, 45, 60];
 
-const WORK_PRESETS = [25, 45, 60];
-const BREAK_PRESETS = [5, 10, 15];
-
-const buttonBase: React.CSSProperties = {
-  fontFamily: "var(--font-cinzel)",
-  fontSize: "0.6rem",
-  letterSpacing: "0.2em",
-  textTransform: "uppercase",
-  padding: "0.6rem 1.5rem",
-  borderRadius: "2px",
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-  ...buttonBase,
-  color: "var(--accent-ember)",
-  background: "rgba(200,75,17,0.15)",
-  border: "1px solid rgba(200,75,17,0.35)",
-};
-
-const pauseButtonStyle: React.CSSProperties = {
-  ...buttonBase,
-  color: "var(--accent-gold)",
-  background: "rgba(255,215,0,0.1)",
-  border: "1px solid rgba(255,215,0,0.25)",
-};
-
-const stopButtonStyle: React.CSSProperties = {
-  ...buttonBase,
-  color: "var(--text-muted)",
-  background: "rgba(20,18,28,0.7)",
-  border: "1px solid rgba(224,216,200,0.1)",
-};
+function titleForLevel(level: number): string {
+  if (level >= 50) return "Vow Eternal";
+  if (level >= 40) return "Mythbreaker";
+  if (level >= 30) return "Shadowforged";
+  if (level >= 20) return "Duskwalker";
+  if (level >= 15) return "Flamewarden";
+  if (level >= 10) return "Ironsworn";
+  if (level >= 5) return "Oath-Bound";
+  return "Wanderer";
+}
 
 export default function DungeonPage() {
-  const { user, loading } = useUser();
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ backgroundColor: "var(--bg-abyss)" }}
+        >
+          <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+        </div>
+      }
+    >
+      <DungeonPageInner />
+    </Suspense>
+  );
+}
+
+function DungeonPageInner() {
+  const { user, session, loading } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [mode, setMode] = useState<TimerMode>("continuous");
-  const [workMinutes, setWorkMinutes] = useState(45);
-  const [breakMinutes, setBreakMinutes] = useState(15);
-  const [singleMinutes, setSingleMinutes] = useState(60);
-  const [phase, setPhase] = useState<TimerPhase>("idle");
+  // Data
+  const [tiers, setTiers] = useState<DungeonTier[]>([]);
+  const [activeRun, setActiveRun] = useState<DungeonRun | null>(null);
+  const [trees, setTrees] = useState<TalentTree[]>([]);
+  const [quests, setQuests] = useState<DailyQuest[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  // Selection state
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [durationMinutes, setDurationMinutes] = useState(45);
+  const [linkedNodeId, setLinkedNodeId] = useState<string | null>(null);
+  const [linkedQuestId, setLinkedQuestId] = useState<string | null>(null);
+
+  // UI state
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<{
+    result: DungeonCompleteResult;
+    events: DungeonEvent[];
+    durationMinutes: number;
+  } | null>(null);
+  const [levelUpEvent, setLevelUpEvent] = useState<{
+    level: number;
+    title: string;
+    previousTitle: string;
+    xpEarned: number;
+  } | null>(null);
+
+  // Active run timer
   const [secondsLeft, setSecondsLeft] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [cycleCount, setCycleCount] = useState(0);
-
-  // Hover states for primary button
-  const [primaryHover, setPrimaryHover] = useState(false);
-
+  const [revealedEvents, setRevealedEvents] = useState<DungeonEvent[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Refs to avoid stale closures in the interval callback
-  const phaseRef = useRef<TimerPhase>("idle");
-  const modeRef = useRef<TimerMode>("continuous");
-  const workMinutesRef = useRef(45);
-  const breakMinutesRef = useRef(15);
+  // Pre-fill from query params (quest-to-dungeon flow)
+  useEffect(() => {
+    if (dataLoading || activeRun) return;
 
-  useEffect(() => { phaseRef.current = phase; }, [phase]);
-  useEffect(() => { modeRef.current = mode; }, [mode]);
-  useEffect(() => { workMinutesRef.current = workMinutes; }, [workMinutes]);
-  useEffect(() => { breakMinutesRef.current = breakMinutes; }, [breakMinutes]);
+    const questId = searchParams.get("quest");
+    const duration = searchParams.get("duration");
 
-  const handlePhaseEnd = () => {
-    const currentPhase = phaseRef.current;
-    const currentMode = modeRef.current;
-
-    if (currentMode === "continuous") {
-      if (currentPhase === "work") {
-        phaseRef.current = "break";
-        setPhase("break");
-        setSecondsLeft(breakMinutesRef.current * 60);
-        setCycleCount((prev) => prev + 1);
-      } else if (currentPhase === "break") {
-        phaseRef.current = "work";
-        setPhase("work");
-        setSecondsLeft(workMinutesRef.current * 60);
-      }
-    } else {
-      if (currentPhase === "work") {
-        phaseRef.current = "complete";
-        setPhase("complete");
-        setIsRunning(false);
+    if (questId) {
+      setLinkedQuestId(questId);
+    }
+    if (duration) {
+      const mins = parseInt(duration, 10);
+      if (mins >= 15 && mins <= 120) {
+        setDurationMinutes(mins);
       }
     }
-  };
+
+    // Auto-select highest unlocked tier
+    if (questId && tiers.length > 0 && !selectedTier) {
+      const unlocked = tiers.filter((t) => t.unlocked);
+      if (unlocked.length > 0) {
+        setSelectedTier(unlocked[unlocked.length - 1].key);
+      }
+    }
+  }, [dataLoading, activeRun, searchParams, tiers, selectedTier]);
+
+  // Auth redirect
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/auth");
+    }
+  }, [user, loading, router]);
+
+  // Load data on mount
+  useEffect(() => {
+    if (!session?.access_token) return;
+    const token = session.access_token;
+
+    Promise.allSettled([
+      api.getDungeonTiers(token),
+      api.getActiveDungeon(token),
+      api.listTrees(token),
+      api.getTodayQuests(token),
+    ]).then(([tiersRes, activeRes, treesRes, questsRes]) => {
+      if (tiersRes.status === "fulfilled" && tiersRes.value.data)
+        setTiers(tiersRes.value.data);
+      if (activeRes.status === "fulfilled" && activeRes.value.data)
+        setActiveRun(activeRes.value.data);
+      if (treesRes.status === "fulfilled" && treesRes.value.data)
+        setTrees(treesRes.value.data);
+      if (questsRes.status === "fulfilled" && questsRes.value.data)
+        setQuests(questsRes.value.data);
+      setDataLoading(false);
+    });
+  }, [session]);
+
+  // Track whether we already fired a notification for this run
+  const notifiedRef = useRef(false);
+
+  // Timer for active run
+  const computeTimerState = useCallback(() => {
+    if (!activeRun) return;
+    const startedAt = new Date(activeRun.created_at).getTime();
+    const endAt = startedAt + activeRun.duration_minutes * 60 * 1000;
+    const now = Date.now();
+    const remaining = Math.max(0, Math.floor((endAt - now) / 1000));
+    setSecondsLeft(remaining);
+
+    if (activeRun.events) {
+      const elapsed = Math.floor((now - startedAt) / 1000);
+      const visible = activeRun.events.filter(
+        (e) => e.trigger_at_seconds <= elapsed,
+      );
+      setRevealedEvents(visible);
+    }
+
+    // Fire browser notification when timer completes (only once, only if tab hidden)
+    if (remaining === 0 && !notifiedRef.current && document.hidden) {
+      notifiedRef.current = true;
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("The Dungeon Yields", {
+          body: "Your hero has returned. Collect your spoils.",
+        });
+      }
+    }
+  }, [activeRun]);
 
   useEffect(() => {
-    if (!isRunning) {
+    if (!activeRun) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
-    intervalRef.current = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          handlePhaseEnd();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+
+    computeTimerState();
+    intervalRef.current = setInterval(computeTimerState, 1000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isRunning]);
+  }, [activeRun, computeTimerState]);
 
-  const handleStart = () => {
-    const initialSeconds =
-      mode === "continuous" ? workMinutes * 60 : singleMinutes * 60;
-    setSecondsLeft(initialSeconds);
-    phaseRef.current = "work";
-    setPhase("work");
-    setIsRunning(true);
-    setCycleCount(0);
-  };
+  // Page visibility handling — recalculate timer when user returns to tab
+  useEffect(() => {
+    if (!activeRun) return;
 
-  const handlePause = () => setIsRunning(false);
-  const handleResume = () => setIsRunning(true);
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        computeTimerState();
+      }
+    }
 
-  const handleStop = () => {
-    setIsRunning(false);
-    phaseRef.current = "idle";
-    setPhase("idle");
-    setSecondsLeft(0);
-    setCycleCount(0);
-  };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [activeRun, computeTimerState]);
+
+  // Auto-complete if timer finished while away
+  useEffect(() => {
+    if (!activeRun || !session?.access_token) return;
+    if (secondsLeft === 0 && activeRun.status === "active") {
+      const startedAt = new Date(activeRun.created_at).getTime();
+      const endAt = startedAt + activeRun.duration_minutes * 60 * 1000;
+      if (Date.now() >= endAt) {
+        // Timer should have completed — don't auto-complete, let user click "Claim Victory"
+        // This gives them the satisfaction of seeing the events and clicking the button
+      }
+    }
+  }, [activeRun, secondsLeft, session]);
+
+  const handleStart = useCallback(async () => {
+    if (!session?.access_token || !selectedTier) return;
+    setStarting(true);
+    setError(null);
+
+    const res = await api.startDungeon(
+      selectedTier,
+      durationMinutes,
+      linkedNodeId,
+      linkedQuestId,
+      session.access_token,
+    );
+
+    setStarting(false);
+
+    if (res.error) {
+      setError(res.error.message);
+      return;
+    }
+
+    if (res.data) {
+      notifiedRef.current = false;
+      setActiveRun({
+        ...res.data,
+        events: res.data.events,
+      });
+
+      // Request notification permission for timer completion
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    }
+  }, [session, selectedTier, durationMinutes, linkedNodeId, linkedQuestId]);
+
+  const handleComplete = useCallback(async () => {
+    if (!session?.access_token || !activeRun) return;
+    const res = await api.completeDungeon(session.access_token);
+    if (res.data) {
+      const runEvents = activeRun.events ?? [];
+      const runDuration = activeRun.duration_minutes;
+      setActiveRun(null);
+      setReportData({
+        result: res.data,
+        events: runEvents,
+        durationMinutes: runDuration,
+      });
+      if (res.data.leveled_up) {
+        setLevelUpEvent({
+          level: res.data.new_level,
+          title: res.data.new_title,
+          previousTitle: titleForLevel(res.data.previous_level),
+          xpEarned: res.data.xp_earned,
+        });
+      }
+    }
+  }, [session, activeRun]);
+
+  const handleRetreat = useCallback(async () => {
+    if (!session?.access_token || !activeRun) return;
+    const res = await api.retreatDungeon(session.access_token);
+    if (res.data) {
+      const runEvents = activeRun.events ?? [];
+      const runDuration = activeRun.duration_minutes;
+      setActiveRun(null);
+      setReportData({
+        result: res.data,
+        events: runEvents,
+        durationMinutes: runDuration,
+      });
+      if (res.data.leveled_up) {
+        setLevelUpEvent({
+          level: res.data.new_level,
+          title: res.data.new_title,
+          previousTitle: titleForLevel(res.data.previous_level),
+          xpEarned: res.data.xp_earned,
+        });
+      }
+    }
+  }, [session, activeRun]);
+
+  const handleDelveAgain = useCallback(() => {
+    // Keep last tier selected, clear report
+    setReportData(null);
+  }, []);
+
+  const handleReturnToHub = useCallback(() => {
+    router.push("/dashboard");
+  }, [router]);
 
   const formatTime = (totalSeconds: number): string => {
     const m = Math.floor(totalSeconds / 60);
@@ -143,45 +309,57 @@ export default function DungeonPage() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const getHourglassOpacity = (): number => {
-    if (phase === "idle") return 0.4;
-    if (phase === "work") return 0.9;
-    if (phase === "break") return 0.3;
-    return 1.0; // complete
-  };
-
-  const getPhaseLabel = (): { text: string; color: string } => {
-    if (phase === "work") return { text: "Delving...", color: "var(--accent-ember)" };
-    if (phase === "break") return { text: "Resting at Campfire", color: "var(--accent-gold)" };
-    if (phase === "complete") return { text: "The Dungeon Yields", color: "var(--accent-gold)" };
-    return { text: "", color: "var(--text-muted)" };
-  };
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/auth");
-    }
-  }, [user, loading, router]);
-
   if (loading || (!user && loading)) {
     return (
       <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "var(--bg-abyss)",
-        }}
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--bg-abyss)" }}
       >
-        <p style={{ color: "var(--text-muted)" }}>Loading…</p>
+        <p style={{ color: "var(--text-muted)" }}>Loading...</p>
       </div>
     );
   }
 
   if (!user) return null;
 
-  const phaseLabel = getPhaseLabel();
+  // Gather linkable nodes from active trees
+  const linkableNodes: Array<{ node: SkillNode; treeName: string }> = [];
+  for (const tree of trees) {
+    if (tree.status !== "active" || !tree.nodes) continue;
+    for (const node of tree.nodes) {
+      if (node.state === "available" || node.state === "in_progress") {
+        linkableNodes.push({ node, treeName: tree.title });
+      }
+    }
+  }
+
+  // Uncompleted quests for today
+  const uncompletedQuests = quests.filter((q) => !q.completed_today);
+
+  // XP bonus display
+  const nodeBonus = linkedNodeId ? 20 : 0;
+  const questBonus = linkedQuestId ? 15 : 0;
+  const totalBonus = nodeBonus + questBonus;
+
+  // Selected tier info
+  const selectedTierInfo = tiers.find((t) => t.key === selectedTier);
+
+  // Estimated XP preview (mirrors backend compute_xp_reward logic)
+  const estimatedXp = (() => {
+    if (!selectedTierInfo) return 0;
+    const base = selectedTierInfo.base_xp;
+    // Duration multiplier: baseline 25 min = 1.0x, scales to 2.0x at 90+ min
+    const baseline = 25;
+    const cap = 2.0;
+    let durMult = 1.0;
+    if (durationMinutes > baseline) {
+      durMult = Math.min(1.0 + (durationMinutes - baseline) / (90 - baseline), cap);
+    }
+    let xp = base * durMult;
+    if (linkedNodeId) xp *= 1.20;
+    if (linkedQuestId) xp *= 1.15;
+    return Math.floor(xp);
+  })();
 
   return (
     <div
@@ -203,7 +381,8 @@ export default function DungeonPage() {
         style={{
           position: "fixed",
           inset: 0,
-          background: "linear-gradient(rgba(10,10,18,0.60), rgba(10,10,18,0.75))",
+          background:
+            "linear-gradient(rgba(10,10,18,0.60), rgba(10,10,18,0.75))",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -240,7 +419,6 @@ export default function DungeonPage() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
             minHeight: "calc(100vh - 80px)",
             gap: "1.5rem",
             padding: "2rem 1.5rem",
@@ -259,452 +437,958 @@ export default function DungeonPage() {
               alignSelf: "flex-start",
               transition: "color 0.2s ease",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-muted)";
+            }}
           >
             ← Return to Hub
           </Link>
 
-          {/* Hourglass with radial glow */}
-          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{
-              position: "absolute",
-              width: "400px",
-              height: "400px",
-              background: "radial-gradient(ellipse at center, rgba(200,75,17,0.08) 0%, transparent 70%)",
-              pointerEvents: "none",
-              zIndex: 0,
-            }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/dungeon_card.webp"
-              alt="Dungeon Hourglass"
-              style={{
-                maxHeight: "300px",
-                objectFit: "contain",
-                opacity: getHourglassOpacity(),
-                transition: "opacity 0.8s ease",
-                position: "relative",
-                zIndex: 1,
-              }}
+          {reportData ? (
+            /* ════════════ BATTLE REPORT STATE ════════════ */
+            <BattleReport
+              result={reportData.result}
+              events={reportData.events}
+              durationMinutes={reportData.durationMinutes}
+              onDelveAgain={handleDelveAgain}
+              onReturnToHub={handleReturnToHub}
             />
-          </div>
-
-          <h1
-            style={{
-              fontFamily: "var(--font-cinzel)",
-              color: "var(--text-primary)",
-              fontSize: "1.8rem",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              margin: 0,
-              textAlign: "center",
-            }}
-          >
-            The Dungeon Awaits
-          </h1>
-
-          <p
-            style={{
-              fontFamily: "var(--font-crimson)",
-              fontStyle: "italic",
-              color: "var(--text-secondary)",
-              margin: 0,
-              fontSize: "1.2rem",
-              textAlign: "center",
-            }}
-          >
-            Steel your mind. Forge your focus.
-          </p>
-
-          {/* ── Timer UI ── */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "1.25rem",
-              width: "100%",
-              maxWidth: "420px",
-            }}
-          >
-
-            {/* ── Mode selector (idle only) ── */}
-            {phase === "idle" && (
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                <button
-                  onClick={() => setMode("continuous")}
+          ) : activeRun ? (
+            /* ════════════ ACTIVE RUN STATE ════════════ */
+            <ActiveRunView
+              run={activeRun}
+              secondsLeft={secondsLeft}
+              revealedEvents={revealedEvents}
+              formatTime={formatTime}
+              onComplete={handleComplete}
+              onRetreat={handleRetreat}
+              timerDone={secondsLeft <= 0}
+            />
+          ) : (
+            /* ════════════ IDLE / PRE-DELVE STATE ════════════ */
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "2rem",
+                width: "100%",
+                maxWidth: "720px",
+              }}
+            >
+              {/* Page title */}
+              <div style={{ textAlign: "center" }}>
+                <h1
                   style={{
                     fontFamily: "var(--font-cinzel)",
-                    textTransform: "uppercase",
-                    fontSize: "0.65rem",
+                    color: "var(--text-primary)",
+                    fontSize: "1.8rem",
                     letterSpacing: "0.15em",
-                    padding: "0.5rem 1.2rem",
-                    borderRadius: "2px",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    color: mode === "continuous" ? "var(--accent-ember)" : "var(--text-muted)",
-                    border: mode === "continuous"
-                      ? "1px solid rgba(200,75,17,0.5)"
-                      : "1px solid var(--border-default)",
-                    background: mode === "continuous"
-                      ? "rgba(200,75,17,0.15)"
-                      : "transparent",
+                    textTransform: "uppercase",
+                    margin: 0,
                   }}
                 >
-                  Endless Delve
-                </button>
-                <button
-                  onClick={() => setMode("single")}
-                  style={{
-                    fontFamily: "var(--font-cinzel)",
-                    textTransform: "uppercase",
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.15em",
-                    padding: "0.5rem 1.2rem",
-                    borderRadius: "2px",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    color: mode === "single" ? "var(--accent-ember)" : "var(--text-muted)",
-                    border: mode === "single"
-                      ? "1px solid rgba(200,75,17,0.5)"
-                      : "1px solid var(--border-default)",
-                    background: mode === "single"
-                      ? "rgba(200,75,17,0.15)"
-                      : "transparent",
-                  }}
-                >
-                  Timed Raid
-                </button>
-              </div>
-            )}
-
-            {/* ── Time configuration (idle only) ── */}
-            {phase === "idle" && mode === "continuous" && (
-              <div
-                style={{
-                  display: "flex",
-                  gap: "2rem",
-                  alignItems: "flex-start",
-                }}
-              >
-                {/* Battle (work) input */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
-                  <label
-                    style={{
-                      fontFamily: "var(--font-crimson)",
-                      fontStyle: "italic",
-                      color: "var(--text-secondary)",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    Battle
-                  </label>
-                  <input
-                    type="number"
-                    value={workMinutes}
-                    min={1}
-                    onChange={(e) => setWorkMinutes(Number(e.target.value))}
-                    style={{
-                      width: "4rem",
-                      background: "var(--bg-elevated)",
-                      color: "var(--text-primary)",
-                      border: "1px solid var(--border-default)",
-                      borderRadius: "2px",
-                      padding: "0.35rem 0.5rem",
-                      fontFamily: "var(--font-cinzel)",
-                      fontSize: "0.85rem",
-                      textAlign: "center",
-                      outline: "none",
-                    }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent-ember)"; }}
-                    onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; }}
-                  />
-                  {/* Work presets */}
-                  <div style={{ display: "flex", gap: "0.35rem" }}>
-                    {WORK_PRESETS.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setWorkMinutes(p)}
-                        style={{
-                          fontFamily: "var(--font-cinzel)",
-                          fontSize: "0.55rem",
-                          letterSpacing: "0.1em",
-                          padding: "0.25rem 0.45rem",
-                          borderRadius: "2px",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                          color: workMinutes === p ? "var(--accent-ember)" : "var(--text-muted)",
-                          border: workMinutes === p
-                            ? "1px solid rgba(200,75,17,0.5)"
-                            : "1px solid var(--border-default)",
-                          background: workMinutes === p ? "rgba(200,75,17,0.15)" : "transparent",
-                        }}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Rest (break) input */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
-                  <label
-                    style={{
-                      fontFamily: "var(--font-crimson)",
-                      fontStyle: "italic",
-                      color: "var(--text-secondary)",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    Rest
-                  </label>
-                  <input
-                    type="number"
-                    value={breakMinutes}
-                    min={1}
-                    onChange={(e) => setBreakMinutes(Number(e.target.value))}
-                    style={{
-                      width: "4rem",
-                      background: "var(--bg-elevated)",
-                      color: "var(--text-primary)",
-                      border: "1px solid var(--border-default)",
-                      borderRadius: "2px",
-                      padding: "0.35rem 0.5rem",
-                      fontFamily: "var(--font-cinzel)",
-                      fontSize: "0.85rem",
-                      textAlign: "center",
-                      outline: "none",
-                    }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent-ember)"; }}
-                    onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; }}
-                  />
-                  {/* Break presets */}
-                  <div style={{ display: "flex", gap: "0.35rem" }}>
-                    {BREAK_PRESETS.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setBreakMinutes(p)}
-                        style={{
-                          fontFamily: "var(--font-cinzel)",
-                          fontSize: "0.55rem",
-                          letterSpacing: "0.1em",
-                          padding: "0.25rem 0.45rem",
-                          borderRadius: "2px",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                          color: breakMinutes === p ? "var(--accent-ember)" : "var(--text-muted)",
-                          border: breakMinutes === p
-                            ? "1px solid rgba(200,75,17,0.5)"
-                            : "1px solid var(--border-default)",
-                          background: breakMinutes === p ? "rgba(200,75,17,0.15)" : "transparent",
-                        }}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {phase === "idle" && mode === "single" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
-                <label
+                  The Dungeon Awaits
+                </h1>
+                <p
                   style={{
                     fontFamily: "var(--font-crimson)",
                     fontStyle: "italic",
                     color: "var(--text-secondary)",
-                    fontSize: "0.9rem",
+                    margin: "0.5rem 0 0 0",
+                    fontSize: "1.1rem",
                   }}
                 >
-                  Delve Duration
-                </label>
-                <input
-                  type="number"
-                  value={singleMinutes}
-                  min={1}
-                  onChange={(e) => setSingleMinutes(Number(e.target.value))}
-                  style={{
-                    width: "4rem",
-                    background: "var(--bg-elevated)",
-                    color: "var(--text-primary)",
-                    border: "1px solid var(--border-default)",
-                    borderRadius: "2px",
-                    padding: "0.35rem 0.5rem",
-                    fontFamily: "var(--font-cinzel)",
-                    fontSize: "0.85rem",
-                    textAlign: "center",
-                    outline: "none",
-                  }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent-ember)"; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; }}
-                />
-                {/* Single mode presets */}
-                <div style={{ display: "flex", gap: "0.35rem" }}>
-                  {WORK_PRESETS.map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setSingleMinutes(p)}
+                  Choose your descent. Steel your mind.
+                </p>
+              </div>
+
+              {dataLoading ? (
+                <p style={{ color: "var(--text-muted)" }}>
+                  Scouting the depths...
+                </p>
+              ) : (
+                <>
+                  {/* ── Tier Selection Cards ── */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                      gap: "0.75rem",
+                      width: "100%",
+                    }}
+                  >
+                    {tiers.map((tier) => (
+                      <TierCard
+                        key={tier.key}
+                        tier={tier}
+                        selected={selectedTier === tier.key}
+                        onSelect={() => {
+                          if (tier.unlocked) {
+                            setSelectedTier(
+                              selectedTier === tier.key ? null : tier.key,
+                            );
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* ── Duration Selector ── */}
+                  {selectedTier && (
+                    <div
                       style={{
-                        fontFamily: "var(--font-cinzel)",
-                        fontSize: "0.55rem",
-                        letterSpacing: "0.1em",
-                        padding: "0.25rem 0.45rem",
-                        borderRadius: "2px",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                        color: singleMinutes === p ? "var(--accent-ember)" : "var(--text-muted)",
-                        border: singleMinutes === p
-                          ? "1px solid rgba(200,75,17,0.5)"
-                          : "1px solid var(--border-default)",
-                        background: singleMinutes === p ? "rgba(200,75,17,0.15)" : "transparent",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        width: "100%",
                       }}
                     >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+                      <label
+                        style={{
+                          fontFamily: "var(--font-crimson)",
+                          fontStyle: "italic",
+                          color: "var(--text-secondary)",
+                          fontSize: "1rem",
+                        }}
+                      >
+                        Delve Duration
+                      </label>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        {DURATION_PRESETS.map((preset) => (
+                          <button
+                            key={preset}
+                            onClick={() => setDurationMinutes(preset)}
+                            style={{
+                              fontFamily: "var(--font-cinzel)",
+                              fontSize: "0.65rem",
+                              letterSpacing: "0.12em",
+                              padding: "0.5rem 1.2rem",
+                              borderRadius: "2px",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              color:
+                                durationMinutes === preset
+                                  ? "var(--accent-ember)"
+                                  : "var(--text-muted)",
+                              border:
+                                durationMinutes === preset
+                                  ? "1px solid rgba(200,75,17,0.5)"
+                                  : "1px solid var(--border-default)",
+                              background:
+                                durationMinutes === preset
+                                  ? "rgba(200,75,17,0.15)"
+                                  : "transparent",
+                            }}
+                          >
+                            {preset} min
+                          </button>
+                        ))}
+                      </div>
+                      <p
+                        style={{
+                          color: "var(--text-muted)",
+                          fontSize: "0.7rem",
+                          margin: 0,
+                        }}
+                      >
+                        Longer delves yield more XP and loot
+                      </p>
+                    </div>
+                  )}
 
-            {/* ── Timer display (non-idle phases) ── */}
-            {phase !== "idle" && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <p
-                  className={isRunning ? "dungeon-pulse" : ""}
-                  style={{
-                    fontFamily: "var(--font-cinzel)",
-                    fontSize: "4rem",
-                    color: "var(--text-primary)",
-                    letterSpacing: "0.1em",
-                    margin: 0,
-                    lineHeight: 1,
-                  }}
-                >
-                  {formatTime(secondsLeft)}
-                </p>
-
-                <p
-                  style={{
-                    fontFamily: "var(--font-cinzel)",
-                    fontSize: "0.7rem",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: phaseLabel.color,
-                    margin: 0,
-                  }}
-                >
-                  {phaseLabel.text}
-                </p>
-
-                {mode === "continuous" && cycleCount > 0 && (
-                  <p
-                    style={{
-                      color: "var(--text-muted)",
-                      fontSize: "0.7rem",
-                      fontFamily: "var(--font-cinzel)",
-                      letterSpacing: "0.1em",
-                      margin: 0,
-                    }}
-                  >
-                    Cycle {cycleCount}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* ── Control buttons ── */}
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
-              {/* Idle: Venture Forth */}
-              {phase === "idle" && (
-                <button
-                  onClick={handleStart}
-                  onMouseEnter={() => setPrimaryHover(true)}
-                  onMouseLeave={() => setPrimaryHover(false)}
-                  style={{
-                    ...primaryButtonStyle,
-                    ...(primaryHover
-                      ? {
-                          background: "rgba(200,75,17,0.28)",
-                          borderColor: "rgba(200,75,17,0.7)",
-                          boxShadow: "0 0 12px rgba(200,75,17,0.3)",
+                  {/* ── Link to Tree Node (Optional) ── */}
+                  {selectedTier && linkableNodes.length > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem",
+                        width: "100%",
+                        maxWidth: "400px",
+                      }}
+                    >
+                      <label
+                        style={{
+                          fontFamily: "var(--font-crimson)",
+                          fontStyle: "italic",
+                          color: "var(--text-secondary)",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        What are you working on?
+                      </label>
+                      <select
+                        value={linkedNodeId ?? ""}
+                        onChange={(e) =>
+                          setLinkedNodeId(e.target.value || null)
                         }
-                      : {}),
-                  }}
-                >
-                  Venture Forth
-                </button>
-              )}
+                        style={{
+                          background: "var(--bg-elevated)",
+                          color: "var(--text-primary)",
+                          border: "1px solid var(--border-default)",
+                          borderRadius: "2px",
+                          padding: "0.5rem 0.75rem",
+                          fontFamily: "var(--font-cinzel)",
+                          fontSize: "0.7rem",
+                          outline: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <option value="">None</option>
+                        {linkableNodes.map(({ node, treeName }) => (
+                          <option key={node.id} value={node.id}>
+                            {treeName} → {node.title}
+                          </option>
+                        ))}
+                      </select>
+                      {linkedNodeId && (
+                        <span
+                          style={{
+                            fontSize: "0.7rem",
+                            color: "var(--accent-gold)",
+                            fontFamily: "var(--font-cinzel)",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          +20% XP bonus
+                        </span>
+                      )}
+                    </div>
+                  )}
 
-              {/* Running: Hold Position + Retreat */}
-              {isRunning && (
-                <>
-                  <button onClick={handlePause} style={pauseButtonStyle}>
-                    Hold Position
-                  </button>
-                  <button onClick={handleStop} style={stopButtonStyle}>
-                    Retreat
-                  </button>
-                </>
-              )}
-
-              {/* Paused: Press Onward + Retreat */}
-              {!isRunning && phase !== "idle" && phase !== "complete" && (
-                <>
-                  <button
-                    onClick={handleResume}
-                    onMouseEnter={() => setPrimaryHover(true)}
-                    onMouseLeave={() => setPrimaryHover(false)}
-                    style={{
-                      ...primaryButtonStyle,
-                      ...(primaryHover
-                        ? {
-                            background: "rgba(200,75,17,0.28)",
-                            borderColor: "rgba(200,75,17,0.7)",
-                            boxShadow: "0 0 12px rgba(200,75,17,0.3)",
-                          }
-                        : {}),
-                    }}
-                  >
-                    Press Onward
-                  </button>
-                  <button onClick={handleStop} style={stopButtonStyle}>
-                    Retreat
-                  </button>
-                </>
-              )}
-
-              {/* Complete: Delve Again */}
-              {phase === "complete" && (
-                <button
-                  onClick={handleStop}
-                  onMouseEnter={() => setPrimaryHover(true)}
-                  onMouseLeave={() => setPrimaryHover(false)}
-                  style={{
-                    ...primaryButtonStyle,
-                    ...(primaryHover
-                      ? {
-                          background: "rgba(200,75,17,0.28)",
-                          borderColor: "rgba(200,75,17,0.7)",
-                          boxShadow: "0 0 12px rgba(200,75,17,0.3)",
+                  {/* ── Link to Daily Quest (Optional) ── */}
+                  {selectedTier && uncompletedQuests.length > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem",
+                        width: "100%",
+                        maxWidth: "400px",
+                      }}
+                    >
+                      <label
+                        style={{
+                          fontFamily: "var(--font-crimson)",
+                          fontStyle: "italic",
+                          color: "var(--text-secondary)",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Fulfill a quest?
+                      </label>
+                      <select
+                        value={linkedQuestId ?? ""}
+                        onChange={(e) =>
+                          setLinkedQuestId(e.target.value || null)
                         }
-                      : {}),
-                  }}
-                >
-                  Delve Again
-                </button>
+                        style={{
+                          background: "var(--bg-elevated)",
+                          color: "var(--text-primary)",
+                          border: "1px solid var(--border-default)",
+                          borderRadius: "2px",
+                          padding: "0.5rem 0.75rem",
+                          fontFamily: "var(--font-cinzel)",
+                          fontSize: "0.7rem",
+                          outline: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <option value="">None</option>
+                        {uncompletedQuests.map((q) => (
+                          <option key={q.id} value={q.id}>
+                            {q.title} (+{q.xp_reward} XP)
+                          </option>
+                        ))}
+                      </select>
+                      {linkedQuestId && (
+                        <span
+                          style={{
+                            fontSize: "0.7rem",
+                            color: "var(--accent-gold)",
+                            fontFamily: "var(--font-cinzel)",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          +15% XP bonus — auto-completes quest on dungeon
+                          completion
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Error message ── */}
+                  {error && (
+                    <p
+                      style={{
+                        color: "var(--accent-blood)",
+                        fontSize: "0.8rem",
+                        margin: 0,
+                        textAlign: "center",
+                      }}
+                    >
+                      {error}
+                    </p>
+                  )}
+
+                  {/* ── Venture Forth Button ── */}
+                  {selectedTier && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.85rem",
+                          color: "var(--accent-gold)",
+                          fontFamily: "var(--font-cinzel)",
+                          letterSpacing: "0.1em",
+                          textShadow: "0 0 10px rgba(255,215,0,0.25)",
+                        }}
+                      >
+                        ~{estimatedXp} XP
+                      </span>
+                      {totalBonus > 0 && (
+                        <span
+                          style={{
+                            fontSize: "0.6rem",
+                            color: "var(--text-muted)",
+                            fontFamily: "var(--font-cinzel)",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          includes +{totalBonus}% bonus
+                        </span>
+                      )}
+                      <VentureForthButton
+                        disabled={starting || !selectedTier}
+                        loading={starting}
+                        onClick={handleStart}
+                        tierName={selectedTierInfo?.name ?? ""}
+                        floors={selectedTierInfo?.floors ?? 0}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
-          </div>
+          )}
         </main>
+      </div>
+
+      {levelUpEvent && (
+        <LevelUpModal
+          level={levelUpEvent.level}
+          title={levelUpEvent.title}
+          previousTitle={levelUpEvent.previousTitle}
+          xpEarned={levelUpEvent.xpEarned}
+          onClose={() => setLevelUpEvent(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TierCard
+// ---------------------------------------------------------------------------
+
+function TierCard({
+  tier,
+  selected,
+  onSelect,
+}: {
+  tier: DungeonTier;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  const locked = !tier.unlocked;
+
+  const borderColor = locked
+    ? "rgba(128,128,128,0.2)"
+    : selected
+      ? "rgba(255,215,0,0.6)"
+      : hover
+        ? "rgba(200,75,17,0.5)"
+        : "rgba(200,75,17,0.25)";
+
+  const bgColor = locked
+    ? "rgba(18,18,26,0.6)"
+    : selected
+      ? "rgba(255,215,0,0.06)"
+      : "rgba(18,18,26,0.8)";
+
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      disabled={locked}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.4rem",
+        padding: "1rem",
+        borderRadius: "4px",
+        border: `1px solid ${borderColor}`,
+        background: bgColor,
+        cursor: locked ? "not-allowed" : "pointer",
+        opacity: locked ? 0.4 : 1,
+        transition: "all 0.2s ease",
+        textAlign: "left",
+        transform: selected ? "scale(1.02)" : "scale(1)",
+        boxShadow: selected ? "0 0 20px rgba(255,215,0,0.1)" : "none",
+      }}
+    >
+      {/* Tier name */}
+      <h3
+        style={{
+          fontFamily: "var(--font-cinzel)",
+          fontSize: "0.85rem",
+          letterSpacing: "0.08em",
+          color: locked
+            ? "var(--text-muted)"
+            : selected
+              ? "var(--accent-gold)"
+              : "var(--text-primary)",
+          margin: 0,
+          lineHeight: 1.3,
+        }}
+      >
+        {tier.name}
+      </h3>
+
+      {/* Description */}
+      <p
+        style={{
+          fontFamily: "var(--font-crimson)",
+          fontStyle: "italic",
+          fontSize: "0.8rem",
+          color: "var(--text-secondary)",
+          margin: 0,
+          lineHeight: 1.4,
+        }}
+      >
+        {tier.description}
+      </p>
+
+      {/* Meta row */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "0.25rem",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "0.65rem",
+            color: "var(--text-muted)",
+            fontFamily: "var(--font-cinzel)",
+            letterSpacing: "0.1em",
+          }}
+        >
+          {tier.floors} floors · {tier.base_xp} XP
+        </span>
+        {locked && (
+          <span
+            style={{
+              fontSize: "0.6rem",
+              color: "var(--accent-blood)",
+              fontFamily: "var(--font-cinzel)",
+              letterSpacing: "0.1em",
+            }}
+          >
+            Lv. {tier.min_level}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// VentureForthButton
+// ---------------------------------------------------------------------------
+
+function VentureForthButton({
+  disabled,
+  loading,
+  onClick,
+  tierName,
+  floors,
+}: {
+  disabled: boolean;
+  loading: boolean;
+  onClick: () => void;
+  tierName: string;
+  floors: number;
+}) {
+  const [hover, setHover] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        fontFamily: "var(--font-cinzel)",
+        fontSize: "0.7rem",
+        letterSpacing: "0.2em",
+        textTransform: "uppercase",
+        padding: "0.75rem 2.5rem",
+        borderRadius: "2px",
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "all 0.2s ease",
+        color: disabled ? "var(--text-muted)" : "var(--accent-ember)",
+        background:
+          hover && !disabled
+            ? "rgba(200,75,17,0.28)"
+            : "rgba(200,75,17,0.15)",
+        border:
+          hover && !disabled
+            ? "1px solid rgba(200,75,17,0.7)"
+            : "1px solid rgba(200,75,17,0.35)",
+        boxShadow:
+          hover && !disabled ? "0 0 16px rgba(200,75,17,0.3)" : "none",
+        opacity: disabled ? 0.5 : 1,
+      }}
+      title={tierName ? `Enter ${tierName} (${floors} floors)` : ""}
+      data-sound="dungeon-start"
+    >
+      {loading ? "Descending..." : "Venture Forth"}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ActiveRunView — Timer + event log during an active dungeon run
+// ---------------------------------------------------------------------------
+
+function ActiveRunView({
+  run,
+  secondsLeft,
+  revealedEvents,
+  formatTime,
+  onComplete,
+  onRetreat,
+  timerDone,
+}: {
+  run: DungeonRun;
+  secondsLeft: number;
+  revealedEvents: DungeonEvent[];
+  formatTime: (s: number) => string;
+  onComplete: () => void;
+  onRetreat: () => void;
+  timerDone: boolean;
+}) {
+  const [completeHover, setCompleteHover] = useState(false);
+  const [retreatHover, setRetreatHover] = useState(false);
+  const [confirmRetreat, setConfirmRetreat] = useState(false);
+  const eventLogRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll event log to bottom
+  useEffect(() => {
+    if (eventLogRef.current) {
+      eventLogRef.current.scrollTop = eventLogRef.current.scrollHeight;
+    }
+  }, [revealedEvents.length]);
+
+  const eventIcon = (type: DungeonEvent["event_type"]) => {
+    switch (type) {
+      case "combat":
+        return "\u2694";
+      case "boss":
+        return "\u{1F480}";
+      case "discovery":
+        return "\u2728";
+      case "trap":
+        return "\u26A0";
+      case "rest":
+        return "\u{1F6E1}";
+      default:
+        return "\u25C6";
+    }
+  };
+
+  const eventColor = (type: DungeonEvent["event_type"]) => {
+    switch (type) {
+      case "combat":
+        return "var(--accent-ember)";
+      case "boss":
+        return "var(--accent-blood)";
+      case "discovery":
+        return "var(--accent-gold)";
+      case "trap":
+        return "var(--accent-ember)";
+      case "rest":
+        return "var(--state-available)";
+      default:
+        return "var(--text-secondary)";
+    }
+  };
+
+  // Floor progress: count unique floors in revealed events
+  const currentFloor = revealedEvents.length > 0
+    ? Math.max(...revealedEvents.map((e) => e.floor_number))
+    : 0;
+
+  // Tier name mapping
+  const tierNames: Record<string, string> = {
+    shallow_crypts: "The Shallow Crypts",
+    ember_mines: "The Ember Mines",
+    hollow_deep: "The Hollow Deep",
+    abyssal_rift: "The Abyssal Rift",
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "1.25rem",
+        width: "100%",
+        maxWidth: "520px",
+      }}
+    >
+      {/* Tier name */}
+      <p
+        style={{
+          fontFamily: "var(--font-cinzel)",
+          fontSize: "0.65rem",
+          letterSpacing: "0.25em",
+          textTransform: "uppercase",
+          color: "var(--text-muted)",
+          margin: 0,
+        }}
+      >
+        {tierNames[run.tier] ?? run.tier}
+      </p>
+
+      {/* Floor progress bar */}
+      <div style={{ width: "100%" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "3px",
+            width: "100%",
+            height: "6px",
+          }}
+        >
+          {Array.from({ length: run.total_floors }, (_, i) => {
+            const floorNum = i + 1;
+            const cleared = floorNum <= currentFloor;
+            const isCurrent = floorNum === currentFloor;
+            return (
+              <div
+                key={floorNum}
+                className={isCurrent && !timerDone ? "dungeon-pulse" : ""}
+                style={{
+                  flex: 1,
+                  borderRadius: "2px",
+                  backgroundColor: cleared
+                    ? "var(--accent-gold)"
+                    : "var(--bg-highlight)",
+                  boxShadow: cleared
+                    ? "0 0 6px rgba(255,215,0,0.3)"
+                    : "none",
+                  transition: "background-color 0.5s ease, box-shadow 0.5s ease",
+                }}
+              />
+            );
+          })}
+        </div>
+        <p
+          style={{
+            fontFamily: "var(--font-cinzel)",
+            fontSize: "0.6rem",
+            letterSpacing: "0.12em",
+            color: "var(--text-muted)",
+            margin: "0.35rem 0 0 0",
+            textAlign: "center",
+          }}
+        >
+          Floor {Math.min(currentFloor, run.total_floors)} of{" "}
+          {run.total_floors}
+        </p>
+      </div>
+
+      {/* Timer */}
+      <div style={{ textAlign: "center" }}>
+        <p
+          className={!timerDone ? "dungeon-pulse" : ""}
+          style={{
+            fontFamily: "var(--font-cinzel)",
+            fontSize: "4rem",
+            color: "var(--text-primary)",
+            letterSpacing: "0.1em",
+            margin: 0,
+            lineHeight: 1,
+          }}
+        >
+          {formatTime(secondsLeft)}
+        </p>
+        <p
+          style={{
+            fontFamily: "var(--font-cinzel)",
+            fontSize: "0.7rem",
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            color: timerDone ? "var(--accent-gold)" : "var(--accent-ember)",
+            margin: "0.5rem 0 0 0",
+          }}
+        >
+          {timerDone ? "The Dungeon Yields" : "Delving..."}
+        </p>
+
+        {/* Linked node/quest info */}
+        {run.linked_node_id && (
+          <p
+            style={{
+              fontSize: "0.6rem",
+              color: "var(--text-muted)",
+              margin: "0.25rem 0 0 0",
+              fontFamily: "var(--font-cinzel)",
+              letterSpacing: "0.08em",
+            }}
+          >
+            +20% XP — linked to tree node
+          </p>
+        )}
+        {run.linked_quest_id && (
+          <p
+            style={{
+              fontSize: "0.6rem",
+              color: "var(--text-muted)",
+              margin: "0.15rem 0 0 0",
+              fontFamily: "var(--font-cinzel)",
+              letterSpacing: "0.08em",
+            }}
+          >
+            +15% XP — fulfilling daily quest
+          </p>
+        )}
+      </div>
+
+      {/* Event log */}
+      {revealedEvents.length > 0 && (
+        <div
+          ref={eventLogRef}
+          style={{
+            width: "100%",
+            maxHeight: "240px",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
+            padding: "0.75rem",
+            background: "rgba(10,10,18,0.6)",
+            border: "1px solid var(--border-default)",
+            borderRadius: "4px",
+          }}
+        >
+          {revealedEvents.map((event) => (
+            <div
+              key={event.id}
+              style={{
+                display: "flex",
+                gap: "0.6rem",
+                alignItems: "flex-start",
+                padding: "0.4rem 0",
+                borderBottom: "1px solid rgba(224,216,200,0.05)",
+                animation: "fadeIn 0.5s ease",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "0.9rem",
+                  lineHeight: 1.3,
+                  flexShrink: 0,
+                }}
+              >
+                {eventIcon(event.event_type)}
+              </span>
+              <div>
+                <p
+                  style={{
+                    fontFamily: "var(--font-cinzel)",
+                    fontSize: "0.75rem",
+                    color: eventColor(event.event_type),
+                    margin: 0,
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Floor {event.floor_number}: {event.title}
+                </p>
+                <p
+                  style={{
+                    fontFamily: "var(--font-crimson)",
+                    fontStyle: "italic",
+                    fontSize: "0.8rem",
+                    color: "var(--text-secondary)",
+                    margin: "0.15rem 0 0 0",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {event.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Controls */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
+          {timerDone ? (
+            <button
+              onClick={onComplete}
+              onMouseEnter={() => setCompleteHover(true)}
+              onMouseLeave={() => setCompleteHover(false)}
+              style={{
+                fontFamily: "var(--font-cinzel)",
+                fontSize: "0.65rem",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                padding: "0.7rem 2rem",
+                borderRadius: "2px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                color: "var(--accent-gold)",
+                background: completeHover
+                  ? "rgba(255,215,0,0.2)"
+                  : "rgba(255,215,0,0.1)",
+                border: completeHover
+                  ? "1px solid rgba(255,215,0,0.6)"
+                  : "1px solid rgba(255,215,0,0.3)",
+                boxShadow: completeHover
+                  ? "0 0 12px rgba(255,215,0,0.2)"
+                  : "none",
+              }}
+              data-sound="dungeon-complete"
+            >
+              Claim Victory
+            </button>
+          ) : confirmRetreat ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "var(--font-crimson)",
+                  fontStyle: "italic",
+                  fontSize: "0.85rem",
+                  color: "var(--text-secondary)",
+                  margin: 0,
+                  textAlign: "center",
+                }}
+              >
+                Retreat now? Your hero will return wounded.
+                <br />
+                Partial XP, no loot.
+              </p>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  onClick={() => {
+                    setConfirmRetreat(false);
+                    onRetreat();
+                  }}
+                  style={{
+                    fontFamily: "var(--font-cinzel)",
+                    fontSize: "0.6rem",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: "2px",
+                    cursor: "pointer",
+                    color: "var(--accent-blood)",
+                    background: "rgba(139,0,0,0.15)",
+                    border: "1px solid rgba(139,0,0,0.4)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  Confirm Retreat
+                </button>
+                <button
+                  onClick={() => setConfirmRetreat(false)}
+                  style={{
+                    fontFamily: "var(--font-cinzel)",
+                    fontSize: "0.6rem",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: "2px",
+                    cursor: "pointer",
+                    color: "var(--text-muted)",
+                    background: "var(--bg-elevated)",
+                    border: "1px solid var(--border-default)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  Hold Position
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmRetreat(true)}
+              onMouseEnter={() => setRetreatHover(true)}
+              onMouseLeave={() => setRetreatHover(false)}
+              style={{
+                fontFamily: "var(--font-cinzel)",
+                fontSize: "0.6rem",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                padding: "0.6rem 1.5rem",
+                borderRadius: "2px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                color: "var(--text-muted)",
+                background: retreatHover
+                  ? "rgba(20,18,28,0.9)"
+                  : "rgba(20,18,28,0.7)",
+                border: retreatHover
+                  ? "1px solid rgba(224,216,200,0.2)"
+                  : "1px solid rgba(224,216,200,0.1)",
+              }}
+            >
+              Retreat
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

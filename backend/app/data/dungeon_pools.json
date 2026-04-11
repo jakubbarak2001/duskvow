@@ -1,0 +1,172 @@
+{
+  "tiers": {
+    "shallow_crypts": {
+      "name": "The Shallow Crypts",
+      "description": "Crumbling tombs where restless dead still wander.",
+      "min_level": 1,
+      "floors": 3,
+      "base_xp": 30,
+      "monsters": [
+        { "name": "Hollow Sentinel", "description": "An empty suit of armor, animated by fading spite." },
+        { "name": "Crypt Rat Swarm", "description": "Hundreds of pale vermin, moving as one." },
+        { "name": "Bone Warden", "description": "A skeleton fused to the wall, still swinging its rusted blade." },
+        { "name": "Dust Wraith", "description": "A whisper given form — barely visible, but its touch chills to the marrow." },
+        { "name": "Grave Tender", "description": "Once a caretaker. Now it tends the dead with... enthusiasm." }
+      ],
+      "events": {
+        "discovery": [
+          { "title": "Forgotten Alcove", "description": "Your hero finds a recess in the wall, hidden behind crumbling mortar. Something glints inside." },
+          { "title": "Ancient Inscription", "description": "Faded runes carved into the floor. Your hero traces them, gaining a fragment of old knowledge." },
+          { "title": "Collapsed Passage", "description": "The ceiling gives way behind your hero. No turning back — only forward." }
+        ],
+        "trap": [
+          { "title": "Pressure Plate", "description": "A click underfoot. Darts fly from the walls — your hero rolls aside, mostly unscathed." },
+          { "title": "False Floor", "description": "The stones give way. A short fall into cold water. Your hero climbs out, shaken but whole." }
+        ],
+        "rest": [
+          { "title": "Quiet Chamber", "description": "An empty room. The air is still. Your hero catches their breath before pressing on." },
+          { "title": "Abandoned Campfire", "description": "Someone was here before. The embers are cold, but the shelter remains." }
+        ]
+      },
+      "boss": { "name": "The Warden Below", "description": "A massive figure of rusted iron and fused bone, blocking the deepest passage. It has not moved in centuries — until now." },
+      "loot_weights": { "scroll_of_clarity": 30, "ember_shard": 25, "ashen_token": 25, "heros_ration": 15, "shadowsteel_fragment": 5, "rune_of_focus": 0 }
+    },
+    "ember_mines": {
+      "name": "The Ember Mines",
+      "description": "Abandoned mining shafts where fire still burns in the deep rock.",
+      "min_level": 5,
+      "floors": 5,
+      "base_xp": 55,
+      "monsters": [
+        { "name": "Cinder Crawler", "description": "An insect the size of a hound, its carapace glowing with trapped heat." },
+        { "name": "Soot Phantom", "description": "A shape in the smoke. It solidifies just long enough to strike." },
+        { "name": "Molten Husk", "description": "A miner who never left. The fire took everything but the hunger." },
+        { "name": "Ember Tick", "description": "Small. Fast. Latches on and drains warmth until your hero pries it free." },
+        { "name": "Forge Golem", "description": "Slag and steel fused by underground heat into a shambling guardian." },
+        { "name": "Vein Stalker", "description": "It moves through cracks in the rock. You only see it when it wants you to." }
+      ],
+      "events": {
+        "discovery": [
+          { "title": "Ore Vein", "description": "A seam of dark metal pulses with faint heat. Your hero pockets a shard." },
+          { "title": "Miner's Cache", "description": "A locked chest beneath a collapsed beam. Inside — supplies left by someone who never returned." },
+          { "title": "Underground Spring", "description": "Cool water in a burning place. Your hero drinks deeply and presses on refreshed." }
+        ],
+        "trap": [
+          { "title": "Gas Pocket", "description": "A hiss from the wall. Noxious fumes fill the tunnel. Your hero covers their face and pushes through." },
+          { "title": "Unstable Shaft", "description": "The ground shakes. Rocks fall. Your hero sprints through the collapse." }
+        ],
+        "rest": [
+          { "title": "Cool Alcove", "description": "A pocket of breathable air away from the heat. Your hero rests against the cool stone." },
+          { "title": "Old Elevator Platform", "description": "The mechanism is broken, but the platform makes a decent resting spot." }
+        ]
+      },
+      "boss": { "name": "Furnace Heart", "description": "The mine's core — a mass of molten rock and twisted metal that beats like a living organ. It does not want you to leave." },
+      "loot_weights": { "scroll_of_clarity": 25, "ember_shard": 20, "ashen_token": 15, "heros_ration": 15, "shadowsteel_fragment": 15, "rune_of_focus": 10 }
+    },
+    "hollow_deep": {
+      "name": "The Hollow Deep",
+      "description": "A vast cavern system where sound itself seems to decay.",
+      "min_level": 10,
+      "floors": 7,
+      "base_xp": 85,
+      "monsters": [
+        { "name": "Shade Crawler", "description": "It has too many legs. They make no sound on the stone." },
+        { "name": "Echo Devourer", "description": "It eats sound. Near it, your hero's footsteps vanish and their heartbeat becomes deafening." },
+        { "name": "Hollow Knight", "description": "Armor without a body. Sword without a hand. It fights as if remembering a war long ended." },
+        { "name": "Abyssal Leech", "description": "Translucent. Enormous. It drops from the ceiling without warning." },
+        { "name": "Stone Singer", "description": "It hums a note that makes the walls weep. Your hero's bones vibrate in sympathy." },
+        { "name": "Void Spinner", "description": "A spider of pure darkness. Its web is invisible until you're in it." },
+        { "name": "Deep Watcher", "description": "A single eye, embedded in the cave wall. It follows. It always follows." }
+      ],
+      "events": {
+        "discovery": [
+          { "title": "Crystalline Chamber", "description": "The walls explode with color — bioluminescent crystals light a hidden grotto. Your hero gathers what they can." },
+          { "title": "Petrified Explorer", "description": "A previous adventurer, turned to stone mid-stride. Their pack still holds useful supplies." },
+          { "title": "Underground River", "description": "Black water flowing in silence. Your hero follows it deeper and finds a new passage." }
+        ],
+        "trap": [
+          { "title": "Sound Trap", "description": "A chamber that amplifies every noise. Your hero's breathing draws attention from deeper in." },
+          { "title": "Gravity Anomaly", "description": "The floor becomes the ceiling for a terrifying moment. Your hero lands hard but keeps moving." }
+        ],
+        "rest": [
+          { "title": "Fungal Garden", "description": "Soft bioluminescent moss carpets a small chamber. The air is surprisingly fresh." },
+          { "title": "Abandoned Outpost", "description": "Someone tried to establish a base here. They failed, but left behind useful remnants." }
+        ]
+      },
+      "boss": { "name": "The Hollow King", "description": "It sits on a throne of fused stalactites, wearing a crown of absolute silence. When it stands, the entire cavern holds its breath." },
+      "loot_weights": { "scroll_of_clarity": 20, "ember_shard": 15, "ashen_token": 10, "heros_ration": 15, "shadowsteel_fragment": 20, "rune_of_focus": 20 }
+    },
+    "abyssal_rift": {
+      "name": "The Abyssal Rift",
+      "description": "The wound at the bottom of the world. Reality thins here.",
+      "min_level": 20,
+      "floors": 9,
+      "base_xp": 120,
+      "monsters": [
+        { "name": "Rift Stalker", "description": "It exists in two places at once. Striking one only angers the other." },
+        { "name": "Void Sentinel", "description": "A guardian of nothing, defending an absence with lethal precision." },
+        { "name": "Entropy Worm", "description": "Where it passes, stone crumbles to sand and metal returns to ore." },
+        { "name": "Fractured Angel", "description": "Something holy, broken and remade wrong. It weeps as it fights." },
+        { "name": "Abyss Maw", "description": "Not a creature — a place. A mouth in the ground that is also somehow alive." },
+        { "name": "Memory Eater", "description": "Your hero forgets why they came. Then forgets the exit. Then forgets their name." },
+        { "name": "The Unnamed", "description": "It was something once. Now it is the absence of that something. Its shape hurts to perceive." },
+        { "name": "Dusk Herald", "description": "It speaks in a voice your hero recognizes but cannot place. It offers a deal no sane person would take." }
+      ],
+      "events": {
+        "discovery": [
+          { "title": "Tear in Reality", "description": "A rift in the air itself. Through it, your hero glimpses something they shouldn't — and gains strength from the knowledge." },
+          { "title": "Fallen Vow-Bearer", "description": "Another who swore an oath like yours. They did not make it this far. Their weapon is still sharp." },
+          { "title": "The Inverse Flame", "description": "A fire that burns downward into the stone. It consumes darkness instead of fuel. Your hero warms their hands." }
+        ],
+        "trap": [
+          { "title": "Time Distortion", "description": "Your hero ages a year in a heartbeat, then snaps back. The memory of those unlived days remains." },
+          { "title": "Gravity Well", "description": "The floor pulls harder. Each step costs twice the effort. Your hero crawls through on willpower alone." }
+        ],
+        "rest": [
+          { "title": "Ember Shrine", "description": "An altar to something older than the dark. The ember on it still burns. Your hero rests in its warmth." },
+          { "title": "The Still Point", "description": "A place where nothing moves. Not air, not time, not thought. Perfect rest, if brief." }
+        ]
+      },
+      "boss": { "name": "Vow-Breaker", "description": "The final test is not a monster. It is every promise you failed to keep, given form and fury. It knows your name." },
+      "loot_weights": { "scroll_of_clarity": 15, "ember_shard": 10, "ashen_token": 10, "heros_ration": 10, "shadowsteel_fragment": 25, "rune_of_focus": 30 }
+    }
+  },
+  "loot_items": {
+    "scroll_of_clarity": {
+      "name": "Scroll of Clarity",
+      "description": "Unfurl it and the world sharpens. Focus comes easier.",
+      "effect": "+10% XP from all sources for 24 hours",
+      "rarity": "uncommon"
+    },
+    "ember_shard": {
+      "name": "Ember Shard",
+      "description": "A fragment of living fire. It shields what matters most.",
+      "effect": "Protects your streak for one missed day",
+      "rarity": "rare"
+    },
+    "shadowsteel_fragment": {
+      "name": "Shadowsteel Fragment",
+      "description": "Dark metal that reveals what is hidden.",
+      "effect": "Reveals one locked node's details on any tree",
+      "rarity": "rare"
+    },
+    "heros_ration": {
+      "name": "Hero's Ration",
+      "description": "Preserved food for the long road. Eat it and press deeper.",
+      "effect": "Adds +1 bonus floor to your next dungeon delve",
+      "rarity": "common"
+    },
+    "rune_of_focus": {
+      "name": "Rune of Focus",
+      "description": "An ancient mark of concentration. The dungeon yields more to those who bear it.",
+      "effect": "Next dungeon delve drops 2x loot",
+      "rarity": "epic"
+    },
+    "ashen_token": {
+      "name": "Ashen Token",
+      "description": "A coin from a dead kingdom. Worth nothing — except to those who collect them.",
+      "effect": "Collectible. Future use TBD (track count on profile).",
+      "rarity": "common"
+    }
+  }
+}

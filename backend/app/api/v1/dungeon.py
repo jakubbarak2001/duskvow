@@ -1,0 +1,344 @@
+"""Dungeon API routes — start runs, track progress, complete/retreat."""
+
+import asyncio
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.core import supabase as supa
+from app.core.dependencies import get_current_user_id
+from app.schemas.dungeon import DungeonStartRequest
+from app.services.dungeon import (
+    compute_xp_reward,
+    generate_dungeon_run,
+    get_all_tiers,
+)
+
+router = APIRouter()
+
+
+@router.get("/tiers", response_model=dict)
+async def list_tiers(
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Return all dungeon tiers with lock status based on hero level.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Envelope with list of tier objects, each with an 'unlocked' flag.
+    """
+    profile = await supa.get_profile(user_id)
+    hero_level = profile["hero_level"] if profile else 1
+
+    tiers = get_all_tiers()
+    data = [
+        {
+            "key": key,
+            "name": cfg["name"],
+            "description": cfg["description"],
+            "min_level": cfg["min_level"],
+            "floors": cfg["floors"],
+            "base_xp": cfg["base_xp"],
+            "unlocked": hero_level >= cfg["min_level"],
+        }
+        for key, cfg in tiers.items()
+    ]
+
+    return {"data": data, "error": None}
+
+
+@router.get("/active", response_model=dict)
+async def get_active_run(
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Return the user's current active dungeon run with events.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Envelope with run + events, or null data if no active run.
+    """
+    run = await supa.get_active_dungeon_run(user_id)
+    return {"data": run, "error": None}
+
+
+@router.post("/start", response_model=dict)
+async def start_run(
+    body: DungeonStartRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Start a new dungeon run.
+
+    Validates hero level, ensures no active run exists, pre-rolls the
+    dungeon events and loot, then persists everything.
+
+    Args:
+        body: Tier, duration, optional linked node/quest.
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Envelope with the created run, events, and loot.
+    """
+    # Parallel: fetch profile and check for active run
+    profile, active_run = await asyncio.gather(
+        supa.get_profile(user_id),
+        supa.get_active_dungeon_run(user_id),
+    )
+
+    if active_run:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You already have an active dungeon run. Complete or retreat first.",
+        )
+
+    hero_level = profile["hero_level"] if profile else 1
+    tiers = get_all_tiers()
+
+    if body.tier not in tiers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown dungeon tier: {body.tier}",
+        )
+
+    tier_cfg = tiers[body.tier]
+    if hero_level < tier_cfg["min_level"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Hero level {hero_level} is too low. {tier_cfg['name']} requires level {tier_cfg['min_level']}.",
+        )
+
+    # Generate the dungeon run (no AI calls — pure random from pools)
+    generated = generate_dungeon_run(body.tier, body.duration_minutes)
+
+    # Persist the run
+    run = await supa.create_dungeon_run({
+        "user_id": user_id,
+        "tier": body.tier,
+        "total_floors": generated["total_floors"],
+        "duration_minutes": body.duration_minutes,
+        "linked_node_id": body.linked_node_id,
+        "linked_quest_id": body.linked_quest_id,
+        "status": "active",
+    })
+    run_id = run["id"]
+
+    # Prepare event and loot rows with run_id
+    event_rows = [
+        {**evt, "run_id": run_id}
+        for evt in generated["events"]
+    ]
+    loot_rows = [
+        {
+            "run_id": run_id,
+            "user_id": user_id,
+            "item_type": item["item_type"],
+            "item_name": item["item_name"],
+            "description": item["description"],
+            "effect": item["effect"],
+        }
+        for item in generated["loot"]
+    ]
+
+    # Persist events and loot in parallel
+    events, loot = await asyncio.gather(
+        supa.create_dungeon_events(event_rows),
+        supa.create_dungeon_loot(loot_rows),
+    )
+
+    return {
+        "data": {
+            **run,
+            "events": events,
+            "loot": loot,
+        },
+        "error": None,
+    }
+
+
+@router.post("/complete", response_model=dict)
+async def complete_run(
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Complete the user's active dungeon run.
+
+    Awards full XP (with bonuses for linked node/quest), grants loot,
+    and auto-completes any linked daily quest.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Envelope with xp_earned, loot, level-up info.
+    """
+    run = await supa.get_active_dungeon_run(user_id)
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active dungeon run to complete.",
+        )
+
+    total_floors = run["total_floors"]
+    xp = compute_xp_reward(
+        tier=run["tier"],
+        cleared_floors=total_floors,
+        total_floors=total_floors,
+        duration_minutes=run["duration_minutes"],
+        linked_node=bool(run.get("linked_node_id")),
+        linked_quest=bool(run.get("linked_quest_id")),
+    )
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Update run status and award XP/activity/streak in parallel
+    completion_ops: list[Any] = [
+        supa.complete_dungeon_run(run["id"], {
+            "status": "completed",
+            "cleared_floors": total_floors,
+            "xp_earned": xp,
+            "completed_at": now,
+        }),
+        supa.add_xp_to_profile(user_id, xp),
+        supa.record_daily_activity(user_id, 0, xp),
+        supa.update_streak(user_id),
+    ]
+
+    # Auto-complete linked quest if present and not already done today
+    linked_quest_id = run.get("linked_quest_id")
+    quest_auto_completed = False
+
+    results = await asyncio.gather(*completion_ops)
+    _updated_run, xp_result, _, _ = results
+
+    if linked_quest_id:
+        quest = await supa.get_daily_quest(linked_quest_id)
+        if quest and quest["user_id"] == user_id:
+            today_completions = await supa.get_today_completions(user_id)
+            already_done = any(c["quest_id"] == linked_quest_id for c in today_completions)
+            if not already_done:
+                await asyncio.gather(
+                    supa.complete_daily_quest(linked_quest_id, user_id),
+                    supa.add_xp_to_profile(user_id, quest["xp_reward"]),
+                    supa.record_daily_activity(user_id, 0, quest["xp_reward"]),
+                )
+                quest_auto_completed = True
+
+    # Fetch loot for the response
+    loot = await supa.get_dungeon_loot(run["id"])
+
+    return {
+        "data": {
+            "run_id": run["id"],
+            "status": "completed",
+            "cleared_floors": total_floors,
+            "total_floors": total_floors,
+            "xp_earned": xp,
+            "total_xp": xp_result.get("new_total_xp", 0),
+            "leveled_up": xp_result.get("leveled_up", False),
+            "new_level": xp_result.get("new_level", 1),
+            "previous_level": xp_result.get("previous_level", 1),
+            "new_title": xp_result.get("new_title", "Wanderer"),
+            "loot": loot,
+            "quest_auto_completed": quest_auto_completed,
+            "linked_quest_id": linked_quest_id,
+        },
+        "error": None,
+    }
+
+
+@router.post("/retreat", response_model=dict)
+async def retreat_run(
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Retreat from the active dungeon run.
+
+    Awards partial XP proportional to floors cleared (based on elapsed time),
+    but grants zero loot. The CD8 (Loss/Avoidance) penalty.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Envelope with partial xp_earned, cleared_floors.
+    """
+    run = await supa.get_active_dungeon_run(user_id)
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active dungeon run to retreat from.",
+        )
+
+    # Calculate floors cleared based on elapsed time
+    started_at = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    elapsed_seconds = (now - started_at).total_seconds()
+    total_seconds = run["duration_minutes"] * 60
+    total_floors = run["total_floors"]
+
+    if total_seconds > 0:
+        cleared_floors = min(
+            total_floors - 1,  # Can't "clear" last floor by retreating
+            int((elapsed_seconds / total_seconds) * total_floors),
+        )
+    else:
+        cleared_floors = 0
+
+    cleared_floors = max(0, cleared_floors)
+
+    xp = compute_xp_reward(
+        tier=run["tier"],
+        cleared_floors=cleared_floors,
+        total_floors=total_floors,
+        duration_minutes=run["duration_minutes"],
+        linked_node=False,  # No bonuses on retreat
+        linked_quest=False,
+    )
+
+    now_iso = now.isoformat()
+
+    # Update run and award partial XP in parallel
+    _, xp_result, _, _ = await asyncio.gather(
+        supa.complete_dungeon_run(run["id"], {
+            "status": "retreated",
+            "cleared_floors": cleared_floors,
+            "xp_earned": xp,
+            "completed_at": now_iso,
+        }),
+        supa.add_xp_to_profile(user_id, xp),
+        supa.record_daily_activity(user_id, 0, xp),
+        supa.update_streak(user_id),
+    )
+
+    return {
+        "data": {
+            "run_id": run["id"],
+            "status": "retreated",
+            "cleared_floors": cleared_floors,
+            "total_floors": total_floors,
+            "xp_earned": xp,
+            "total_xp": xp_result.get("new_total_xp", 0),
+            "leveled_up": xp_result.get("leveled_up", False),
+            "new_level": xp_result.get("new_level", 1),
+            "loot": [],  # No loot on retreat
+        },
+        "error": None,
+    }
+
+
+@router.get("/history", response_model=dict)
+async def get_history(
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Return the user's last 10 completed or retreated dungeon runs.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Envelope with list of past run summaries.
+    """
+    runs = await supa.get_dungeon_history(user_id)
+    return {"data": runs, "error": None}

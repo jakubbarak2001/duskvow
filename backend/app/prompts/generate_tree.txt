@@ -28,6 +28,15 @@ Create a talent tree with 15-20 nodes. Return ONLY valid JSON matching this exac
   ],
   "edges": [
     { "from": "node_1", "to": "node_2" }
+  ],
+  "daily_quests": [
+    {
+      "id": "dq_1",
+      "title": "Short daily habit title (3-6 words)",
+      "description": "Clear description of what to do each day.",
+      "xp_reward": 15,
+      "estimated_minutes": 25
+    }
   ]
 }
 
@@ -55,3 +64,13 @@ node_4a → node_5, node_4b → node_5  (branches merge)
 node_5 → node_6 (keystone)
 
 Position values are ignored — set them all to {"x": 0, "y": 0}.
+
+DAILY QUEST RULES:
+- Generate 3-5 daily recurring tasks that support the goal
+- These are habits the user should do EVERY DAY (e.g., "Practice for 20 minutes", "Review yesterday's notes")
+- They are separate from milestone nodes — do NOT duplicate node titles
+- XP rewards for dailies: 10-25 range (lower than milestone nodes)
+- Keep titles short (3-6 words) and descriptions actionable
+- If a quest involves a timed activity (practice, study, exercise, meditation, reading), include "estimated_minutes" (15-60). Otherwise omit it.
+  Examples with estimated_minutes: "Practice scales" (25), "Study flashcards" (20), "Morning run" (30)
+  Examples without: "Review progress", "Update journal", "Plan tomorrow"

@@ -107,6 +107,121 @@ export interface Ember {
 }
 
 // ============================================================
+// Daily Quest Types
+// ============================================================
+
+export interface DailyQuest {
+  id: string;
+  tree_id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  xp_reward: number;
+  sort_order: number;
+  estimated_minutes: number | null;
+  created_at: string;
+  completed_today: boolean;
+}
+
+export interface DailyQuestCompletionResult {
+  quest_id: string;
+  xp_earned: number;
+  total_xp: number;
+  leveled_up: boolean;
+  new_level: number;
+  previous_level: number;
+  new_title: string;
+}
+
+// ============================================================
+// Dungeon Types
+// ============================================================
+
+export interface DungeonTier {
+  key: string;
+  name: string;
+  description: string;
+  min_level: number;
+  floors: number;
+  base_xp: number;
+  unlocked: boolean;
+}
+
+export interface DungeonEvent {
+  id: string;
+  run_id: string;
+  floor_number: number;
+  event_type: "combat" | "discovery" | "trap" | "rest" | "boss";
+  title: string;
+  description: string;
+  monster_name: string | null;
+  monsters_defeated: number;
+  trigger_at_seconds: number;
+  sort_order: number;
+}
+
+export interface DungeonLootItem {
+  id: string;
+  run_id: string;
+  user_id: string;
+  item_type: string;
+  item_name: string;
+  description: string;
+  effect: string;
+  claimed: boolean;
+  created_at: string;
+}
+
+export interface DungeonRun {
+  id: string;
+  user_id: string;
+  tier: string;
+  status: "active" | "completed" | "retreated";
+  total_floors: number;
+  cleared_floors: number;
+  duration_minutes: number;
+  xp_earned: number;
+  linked_node_id: string | null;
+  linked_quest_id: string | null;
+  created_at: string;
+  completed_at: string | null;
+  events: DungeonEvent[];
+}
+
+export interface DungeonStartResult {
+  id: string;
+  user_id: string;
+  tier: string;
+  status: "active";
+  total_floors: number;
+  cleared_floors: number;
+  duration_minutes: number;
+  xp_earned: number;
+  linked_node_id: string | null;
+  linked_quest_id: string | null;
+  created_at: string;
+  completed_at: string | null;
+  events: DungeonEvent[];
+  loot: DungeonLootItem[];
+}
+
+export interface DungeonCompleteResult {
+  run_id: string;
+  status: "completed" | "retreated";
+  cleared_floors: number;
+  total_floors: number;
+  xp_earned: number;
+  total_xp: number;
+  leveled_up: boolean;
+  new_level: number;
+  previous_level: number;
+  new_title: string;
+  loot: DungeonLootItem[];
+  quest_auto_completed?: boolean;
+  linked_quest_id?: string | null;
+}
+
+// ============================================================
 // API Response Types
 // ============================================================
 

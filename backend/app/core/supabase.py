@@ -426,7 +426,27 @@ async def save_generated_tree(
         )
 
     nodes = await _bulk_insert("skill_nodes", node_rows)
-    return {**tree, "nodes": nodes}
+
+    # Save daily quests if the AI generated them
+    raw_quests: list[dict] = ai_result.get("daily_quests", [])
+    daily_quests: list[dict[str, Any]] = []
+    if raw_quests:
+        quest_rows = []
+        for i, q in enumerate(raw_quests):
+            row: dict[str, Any] = {
+                "tree_id": tree_id,
+                "user_id": user_id,
+                "title": q["title"],
+                "description": q["description"],
+                "xp_reward": q.get("xp_reward", 15),
+                "sort_order": i,
+            }
+            if q.get("estimated_minutes"):
+                row["estimated_minutes"] = q["estimated_minutes"]
+            quest_rows.append(row)
+        daily_quests = await _bulk_insert("daily_quests", quest_rows)
+
+    return {**tree, "nodes": nodes, "daily_quests": daily_quests}
 
 
 async def delete_tree(tree_id: str, user_id: str) -> bool:
@@ -605,6 +625,245 @@ async def get_ember(ember_id: str) -> dict[str, Any] | None:
     """
     rows = await _get("embers", {"id": f"eq.{ember_id}", "select": "*"})
     return rows[0] if rows else None
+
+
+# ---------------------------------------------------------------------------
+# Daily Quests
+# ---------------------------------------------------------------------------
+
+
+async def list_daily_quests(user_id: str) -> list[dict[str, Any]]:
+    """List all daily quests for a user's active (non-deleted) trees.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        List of quest dicts ordered by sort_order.
+    """
+    # Get active tree IDs first
+    active_trees = await _get(
+        "talent_trees",
+        {
+            "user_id": f"eq.{user_id}",
+            "status": "eq.active",
+            "deleted_at": "is.null",
+            "select": "id",
+        },
+    )
+    if not active_trees:
+        return []
+
+    tree_ids = ",".join(t["id"] for t in active_trees)
+    return await _get(
+        "daily_quests",
+        {
+            "user_id": f"eq.{user_id}",
+            "tree_id": f"in.({tree_ids})",
+            "select": "*",
+            "order": "sort_order.asc",
+        },
+    )
+
+
+async def get_today_completions(user_id: str) -> list[dict[str, Any]]:
+    """Get today's quest completion records for a user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        List of completion dicts for today.
+    """
+    today = date.today().isoformat()
+    return await _get(
+        "daily_quest_completions",
+        {
+            "user_id": f"eq.{user_id}",
+            "completed_date": f"eq.{today}",
+            "select": "*",
+        },
+    )
+
+
+async def get_daily_quest(quest_id: str) -> dict[str, Any] | None:
+    """Fetch a single daily quest by ID.
+
+    Args:
+        quest_id: Quest UUID.
+
+    Returns:
+        Quest dict or None.
+    """
+    rows = await _get("daily_quests", {"id": f"eq.{quest_id}", "select": "*"})
+    return rows[0] if rows else None
+
+
+async def complete_daily_quest(quest_id: str, user_id: str) -> dict[str, Any]:
+    """Record today's completion for a daily quest.
+
+    Args:
+        quest_id: Quest UUID.
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        The inserted completion record.
+    """
+    return await _insert_one(
+        "daily_quest_completions",
+        {
+            "quest_id": quest_id,
+            "user_id": user_id,
+            "completed_date": date.today().isoformat(),
+        },
+    )
+
+
+async def uncomplete_daily_quest(quest_id: str, user_id: str) -> None:
+    """Remove today's completion for a daily quest.
+
+    Args:
+        quest_id: Quest UUID.
+        user_id: Authenticated user's UUID.
+    """
+    today = date.today().isoformat()
+    await _delete(
+        "daily_quest_completions",
+        {
+            "quest_id": f"eq.{quest_id}",
+            "user_id": f"eq.{user_id}",
+            "completed_date": f"eq.{today}",
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Dungeon Runs
+# ---------------------------------------------------------------------------
+
+
+async def create_dungeon_run(data: dict[str, Any]) -> dict[str, Any]:
+    """Insert a new dungeon run row.
+
+    Args:
+        data: Run fields (user_id, tier, total_floors, duration_minutes, etc.).
+
+    Returns:
+        The created run dict.
+    """
+    return await _insert_one("dungeon_runs", data)
+
+
+async def create_dungeon_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bulk insert dungeon events for a run.
+
+    Args:
+        events: List of event dicts (each with run_id, floor_number, etc.).
+
+    Returns:
+        List of created event dicts.
+    """
+    return await _bulk_insert("dungeon_events", events)
+
+
+async def create_dungeon_loot(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bulk insert dungeon loot items for a run.
+
+    Args:
+        items: List of loot dicts (each with run_id, user_id, item_type, etc.).
+
+    Returns:
+        List of created loot dicts.
+    """
+    if not items:
+        return []
+    return await _bulk_insert("dungeon_loot", items)
+
+
+async def get_active_dungeon_run(user_id: str) -> dict[str, Any] | None:
+    """Fetch the user's current active dungeon run with events.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Run dict with 'events' key, or None if no active run.
+    """
+    rows = await _get(
+        "dungeon_runs",
+        {
+            "user_id": f"eq.{user_id}",
+            "status": "eq.active",
+            "select": "*",
+        },
+    )
+    if not rows:
+        return None
+
+    run = rows[0]
+    events = await _get(
+        "dungeon_events",
+        {
+            "run_id": f"eq.{run['id']}",
+            "select": "*",
+            "order": "sort_order.asc",
+        },
+    )
+    return {**run, "events": events}
+
+
+async def complete_dungeon_run(
+    run_id: str,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    """Update a dungeon run's status and completion fields.
+
+    Args:
+        run_id: Run UUID.
+        data: Fields to update (status, cleared_floors, xp_earned, completed_at).
+
+    Returns:
+        Updated run dict.
+    """
+    rows = await _patch("dungeon_runs", {"id": f"eq.{run_id}"}, data)
+    return rows[0]
+
+
+async def get_dungeon_loot(run_id: str) -> list[dict[str, Any]]:
+    """Fetch all loot items for a specific dungeon run.
+
+    Args:
+        run_id: Run UUID.
+
+    Returns:
+        List of loot dicts.
+    """
+    return await _get(
+        "dungeon_loot",
+        {"run_id": f"eq.{run_id}", "select": "*"},
+    )
+
+
+async def get_dungeon_history(user_id: str, limit: int = 10) -> list[dict[str, Any]]:
+    """Fetch recent completed/retreated runs for a user.
+
+    Args:
+        user_id: Authenticated user's UUID.
+        limit: Max rows to return.
+
+    Returns:
+        List of run dicts ordered by completed_at DESC.
+    """
+    return await _get(
+        "dungeon_runs",
+        {
+            "user_id": f"eq.{user_id}",
+            "status": f"in.(completed,retreated)",
+            "select": "*",
+            "order": "completed_at.desc",
+            "limit": str(limit),
+        },
+    )
 
 
 async def delete_ember(ember_id: str, user_id: str) -> bool:
