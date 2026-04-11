@@ -1,27 +1,47 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd C:/Users/USER/Duskvow && npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes 2>&1)",
-      "Bash(cd C:/Users/USER/Duskvow/frontend && npm install @xyflow/react @supabase/supabase-js @supabase/ssr @supabase/auth-ui-react @supabase/auth-ui-shared zustand 2>&1)",
-      "Bash(cd C:/Users/USER/Duskvow && python -m venv backend/.venv 2>&1 && echo \"venv created\")",
-      "Bash(cd C:/Users/USER/Duskvow/frontend && npm install --save-dev prettier eslint-config-prettier prettier-plugin-tailwindcss 2>&1)",
-      "Bash(C:/Users/USER/Duskvow/backend/.venv/Scripts/pip install:*)",
-      "Bash(cd C:/Users/USER/Duskvow/frontend && npx tsc --noEmit 2>&1)",
-      "Bash(cd C:/Users/USER/Duskvow/frontend && npm run build 2>&1 | tail -20)",
-      "Bash(cd C:/Users/USER/Duskvow/backend && .venv/Scripts/pytest tests/test_health.py -v 2>&1)",
-      "Read(//c/Users/USER/Duskvow/%USERPROFILE%//**)",
-      "Read(//c/Users/USER/Duskvow/%USERPROFILE%/duskvow//**)",
-      "Bash(netstat -ano | grep \":8000\" | grep LISTENING)",
-      "Bash(taskkill /PID 1288 /F)",
-      "Bash(cmd /c \"taskkill /PID 1288 /F\")",
-      "Bash(netstat -ano | grep \":8000\")",
-      "Bash(cmd /c \"taskkill /F /PID 1288 & taskkill /F /PID 3168\")",
-      "Bash(npm run:*)",
-      "Bash(npx next:*)",
-      "Bash(NEXT_TURBOPACK=0 npx next build)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "Bash(npx supabase *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+      "Bash(pip install *)",
+      "Bash(cd *)",
+      "Bash(ls *)",
+      "Bash(wc *)",
+      "Bash(mkdir *)",
+      "Bash(netstat *)",
+      "Bash(taskkill *)"
+    ],
+    "deny": [
+      "Bash(git push *)",
+      "Bash(rm -rf *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit *)",
+            "command": "cd frontend && npx tsc --noEmit 2>&1",
+            "timeout": 60
+          }
+        ]
+      }
     ]
   }
 }

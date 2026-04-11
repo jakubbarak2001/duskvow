@@ -1,95 +1,14 @@
 # STATE.md — Duskvow Living Project State
 
-> **Purpose**: This file is the single source of truth for every Claude session.
-> Read this BEFORE touching any code. Update this BEFORE ending any session.
+> **Purpose**: Decisions log + current state snapshot. Updated every session.
+> Coding standards, visual rules, and workflow are in CLAUDE.md (single source of truth).
 >
-> Last updated: 2026-03-30
+> Last updated: 2026-04-11
 
 ---
 
-## LAYER 1 — SESSION RULES (Static)
+## DECISIONS LOG (Append-Only)
 
-### Claude's Role
-You are a **senior full-stack developer** working on Duskvow. You are concise, opinionated, and ship production-quality code. You do NOT:
-- Add features outside the current task scope
-- Use `console.log` — use proper error handling
-- Guess at design decisions — ask or check this file
-- Write placeholder/TODO code without flagging it explicitly
-
-### Project Vision
-Duskvow is a **dark fantasy AI-powered self-improvement app**. Users enter goals → AI generates RPG-style talent trees → users complete nodes → earn XP → track progress. The aesthetic is **dark, atmospheric, and serious** — think Dark Souls meets Notion, not Habitica. No cute mascots, no pixel art, no pastel colors.
-
-### Visual Identity — THE GOLDEN RULE
-The landing page (`page.tsx`) defines the visual bar for the entire app. Every new page/component MUST match this level of craft:
-- **Fonts**: Cinzel (headings, nav, buttons), Crimson Pro (landing body copy), Inter (app body text)
-- **Color palette**: Midnight backgrounds (`#0A0A12` → `#2E2E3A`), warm parchment text (`#E0D8C8`), ember accent (`#C84B11`), gold accent (`#FFD700`), blood red (`#8B0000`)
-- **Atmosphere**: Noise overlay, floating ember particles, radial glows, gold gradient dividers
-- **Typography**: Large Cinzel headings, generous spacing, `letter-spacing: 0.15-0.35em` on labels
-- **Buttons**: Ember gradient backgrounds, Cinzel font, uppercase, wide padding, hover glow effects
-- **NEVER**: Pure black `#000000`, pure white `#FFFFFF`, inline hex colors, light mode anything
-
-### Visual Reference Notes (from landing page screenshots)
-The landing page is the **quality benchmark** for the entire app. Specific details:
-- **Hero**: Full-bleed dark fantasy background image (`hero_bg.webp`) — warrior silhouette in mist/fog. Overlaid with gradient darkening + radial text shadow for readability. Ember particles float upward over everything.
-- **Section dividers**: Gold gradient horizontal lines (`linear-gradient(90deg, transparent, var(--gold-dim), transparent)`) + centered ornamental labels like `◆  A Different Oath  ◆` in small Cinzel caps with wide letter-spacing.
-- **Spacing**: Extremely generous — sections have 4-8rem vertical padding. Text blocks max-width 560-700px centered. Breathing room is a core aesthetic choice.
-- **Step indicators**: Roman numerals (I, II, III) at 3rem in faded ember (`rgba(196, 85, 58, 0.3)`), grid-aligned left of content.
-- **Strikethrough pattern**: Used in anti-section — crossed-out text in muted `var(--ghost)` color contrasting with bright bone-white statement below.
-- **CTA buttons**: Ember gradient (`linear-gradient(135deg, var(--ember), #a03a28)`), wide padding (1.1rem 3.5rem), Cinzel uppercase, hover reveals brighter gradient + glow shadow.
-- **The app pages (dashboard, tree view) do NOT yet match this visual quality.** This is a known gap.
-
-### Design Token Usage
-All colors MUST use CSS custom properties from `globals.css`:
-```
-Backgrounds: var(--bg-abyss), var(--bg-shadow), var(--bg-surface), var(--bg-elevated), var(--bg-highlight)
-Text: var(--text-primary), var(--text-secondary), var(--text-muted)
-Accents: var(--accent-ember), var(--accent-gold), var(--accent-blood)
-Borders: var(--border-default), var(--border-muted)
-Rarity: var(--rarity-common) through var(--rarity-mythic)
-States: var(--state-locked), var(--state-available), var(--state-progress), var(--state-complete)
-```
-
-Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` — use `bg-bg-surface`, `text-text-primary`, etc. in Tailwind classes, OR use `style={{ color: "var(--text-primary)" }}` for inline.
-
-### Component Patterns
-- **Shared UI** → `components/ui/` (StatsBar, buttons, inputs)
-- **Layout** → `components/layout/` (Navbar)
-- **Tree-specific** → `components/tree/` (SkillNodeComponent, TreeCanvas, NodeDetailPanel)
-- **Wizard** → `components/tree-wizard/` (GoalInputStep, FollowUpQuestionsStep, GeneratingStep)
-- **Auth** → `components/auth/` (AuthForm)
-
-### Workflow Rules
-- **Always work on a feature branch** — never commit directly to `main`
-- Branch naming: `feature/description` or `fix/description`
-- Commit messages: `type(scope): description` (e.g., `feat(tree): add node completion animation`)
-- Run `npx tsc --noEmit` and `npm run build` before declaring any task done
-- If you change a component's props, check ALL files that import it
-
-### Performance Budgets
-- Every user action (click, complete, navigate) must resolve UI feedback in **< 300ms**
-- API calls must have **optimistic UI updates** — don't wait for server response to update visuals
-- AI generation is the only acceptable "long wait" (up to 30s, with loading animation)
-- No unnecessary re-renders — check Zustand selector patterns
-
-### Tech Stack Quick Reference
-| Layer | Tech | Notes |
-|-------|------|-------|
-| Frontend | Next.js 16 (App Router) + TypeScript | Strict TS, no `any` |
-| Styling | Tailwind CSS v4 + CSS custom properties | Dark-only, design tokens |
-| State | Zustand | `stores/treeStore.ts`, `stores/userStore.ts` |
-| Auth | Supabase Auth (email/password) | JWT in Bearer header |
-| API Client | `lib/api.ts` centralized fetch wrapper | All calls go through here |
-| Tree Rendering | React Flow (`@xyflow/react`) + Dagre layout | Custom node/edge components |
-| Backend | Python FastAPI + Pydantic v2 | Railway hosting |
-| Database | Supabase PostgreSQL + RLS | All tables have Row Level Security |
-| AI | Google Gemini API | Structured JSON output only |
-| Frontend Hosting | Vercel (primary), Cloudflare Pages (tested) | `write-env.mjs` prebuild script for CF |
-
----
-
-## LAYER 2 — DECISIONS LOG (Append-Only)
-
-> Record every significant architectural or design decision here.
 > Format: `[DATE] DECISION: <what> — REASON: <why>`
 
 [2026-03-30] DECISION: Use Dagre for tree layout instead of AI-provided positions — REASON: AI positions were inconsistent and overlapping. Dagre gives clean left-to-right hierarchical layout every time. See `TreeCanvas.tsx` `applyDagreLayout()`.
@@ -110,227 +29,93 @@ Tailwind v4 theme aliases are registered in `globals.css` under `@theme inline` 
 
 [2026-03-30] DECISION: Active tree cap (currently 5) prevents users from hoarding unfinished trees — REASON: Forces focus, reduces AI generation abuse.
 
+[2026-03-31] DECISION: `--accent-gold` is ONLY for XP numbers, node completion states, rarity indicators, progress bar fills, and the logo. All page headings use `--text-primary`. Ornamental labels/dividers use `--text-secondary`/`--text-muted`/`--gold-dim`.
+
+[2026-04-11] DECISION: Dungeon combat is template-based, not AI-generated — REASON: AI calls during a focus session add latency, cost, and fragility. Monster pools, events, and loot tables are curated JSON (`backend/app/data/dungeon_pools.json`). Randomness comes from weighted selection, not generation. This means instant dungeon starts and zero API cost per session.
+
+[2026-04-11] DECISION: Dungeon events pre-rolled at start, ticked forward by elapsed time — REASON: The user's timer IS the dungeon. Events have `trigger_at_seconds` and appear in the feed as time elapses. This lets the frontend work offline after start (only needs backend for start/complete/retreat). Handles tab switches and phone-in-pocket scenarios gracefully.
+
+[2026-04-11] DECISION: Daily quests with `estimated_minutes` link to dungeon sessions — REASON: "Practice guitar for 25 min" should naturally become "enter a 25-min dungeon." The quest is auto-completed when the dungeon finishes. This connects two previously-isolated systems and gives the dungeon a reason to exist beyond "focus timer."
+
+[2026-04-11] DECISION: Retreat = partial XP, zero loot — REASON: The user needs a reason to finish. Retreating is not punished harshly (you still get proportional XP) but the loot loss creates meaningful stakes. This activates Octalysis CD8 (Loss & Avoidance) without being cruel.
+
+[2026-04-11] DECISION: One active dungeon run per user (DB constraint) — REASON: Prevents gaming the system with parallel runs. Simplifies frontend state — there's always 0 or 1 active run.
+
+[2026-04-11] DECISION: Loot items are simple consumable buffs, not a full inventory RPG — REASON: Keep scope manageable. 6 item types, all consumable, stored in a flat table. No equipment slots, no crafting, no trading. Can expand later without schema changes.
+
 ---
 
-## LAYER 3 — CURRENT STATE (Update Every Session)
+## CURRENT STATE
 
 ### What's Built & Working
-- [x] **Landing page** — Full dark fantasy design with ember particles, noise overlay, Cinzel/Crimson Pro typography, hero with background image, anti-section, how-it-works, CTA, footer
-- [x] **Auth flow** — Supabase email/password login, auth guard on protected routes, middleware redirect
-- [x] **Dashboard (Hub)** — Hub scene with three door cards (Vow Chamber → `/vows`, Dungeon → `/dungeon` (active, unlocked styling), Hearth → `/hearth`), compact XP/Streak header, ember particles
-- [x] **Favicon & Branding** — Ember drop favicon (ico, svg, 96x96 png, apple-touch-icon, webmanifest), generated via Leonardo.ai + realfavicongenerator.net
-- [x] **Vow Chamber (`/vows`)** — Full tree management page: "The Vow Chamber" heading, "← Return to Hub" link, Navbar, New Vow CTA, generation status, StatsBar, Brazier, tree list (active/finished), delete confirmation, empty state
-- [x] **Tree creation wizard** — 3-step flow: goal input → AI follow-up questions → generating animation → redirect to tree view
-- [x] **Interactive skill tree** — React Flow canvas with custom node shapes (circle/square/diamond/hexagon), Dagre auto-layout, zoom/pan, node state colors, tier glow effects
-- [x] **Node detail panel** — Slide-in panel on node click, shows description/type/tier/XP/status, Start/Complete/Reset actions with optimistic updates
-- [x] **Node completion flow** — Optimistic state update, XP tracking, prerequisite auto-unlock, completion pending lock
-- [x] **Backend API** — FastAPI with all endpoints: profile, trees CRUD, node state mutations, AI generation with Gemini, rate limiting, generation status, embers CRUD
-- [x] **Embers backend** — `public.embers` table with RLS, GET/POST/DELETE `/api/v1/embers` endpoints, 50-ember cap enforced server-side
-- [x] **Embers frontend** — `<Brazier>` on dashboard with real data; add flow (form → API → drop animation); delete flow (tooltip icon → confirm dialog → API remove); 50-cap enforced in UI; glow intensity scales with count; cold empty state
-- [x] **Hub page** — `/dashboard` rewritten as atmospheric hub: three door cards (Vow Chamber unlocked → `/vows`, Dungeon locked, Hearth unlocked → `/hearth`), custom hub header (logo + compact XP/Streak stats + sign-out), ember particles, central radial glow, noise overlay, responsive mobile stack
-- [x] **Hearth (`/hearth`)** — Atmospheric sanctum page: "The Hearth" Cinzel heading, "← Return to Hub" link, Navbar, `<Brazier>` with real user embers (API connected), `<AddEmberForm>` below, "coming soon" banner for trophy room/customization, auth guard, warmer dual-glow atmosphere (ember radial from top + firelight from bottom), 8 ember particles
-- [x] **Database** — Supabase PostgreSQL with profiles, talent_trees, skill_nodes, daily_activity tables, all with RLS
-- [x] **Hero & Level System** — hero_name, hero_level, hero_title on profiles. Level computed from XP via `compute_level_from_xp()`. Titles progress: Wanderer → Oath-Bound → Ironsworn → Flamewarden → Duskwalker → Shadowforged → Mythbreaker → Vow Eternal. Level-up detected atomically in `increment_profile_xp` RPC (returns JSONB with leveled_up flag). Node completion response includes level-up data.
-- [x] **Level-Up Modal** — Full-screen overlay with gold Cinzel level number, title change display, ember glow, and Continue button. Triggered in TreeViewPage when node completion returns `leveled_up: true`.
-- [x] **Hero Naming Flow** — HeroNamingModal shown on first dashboard visit when hero_name is null. Input validated (letters/spaces/hyphens, 1-30 chars). Saves via PATCH /api/v1/profile.
-- [x] **Dashboard Level Badge** — Hub header shows hero name + title + Lv.N instead of raw XP.
-- [x] **StatsBar Level-Centric** — Shows hero level + title + XP progress to next level instead of arbitrary XP milestones.
-- [x] **Dungeon Timer** — Pomodoro focus timer page with dark fantasy theming, continuous/single modes, work/break phases. Functional but no rewards/integration yet.
+- [x] **Landing page** — Full dark fantasy design with ember particles, noise overlay, Cinzel/Crimson Pro typography
+- [x] **Auth flow** — Supabase email/password + Google OAuth, auth guard on protected routes
+- [x] **Hub (`/dashboard`)** — Three door cards: Vow Chamber (unlocked), Dungeon (unlocked, shows active run status), Hearth (locked). Hero name + level badge header.
+- [x] **Vow Chamber (`/vows`)** — Tree management: New Vow CTA, generation status, StatsBar, tree list (active/finished), delete confirmation, daily quest checklists per tree with dungeon links for timed quests
+- [x] **Tree creation wizard** — 3-step flow: goal input → AI follow-up → generating → tree view
+- [x] **Interactive skill tree** — React Flow canvas, custom nodes (circle/square/diamond/hexagon), Dagre layout, zoom/pan, node states, tier glows
+- [x] **Node detail panel** — Slide-in panel: description/type/tier/XP/status, Start/Complete/Reset with optimistic updates
+- [x] **Node completion flow** — Optimistic update, XP tracking, prerequisite auto-unlock, completion pending lock
+- [x] **Hero & Level System** — hero_name, hero_level, hero_title. Titles: Wanderer→Vow Eternal. Level-up modal. Hero naming flow.
+- [x] **Daily Quest System** — AI generates 3-5 per tree (now with `estimated_minutes` for timed quests). Backend: GET/POST/DELETE. Frontend: Vow Chamber checklist + Tree View QuestLogPanel overlay.
+- [x] **Dungeon AFK Combat** — Full dungeon system: 4 tiers (Shallow Crypts → Abyssal Rift), tier selection cards, duration picker, optional quest/node linking, pre-rolled event generation from curated JSON pools, real-time event feed, floor progress bar, retreat confirmation, battle report with loot display, XP/streak awards, quest auto-completion, browser notifications, level-up integration, page visibility handling.
+- [x] **Embers/Brazier** — `embers` table + CRUD API. Brazier component with add/delete/glow.
+- [x] **Hearth (`/hearth`)** — Atmospheric page with Brazier. "Coming soon" for trophy room/customization.
+- [x] **Backend API** — FastAPI: profile, trees CRUD, nodes, AI generation, rate limiting, embers, quests, dungeon (6 endpoints)
+- [x] **Database** — Supabase PostgreSQL: profiles, talent_trees, skill_nodes, daily_activity, embers, daily_quests, daily_quest_completions, dungeon_runs, dungeon_events, dungeon_loot. All with RLS.
 
-### What's Broken / Known Issues
-- [ ] **Tree UI quality inconsistency** — AI-generated trees sometimes produce ugly layouts despite Dagre. Node spacing can be too tight with 25+ nodes. Needs investigation into Dagre `nodesep`/`ranksep` tuning.
-- [ ] **Dashboard progress only showing first node** — Previously reported bug where completing multiple nodes only reflected the first completion in dashboard stats. Status: believed fixed with optimistic update refactor, but needs regression testing.
-- [ ] **Slow node completion perceived latency** — Optimistic updates help, but the visual feedback (golden border, glow) could be more dramatic. No particle burst animation implemented yet.
-- [ ] **No automated tests** — Zero frontend tests. Backend has minimal test scaffolding (`tests/test_health.py`). This is a ticking time bomb.
-- [ ] **No error boundaries** — CLAUDE.md specifies them but none are implemented. React Flow crashes can take down the whole page.
+### Known Issues
+- [ ] Tree layout can be ugly with 25+ nodes (Dagre nodesep/ranksep tuning needed)
+- [ ] Node completion visual feedback is flat (no particle burst yet)
+- [ ] No automated tests (backend has minimal scaffolding only)
+- [ ] No error boundaries (React Flow crashes can take down the page)
+- [ ] Unpushed migrations: `20260410_hero_level_system.sql`, `20260411_daily_quests.sql`, `20260412_dungeon_system.sql`
 
-### What's Next (Priority Order)
-1. **Sprint B — Daily Quests** — AI-generated recurring daily tasks per tree, dashboard integration, tree view quest log overlay (6 tasks queued in TASKS.md)
-2. **Sprint C — Dungeon AFK Combat Overhaul** — Template-based combat sim, battle reports, loot drops, XP awards, hero stats integration
-3. **Sprint D — Hearth Page + Ember Economy** — Loot inventory, Ember spend mechanics, Vow completion ceremony
-4. **Visual polish on tree view** — Node completion particle burst, better node spacing, edge animation improvements
-5. **DB Migration** — Push `20260410_hero_level_system.sql` to remote Supabase via `npx supabase db push`
+### What's Next
+1. Sprint D — Progression & Unlocks (levels gate features, achievements, hero profile)
+2. Sprint E — Daily Quest Enhancement (quest pools, rotation, streak bonuses)
+3. Sprint F — Tree Experience Polish (celebrations, fog of war, choice branching)
 
-### File Change Log (Last 3 Sessions)
-> Update this with what you changed each session.
+### File Change Log (Current Session)
 
-**Session: 2026-04-10 (Sprint A — Hero & Level System)**
-- `supabase/migrations/20260410_hero_level_system.sql` — New migration: hero_name, hero_level, hero_title columns, compute_level_from_xp() and title_for_level() functions, modified increment_profile_xp to return JSONB with level-up detection, backfill query
-- `backend/app/schemas/profile.py` — NEW: ProfileUpdateRequest schema for PATCH /profile
-- `backend/app/api/v1/profile.py` — Added PATCH endpoint for hero_name update
-- `backend/app/core/supabase.py` — add_xp_to_profile now returns dict (JSONB) instead of int
-- `backend/app/api/v1/nodes.py` — complete_node response now includes leveled_up, new_level, previous_level, new_title
-- `frontend/src/types/index.ts` — Extended UserProfile with hero fields, added NodeCompletionResult interface
-- `frontend/src/lib/api.ts` — Added updateProfile method, updated completeNode return type
-- `frontend/src/stores/userStore.ts` — Added setHeroName, setLevel actions
-- `frontend/src/components/ui/StatsBar.tsx` — Redesigned: level-centric display with real XP→level thresholds
-- `frontend/src/components/ui/LevelUpModal.tsx` — NEW: full-screen level-up celebration overlay
-- `frontend/src/components/ui/HeroNamingModal.tsx` — NEW: hero naming flow modal
-- `frontend/src/components/tree/NodeDetailPanel.tsx` — Added onLevelUp callback, LevelUpEvent type
-- `frontend/src/components/tree/TreeViewPage.tsx` — Integrated level-up modal + hero level state + titleForLevel helper
-- `frontend/src/app/dashboard/page.tsx` — Hero name + level badge in header, HeroNamingModal integration
-- `frontend/src/app/vows/page.tsx` — StatsBar now receives heroLevel/heroTitle props
-- `TASKS.md` — Sprint A tasks all DONE, Sprint B fully specced (6 tasks)
+**Session: 2026-04-11 (Sprint C — Dungeon AFK Combat)**
+- `supabase/migrations/20260412_dungeon_system.sql` — Dungeon tables: dungeon_runs, dungeon_events, dungeon_loot + RLS + indexes
+- `backend/app/data/dungeon_pools.json` — Curated content: 4 tiers, 26 monsters, 24+ events, 4 bosses, 6 loot items
+- `backend/app/services/dungeon.py` — Generation service: pre-roll events + loot, XP computation
+- `backend/app/schemas/dungeon.py` — DungeonStartRequest schema
+- `backend/app/core/supabase.py` — 7 dungeon helper functions + estimated_minutes in save_generated_tree
+- `backend/app/api/v1/dungeon.py` — 6 REST endpoints: tiers, active, start, complete, retreat, history
+- `backend/app/api/v1/__init__.py` — Registered dungeon router
+- `backend/app/prompts/generate_tree.txt` — Added estimated_minutes to daily quest schema
+- `frontend/src/types/index.ts` — Dungeon types: DungeonTier, DungeonEvent, DungeonLootItem, DungeonRun, DungeonStartResult, DungeonCompleteResult + estimated_minutes on DailyQuest
+- `frontend/src/lib/api.ts` — 6 dungeon API methods
+- `frontend/src/app/dungeon/page.tsx` — Full rewrite: pre-delve tier selection, active run timer+events, battle report, notifications
+- `frontend/src/components/dungeon/BattleReport.tsx` — Post-dungeon reward screen with stats, loot, expandable log
+- `frontend/src/app/globals.css` — fadeIn keyframe for event/loot animations
+- `frontend/src/app/vows/page.tsx` — Quest-to-dungeon sword icon links for timed quests
+- `frontend/src/app/dashboard/page.tsx` — Active dungeon run status on hub card
 
-**Session: 2026-04-05 (Branding & Dungeon Sprint Planning)**
-- `frontend/src/app/page.tsx` — Changed "Make Your Vow" navbar CTA from `<a href="#vow">` to `<Link href="/auth">` for direct auth redirect.
-- `frontend/src/app/dashboard/page.tsx` — Dungeon card: swapped from `hub-door-locked` to `hub-door-unlocked` CSS class (ember glow, full opacity). Added hourglass image placeholder (`dungeon_clipped.webp` reference, to be updated to `dungeon_card.webp` in Sprint 4A).
-- `frontend/src/app/layout.tsx` — Added favicon metadata: `icons` (ico, svg, 96x96 png, apple-touch-icon), `manifest`, `appleWebApp.title`.
-- `frontend/src/app/favicon.ico` — Deleted old Next.js default favicon.
-- `frontend/public/` — User added: `favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png`, `site.webmanifest`, `web-app-manifest-192x192.png`, `web-app-manifest-512x512.png`, `images/fire.webp`, `images/dungeon_card.webp`.
-- `TASKS.md` — Added Sprint 4A (The Dungeon) with 5 tasks: 4A-1 (dashboard card polish), 4A-2 (dungeon page scaffold), 4A-3 (timer engine), 4A-4 (timer UI), 4A-5 (polish & validation).
-- `STATE.md` — Updated Layer 3 with branding, Dungeon sprint as next priority.
-
-**Session: 2026-04-03 (Fix — Remove Orange Glow Artifacts & Enlarge Hub Cards)**
-- `frontend/src/app/dashboard/page.tsx` — Removed `HUB_PARTICLES` array and all ember particle rendering. Removed central radial glow div (`rgba(200,75,17,0.12)`) and stone floor vignette div. Lightened dark overlay from `0.75→0.85` opacity to `0.55→0.70` so background image is more visible on 4K. Removed `hub-door-glow-ring` divs from Vow Chamber and Hearth cards. Removed `hub-door-ember-leak` divs from both unlocked cards. Increased all card image `maxHeight` from `140px` to `220px` with `flex: 1` and `paddingTop: "2rem"` on image containers for better space usage.
-- `frontend/src/app/globals.css` — `.hub-door`: width `300px→340px`, min-height `380px→500px`. `.hub-doors-grid` max-width `1040px→1200px`. Mobile `.hub-door` max-width `340px→380px`, min-height `320px→420px`. `.hub-door-unlocked`: replaced orange border/shadow with neutral parchment tones (`rgba(224,216,200,0.12)`), removed orange gradient tint at bottom. Hover shadow changed from orange glow to neutral dark elevation. `.hub-door-locked`: same neutral border treatment. `.hub-door-arch`: borders changed from orange `rgba(200,75,17,*)` to parchment `rgba(224,216,200,*)`. `hub-ember-pulse` keyframes simplified to opacity-only (removed orange box-shadow).
-
-**Session: 2026-04-02 (TASK 2B-8 — Performance Validation)**
-- `frontend/src/app/dashboard/page.tsx` — Sealed door `<img>`: added `loading="lazy"`. Brazier `<img>`: added `loading="lazy"`. Anvil video wrapper: added mobile fallback pattern — `<video>` gets CSS class `hub-anvil-desktop` (hidden on ≤768px), sibling `<picture><img>` with `anvil.webp` gets class `hub-anvil-mobile` (hidden on >768px).
-- `frontend/src/app/globals.css` — Added `.hub-anvil-desktop` / `.hub-anvil-mobile` rules + `@media (max-width: 768px)` override to toggle between video and static image on mobile.
-
-**Session: 2026-04-02 (TASK 2B-5 — Card Icon — The Hearth (Brazier))**
-- `frontend/src/app/dashboard/page.tsx` — Hearth card: removed `hub-door-symbol` div with `🜂` emoji. Replaced with same centered flex container pattern as Vow Chamber anvil. Uses `<picture>` with `<source srcSet="/images/brazier.webp" type="image/webp" />` + `<img src="/images/brazier.jpg" alt="Brazier" style={{ maxHeight: "140px", objectFit: "contain" }}>` fallback. Note: `brazier.webp` and `brazier.jpg` are absent from `/images/` — container is ready, files need to be dropped in.
-
-**Session: 2026-04-02 (TASK 2B-3 — Card Component — Texture & Styling)**
-- `frontend/src/app/globals.css` — `.hub-door-unlocked`: replaced flat `linear-gradient` background with multi-layer `background-image` (dark gradient overlay + `card_texture.webp`), `background-size: cover; background-position: center`. Removed orange/amber border (`rgba(200,75,17,0.3)`) → replaced with subtler `border: 1px solid rgba(200,80,20,0.1)`. Box-shadow changed to `0 0 20px rgba(200,80,20,0.15), inset 0 0 30px rgba(0,0,0,0.5)`. Hover shadow enhances the ember glow. `.hub-door-locked`: same texture + gradient overlay treatment, same border and shadow. `overflow: hidden` retained (clips child elements only, not background — full texture including ornate border remains visible).
-
-**Session: 2026-04-02 (TASK 2B-2 — Dashboard Page Background)**
-- `frontend/src/app/dashboard/page.tsx` — Outer wrapper: replaced `backgroundColor: var(--bg-abyss)` with `entry_background.webp` as full-page background (`background-size: cover`, `background-position: center`, `background-attachment: fixed`). Added dark gradient overlay (`linear-gradient(rgba(10,10,18,0.75), rgba(10,10,18,0.85))`) as first child fixed div at `zIndex: 0`. Existing 8 ember particles enhanced with `boxShadow` glow (`rgba(200,75,17,0.6)`) for richer atmospheric effect matching landing page particle quality. Central radial glow opacity bumped slightly (0.09→0.12) to compensate for darker overlay. No logic, data fetching, or navigation changes.
-
-**Session: 2026-04-02 (TASK 2B-1 — Asset Optimization)**
-- `frontend/public/images/card_texture.webp` — New. Converted from `card_texture.jpg` at 512x512, quality 80. 21KB.
-- `frontend/public/images/entry_background.webp` — New. Converted from `entry_background.jpg` at 1920x1080, quality 80. 58KB.
-- `frontend/public/images/sealed_door.webp` — New. Converted from `sealed_door.jpg` at 256x256, quality 80. 5.7KB.
-- `frontend/public/images/anvil.webp` — New. Converted from `anvil.jpg` at 256x256, quality 80. 3.4KB.
-- Note: Task spec referenced `brazier.jpg` (absent) and `anvil_video.mp4` (absent) — skipped. Actual file was `anvil.jpg`, converted to `anvil.webp`. Total new asset size: ~89KB.
-
-**Session: 2026-04-02 (TASK P1-5 — Move Brazier to Hearth Placeholder)**
-- `frontend/src/app/hearth/page.tsx` — New page. Atmospheric hearth sanctum with auth guard. Fetches `api.listEmbers(token)`. `<Brazier>` centered with real embers, drop animation, add click, delete request. `<AddEmberForm>` below (toggleable, hidden while adding). 50-ember cap message. "Coming soon" banner: "Your sanctum grows. Trophy room, character customization, and more — forging soon." Warmer dual glow: top ember radial (0.13 opacity) + bottom firelight radial. 8 slow ember particles. Noise overlay, Navbar, "← Return to Hub" link. Ember delete confirm modal identical to vow chamber pattern.
-- `frontend/src/app/dashboard/page.tsx` — Hearth door changed from locked (`div` + shake click handler) to unlocked (`Link href="/hearth"`). Now uses `hub-door-unlocked` classes, `hub-door-glow-ring` (dim, 0.5 opacity), `hub-door-symbol-unlocked`, `hub-door-arch hub-door-arch-unlocked`, ember leak, and "Tend your brazier" status badge. Shake state for "hearth" no longer used.
-
-**Session: 2026-04-02 (TASK P1-4 — Update Auth Redirect & Navigation Flow)**
-- `frontend/src/components/layout/Navbar.tsx` — "Dashboard" link renamed to "Hub"; added "Vow Chamber" link pointing to `/vows`; "New Vow" link unchanged.
-- `frontend/src/components/tree/TreeViewPage.tsx` — Back button changed from "← Dashboard" (`/dashboard`) to "← Vow Chamber" (`/vows`).
-- `frontend/src/components/auth/AuthForm.tsx` — No change needed; already redirects to `/dashboard` (hub) on SIGNED_IN event.
-
-**Session: 2026-04-02 (TASK P1-3 — Hub Door Active State — Live Data on Vow Chamber)**
-- `frontend/src/app/dashboard/page.tsx` — Added `earnedXp` state (sum of `earned_xp` from active trees). Updated `listTrees` handler to compute both `activeVowCount` and `earnedXp` from active trees in one pass. Vow Chamber door status badge now has three states: loading → "Enter"; 0 active trees → "Begin your journey"; 1+ active trees → "{X} active vow(s)" + "{Y} XP earned" (two-line flex column, XP in gold). Glow ring opacity now scales with activity: 0 trees → 0.4 (dim), 1-2 trees → 0.75 (medium), 3+ trees → 1.0 (bright). No other doors or pages touched.
-
-**Session: 2026-04-02 (TASK P1-2 — Vow Chamber Page — Tree List Migration)**
-- `frontend/src/app/vows/page.tsx` — New page. Full tree management content migrated from old dashboard. "The Vow Chamber" Cinzel heading, "← Return to Hub" link above heading navigates to `/dashboard`, `<Navbar />` visible. Auth guard (redirect to `/auth`). Fetches profile, trees, generation status, embers via `Promise.allSettled`. All existing functionality preserved: New Vow CTA (ember gradient, disabled at cap), generation remaining display, StatsBar, Brazier + AddEmberForm + ember delete confirm dialog, active/finished tree sections with `SectionHeader`, `TreeCard` with delete confirmation + progress bar, empty state with atmospheric treatment. Ember particles (6) + noise overlay + radial glow for atmosphere. `SectionHeader` and `TreeCard` defined as local functions (same as old dashboard pattern).
-
-**Session: 2026-04-02 (TASK P1-1 — Hub Page — Layout & Atmosphere)**
-- `frontend/src/app/dashboard/page.tsx` — Full rewrite. Old dashboard (tree list, StatsBar, Brazier, New Vow CTA) replaced with hub scene. Keeps auth guard + `useUser`. Fetches only `getProfile` + `listTrees` (for active vow count). Custom hub header (logo left, compact XP+Streak center, sign-out right; no Navbar). Three door cards: "The Vow Chamber" (unlocked, Link to `/vows`, ember glow arch, pulsing glow ring, ember leak at base, ᛟ rune icon, active vow count status badge), "The Dungeon" (locked, ⚔ icon, chains overlay, shake on click), "The Hearth" (locked, 🜂 icon, shake on click). 8 slow ember particles. Central warm radial glow. Noise overlay. Stone floor gradient. `handleSignOut` uses `getSupabase().auth.signOut()`.
-- `frontend/src/app/globals.css` — Added HUB PAGE STYLES section: `@keyframes hub-door-shake` (locked door click feedback), `@keyframes hub-chain-sway` (dungeon hover rattle), `@keyframes hub-ember-pulse` (unlocked arch glow), `@keyframes hub-glow-ring-pulse` (outer ring). Classes: `.hub-doors-grid` (flex row, wraps to column on ≤760px), `.hub-door` base, `.hub-door-unlocked` (ember border, hover scale+elevate), `.hub-door-locked` (56% opacity, muted), `.hub-door-hearth`, `.hub-door-shake`, `.hub-door-glow-ring`, `.hub-door-arch` + `.hub-door-arch-unlocked`, `.hub-door-chains` (diagonal repeating-gradient), `.hub-door-ember-leak`, `.hub-door-symbol` + `-unlocked`/`-locked`/`-hearth`, `.hub-door-content`, `.hub-door-title`, `.hub-door-subtitle`, `.hub-door-status` + `-unlocked`/`-locked`, `.hub-lock-icon`. Mobile breakpoint at 760px stacks doors vertically.
-
-**Session: 2026-04-02 (TASK 3B-5 — Brazier Integration — Dashboard + API Wiring)**
-- `frontend/src/app/dashboard/page.tsx` — Added `Ember[]` state + `showAddForm`, `animatingEmberId`, `confirmDeleteEmberId`, `deletingEmber`, `addingEmber` states. Fetches `api.listEmbers(token)` alongside other data in `Promise.allSettled`. Added `handleAddEmber` (calls `api.createEmber`, prepends to array, sets `animatingEmberId`, clears after 1.5s) and `handleDeleteEmberConfirm` (calls `api.deleteEmber`, filters from array). Added `◆ Your Brazier ◆` section via `<SectionHeader label="Your Brazier">` between stats bar and tree list. `<Brazier>` wired with real embers, animation id, drop complete callback, add click (hidden at cap), delete request. `<AddEmberForm>` rendered below brazier (toggleable, hidden while `addingEmber`). 50-ember cap message shown when at limit. Ember delete confirm modal: fixed overlay with "Extinguish this ember?" dialog, blood-red confirm + muted cancel buttons.
-- `frontend/src/components/ui/Brazier.tsx` — Added `onDeleteRequest?: (emberId: string) => void` prop. Delete icon button (×, blood-red) added inside hover tooltip alongside title span. Button stops propagation.
-- `frontend/src/app/globals.css` — `.brazier-tooltip` updated: `pointer-events: none` → `pointer-events: auto`, added `display: flex; align-items: center` to support inline delete button.
-
-**Session: 2026-04-02 (TASK 3B-4 — Add Ember Form & Drop Animation)**
-- `frontend/src/components/ui/AddEmberForm.tsx` — New form: title input (required, 1-100 chars) + description textarea (optional, max 500 chars). Inline validation with error message. Dark fantasy styling: `--bg-shadow` container, `--bg-abyss` inputs with ember focus glow, Cinzel labels (`0.25em` letter-spacing uppercase), character counters. Ghost cancel + ember gradient submit (inherits `wiz-btn-primary`, compact padding override). `onSubmit({ title, description })` + `onCancel` callbacks — parent drives visibility.
-- `frontend/src/components/ui/Brazier.tsx` — Added `animatingEmberId?: string | null` and `onDropComplete?: () => void` props. Ember float wrapper gets `.ember-drop` class when its id matches `animatingEmberId`; `onAnimationEnd` fires `onDropComplete` so parent can clear the id. Drop overrides `animationDelay` to `0s` to prevent stale float delay interfering with the effect.
-- `frontend/src/app/globals.css` — Added EMBER DROP ANIMATION section: `@keyframes ember-drop` with asymmetric keyframe spacing to simulate gravity (slow at top, rapid descent, impact burst at 76% with `scale(2.6)` + `brightness(5)`, bounce/settle). `.brazier-ember-float.ember-drop` applies `ease-in` timing, 1s duration, `fill-mode: forwards`, `z-index: 10`. Added ADD EMBER FORM STYLES section: `.ember-form`, `.ember-form-field`, `.ember-form-label`, `.ember-form-optional`, `.ember-form-input`, `.ember-form-textarea`, `.ember-form-counter`, `.ember-form-error`, `.ember-form-actions`, `.ember-form-cancel`, `.ember-form-submit`.
-
-**Session: 2026-04-02 (TASK 3B-3 — Brazier Component — Visual Container)**
-- `frontend/src/components/ui/Brazier.tsx` — New `<Brazier embers onEmberHover onAddClick />` component. Bowl/vessel built with CSS (rounded container, layered gradients). Fire core `radial-gradient` animates with `brazier-flicker`. Ember orbs (`8px` circles) use seeded pseudo-random positions (deterministic from index) with float animation. Float wrapper separates translate animation from hover scale to avoid keyframe/transition conflict. Glow intensity (`brazier-cold` → `brazier-blazing`) driven by ember count thresholds (0 / 1-5 / 6-15 / 16-30 / 31+). Hover shows tooltip with ember title. Empty state renders "Your brazier is cold" prompt. Rim + stem + base SVG-free structure below bowl. Responsive at 400px breakpoint.
-- `frontend/src/app/globals.css` — Added BRAZIER COMPONENT STYLES section: `@keyframes brazier-flicker` (fire glow pulse), `@keyframes brazier-float` (ember bob/drift), `@keyframes brazier-rise` (particle ascent + fade). Intensity classes `.brazier-cold/.brazier-dim/.brazier-warm/.brazier-hot/.brazier-blazing` control fire-core gradient and vessel box-shadow glow. Tooltip, empty-state, rim/stem/base, add-button styles.
-
-**Session: 2026-04-02 (TASK 3B-1 — Ember Database Table & API Endpoints)**
-- `supabase/migrations/20260402055909_create_embers_table.sql` — New migration: `public.embers` table with UUID PK, `user_id` FK to `auth.users`, `title` (1-100 chars), optional `description` (max 500 chars), `created_at`. RLS enabled with "Users can CRUD own embers" policy. Index on `user_id`. Applied via `npx supabase db push`.
-- `backend/app/models/ember.py` — New `Ember` SQLModel model (`table=True`) mirroring the DB schema.
-- `backend/app/schemas/embers.py` — New `EmberCreate` and `EmberResponse` Pydantic v2 schemas.
-- `backend/app/core/supabase.py` — Added ember helpers: `list_embers`, `count_embers`, `create_ember`, `get_ember`, `delete_ember`, and `EMBER_CAP = 50` constant.
-- `backend/app/api/v1/embers.py` — New router with `GET /embers` (list), `POST /embers` (create, enforces 50-cap), `DELETE /embers/{ember_id}` (delete with ownership check). All require Bearer auth. Response shape: `{ "data": ..., "error": null }`.
-- `backend/app/api/v1/__init__.py` — Registered `embers_router` at `/embers`.
-
-**Session: 2026-03-31 (fix: Navbar logo matched to landing page)**
-- `globals.css` — Added `--bone: #d4c9b0` token (landing page heading parchment; distinct from `--text-primary: #E0D8C8` which is slightly lighter)
-- `Navbar.tsx` — Logo split into `<span>Dusk</span>` (`--bone`) + `<span>vow</span>` (`--accent-ember`); font-size 1.3rem, weight 700, letter-spacing 0.15em, uppercase, Cinzel — exact match to `.lp-nav-logo` on landing page; removed `text-xl font-bold` Tailwind classes and `--accent-gold` color
-
-**Session: 2026-03-31 (fix: heading gold → text-primary across runner pages)**
-- `globals.css` — Added `--gold-dim: #8a7340` token to `:root` (mirrors landing page `--gold-dim`; for ornamental dividers/labels only, never headings)
-- `auth/page.tsx` — h1 "Enter the Realm": `--accent-gold` → `--text-primary`, removed bright gold textShadow; gold gradient divider now uses `var(--gold-dim)`; "Return to the Gates" hover changed from gold to `--text-secondary`
-- `dashboard/page.tsx` — h1 "Your Vow Board": `--accent-gold` → `--text-primary`, removed gold textShadow; SectionHeader ornamental label: `rgba(255,215,0,0.55)` → `--text-secondary`; SectionHeader divider lines: gold → gold-dim rgba; empty state `◆` label: gold → `--text-muted`; empty state h2 textShadow removed; finished tree card title: `--accent-gold` → `--text-primary` (gold badge and left border accent preserved as completion-state indicators)
-- `tree/new/page.tsx` — Step indicator done-state numeral: `--accent-gold` → `rgba(200,75,17,0.5)` (muted ember); done-state label: gold → `--text-muted`; done-state connector line: gold gradient → `rgba(200,75,17,0.35)`
-- `GoalInputStep.tsx` — h1 "Make Your Vow": `--accent-gold` → `--text-primary`
-- Rule established: `--accent-gold` is ONLY for XP numbers (`StatsBar`), node completion states (`--state-complete`), rarity indicators, progress bar fills, and the Duskvow logo. All page headings use `--text-primary`. All ornamental labels/dividers use `--text-secondary` / `--text-muted` / `--gold-dim`.
-
-**Session: 2026-03-31 (TASK 2B-1 — Google OAuth Implementation)**
-- `AuthForm.tsx` — Added `"google"` to `providers` array; existing `defaultButtonBackground`/`defaultButtonText` variables already dark-themed; `redirectTo` uses `window.location.origin + /dashboard` which works for OAuth callback
-- `globals.css` — Added `.auth-submit-btn:has(svg)` overrides so Google button renders as dark surface (`--bg-elevated` background, muted border) instead of inheriting ember gradient from `auth-submit-btn`; hover shows subtle ember border glow matching the rest of the form
-
-**Session: 2026-03-31 (TASK 2A-4 — Follow-Up "Something Else" Freetext Option)**
-- `FollowUpQuestionsStep.tsx` — Added "Something else…" button (dashed border, muted text) after predefined options for every question; clicking opens a freetext `<input>` with `--bg-shadow` background and ember border-on-focus; freetext value used as answer (not the literal string); selecting a predefined option collapses freetext; 3-char minimum enforced with inline hint; `allAnswered` logic accounts for freetext mode per question
-- `globals.css` — Added `.wiz-freetext-input:focus` (ember glow matching `.wiz-textarea:focus`) and `.wiz-freetext-input::placeholder` (muted italic)
-
-**Session: 2026-03-31 (TASK 2A-1 — Auth Page Visual Refactor)**
-- `auth/page.tsx` — Full atmospheric redesign: noise overlay (fixed), ember/gold radial glows (fixed), 11 floating ember particles (reusing wiz-float-a/b/c animations); auth card uses `--bg-shadow` with ember border glow + deep box-shadow; Duskvow logo linking to `/` at top; gold gradient divider; Cinzel heading at `clamp(1.75rem, 4vw, 2.3rem)` with gold text-shadow; Cinzel uppercase subtitle; "Return to the Gates" back link at bottom
-- `AuthForm.tsx` — Pushed `appearance.variables` further: `fonts` object added (Cinzel for buttons/labels, Inter for inputs/body); tighter `brandAccent`, deeper `inputBackground` (`--bg-abyss`), wider button/input spacing; added `appearance.className` with `auth-submit-btn` (ember gradient button), `auth-label` (Cinzel uppercase), `auth-input` (deep focus glow)
-- `globals.css` — Added AUTH PAGE STYLES section: `.auth-submit-btn` (ember gradient, Cinzel uppercase, hover glow), `.auth-label` (Cinzel 0.25em letter-spacing), `.auth-input` (abyss bg, gold focus ring)
-
-**Session: 2026-03-31 (TASK 2A-3 — Dashboard Visual Refactor)**
-- `dashboard/page.tsx` — Full atmospheric redesign: noise overlay (fixed), ember radial glow (fixed), 6 floating ember particles; "Your Vow Board" heading at `clamp(2.4rem, 5vw, 3.4rem)` with gold text-shadow; `wiz-btn-primary` ember gradient on "New Vow" CTA; `SectionHeader` component with `◆ Label ◆` ornamental Cinzel caps + gold gradient divider lines; `TreeCard` upgraded with left border accent in status color (`3px solid`), `dash-tree-card` hover class (elevation + glow), thicker progress bar (`h-2`) using glow fill classes; empty state atmospheric treatment with radial inner glow, italic copy, Cinzel eyebrow
-- `StatsBar.tsx` — Full HUD redesign: full-width layout, 5xl Cinzel numbers, vertical separators between stats, gold glow on XP (`dash-stat-xp`), ember glow on Streak (`dash-stat-streak`), gold/complete glow on Nodes (`dash-stat-nodes`), mini XP milestone progress bar with label
-- `globals.css` — Added DASHBOARD PAGE STYLES section: `.dash-stat-xp/streak/nodes` (text-shadow glow), `.dash-tree-card` / `:hover` (elevation), `.dash-progress-fill-active/complete` (box-shadow glow)
-
-**Session: 2026-03-31 (TASK 2A-2 — Tree Wizard Visual Refactor)**
-- `globals.css` — Added `.wiz-btn-primary` (ember gradient CTA), `.wiz-textarea` (dark fantasy focus glow), `.wiz-option-card` / `.wiz-option-selected` (hover/selected glow), `@keyframes wiz-drift` / `wiz-float-a/b/c` (wizard atmosphere)
-- `tree/new/page.tsx` — Added noise overlay (fixed), ember particles (fixed), radial glow (absolute); replaced generic dot step indicators with ornamental Roman numeral indicators (I/II/III with labels); added gold gradient divider between step indicator and content
-- `GoalInputStep.tsx` — Dramatic Cinzel heading at `clamp(2.2rem, 5vw, 3.2rem)`, ember eyebrow label, `wiz-textarea` dark fantasy treatment, `wiz-btn-primary` ember gradient button, atmospheric italic note below textarea
-- `FollowUpQuestionsStep.tsx` — Cinzel question text, `wiz-option-card` / `wiz-option-selected` path-choice cards with hover/selected glow, `wiz-btn-primary` ember gradient CTA
-- `GeneratingStep.tsx` — Added drifting rune background (10 faint runes, `wiz-drift` animation), centered radial glow behind rune ring; existing breathing rings preserved
-
-**Session: 2026-03-30 (initial STATE.md creation)**
-- Created STATE.md
-- No code changes — documentation session
+> Older session logs archived in git history. See `git log --oneline` for file-level diffs.
 
 ---
 
-## LAYER 4 — VALIDATION CHECKLIST
-
-> Claude: Run through this BEFORE saying "done" on any task.
-
-### After Every Code Change
-- [ ] `npx tsc --noEmit` passes (no TypeScript errors)
-- [ ] `npm run build` succeeds (no build errors)
-- [ ] All design tokens used — no inline hex colors
-- [ ] No `console.log` left in code
-- [ ] No `any` types introduced
-- [ ] Imports use `@/` path aliases (no `../../..`)
-- [ ] New components follow existing patterns in their directory
-
-### After UI Changes
-- [ ] Dark fantasy aesthetic maintained (check against landing page)
-- [ ] Cinzel for headings, Inter for body text
-- [ ] Interactive elements have hover/focus states
-- [ ] Mobile responsive (test at 375px width mentally)
-- [ ] No visual regressions on existing pages
-
-### After API/Data Changes
-- [ ] Optimistic UI updates in place
-- [ ] Error states handled and displayed to user
-- [ ] Loading states shown during async operations
-- [ ] Zustand store updated correctly
-- [ ] Types in `types/index.ts` match backend schema
-
----
-
-## APPENDIX — Key File Locations
+## KEY FILE LOCATIONS
 
 | What | Where |
 |------|-------|
 | Design tokens | `frontend/src/app/globals.css` |
 | Landing page (visual reference) | `frontend/src/app/page.tsx` |
-| API client (all backend calls) | `frontend/src/lib/api.ts` |
+| API client | `frontend/src/lib/api.ts` |
 | TypeScript types | `frontend/src/types/index.ts` |
-| Tree state management | `frontend/src/stores/treeStore.ts` |
-| Custom node rendering | `frontend/src/components/tree/SkillNodeComponent.tsx` |
-| Tree layout algorithm | `frontend/src/components/tree/TreeCanvas.tsx` → `applyDagreLayout()` |
-| Node interaction logic | `frontend/src/components/tree/TreeViewPage.tsx` → `handleNodeUpdate()` |
-| Supabase client | `frontend/src/lib/supabase.ts` |
+| Tree state store | `frontend/src/stores/treeStore.ts` |
+| User state store | `frontend/src/stores/userStore.ts` |
+| Tree rendering | `frontend/src/components/tree/TreeCanvas.tsx` |
+| Node interaction | `frontend/src/components/tree/TreeViewPage.tsx` |
+| Supabase client (FE) | `frontend/src/lib/supabase.ts` |
+| Supabase client (BE) | `backend/app/core/supabase.py` |
+| AI prompts | `backend/app/prompts/generate_tree.txt` |
 | Auth hook | `frontend/src/hooks/useUser.ts` |
-| Tailwind config | `frontend/postcss.config.mjs` (v4 — PostCSS plugin, no separate config) |
-| Env var bridge (Cloudflare) | `frontend/scripts/write-env.mjs` |
+| Dungeon pools | `backend/app/data/dungeon_pools.json` |
+| Dungeon service | `backend/app/services/dungeon.py` |
+| Dungeon API | `backend/app/api/v1/dungeon.py` |
+| Battle Report | `frontend/src/components/dungeon/BattleReport.tsx` |
