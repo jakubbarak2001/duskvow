@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { useProfile } from "@/hooks/useProfile";
+import { useUserStore } from "@/stores/userStore";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { Navbar } from "@/components/layout/Navbar";
 import { api } from "@/lib/api";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
 import { useAchievementToast } from "@/components/ui/AchievementProvider";
-import type { UserProfile, TalentTree, GenerationStatus, DailyQuest } from "@/types";
+import { titleForLevel } from "@/lib/levels";
+import { StatsBarSkeleton, TreeCardSkeleton } from "@/components/ui/Skeleton";
+import type { TalentTree, GenerationStatus, DailyQuest } from "@/types";
 
 const PARTICLES = [
   { left: "8%",  delay: "0s",   dur: "9s",  anim: "wiz-float-a", size: 3 },
@@ -20,23 +24,14 @@ const PARTICLES = [
   { left: "91%", delay: "7s",   dur: "9s",  anim: "wiz-float-c", size: 2 },
 ];
 
-function titleForLevel(level: number): string {
-  if (level >= 50) return "Vow Eternal";
-  if (level >= 40) return "Mythbreaker";
-  if (level >= 30) return "Shadowforged";
-  if (level >= 20) return "Duskwalker";
-  if (level >= 15) return "Flamewarden";
-  if (level >= 10) return "Ironsworn";
-  if (level >= 5) return "Oath-Bound";
-  return "Wanderer";
-}
-
 export default function VowChamberPage() {
   const { user, session, loading } = useUser();
+  const { profile } = useProfile();
+  const updateFromCompletion = useUserStore((s) => s.updateFromCompletion);
+  const storeSetLevel = useUserStore((s) => s.setLevel);
   const router = useRouter();
   const { showAchievements, showStreakMilestone } = useAchievementToast();
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [trees, setTrees] = useState<TalentTree[]>([]);
   const [genStatus, setGenStatus] = useState<GenerationStatus | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -61,13 +56,10 @@ export default function VowChamberPage() {
 
     const token = session.access_token;
     Promise.allSettled([
-      api.getProfile(token),
       api.listTrees(token),
       api.getGenerationStatus(token),
       api.getTodayQuests(token),
-    ]).then(([profileResult, treesResult, genResult, questsResult]) => {
-      if (profileResult.status === "fulfilled" && profileResult.value.data)
-        setProfile(profileResult.value.data);
+    ]).then(([treesResult, genResult, questsResult]) => {
       if (treesResult.status === "fulfilled" && treesResult.value.data)
         setTrees(treesResult.value.data);
       if (genResult.status === "fulfilled" && genResult.value.data)
@@ -100,11 +92,30 @@ export default function VowChamberPage() {
 
   if (loading || (!user && loading)) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: "var(--bg-abyss)" }}
-      >
-        <p style={{ color: "var(--text-muted)" }}>Loading…</p>
+      <div style={{ backgroundColor: "var(--bg-abyss)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundImage: 'url("/noise.png")',
+            backgroundRepeat: "repeat",
+            backgroundSize: "200px 200px",
+            opacity: 0.04,
+            pointerEvents: "none",
+          }}
+        />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <Navbar />
+          <main className="max-w-6xl mx-auto px-4 py-10">
+            <div className="mb-10">
+              <StatsBarSkeleton />
+            </div>
+            <div className="grid gap-4">
+              <TreeCardSkeleton />
+              <TreeCardSkeleton />
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
@@ -141,10 +152,12 @@ export default function VowChamberPage() {
           ),
         );
       } else if (res.data) {
-        // Update profile XP
-        if (profile) {
-          setProfile({ ...profile, total_xp: res.data.total_xp });
-        }
+        // Update store — instant XP everywhere
+        updateFromCompletion({
+          total_xp: res.data.total_xp,
+          new_level: res.data.new_level,
+          new_title: res.data.new_title,
+        });
         // Show level-up modal
         if (res.data.leveled_up) {
           const prevTitle = titleForLevel(res.data.previous_level);
@@ -154,14 +167,7 @@ export default function VowChamberPage() {
             previousTitle: prevTitle,
             xpEarned: res.data.xp_earned,
           });
-          if (profile) {
-            setProfile({
-              ...profile,
-              total_xp: res.data.total_xp,
-              hero_level: res.data.new_level,
-              hero_title: res.data.new_title,
-            });
-          }
+          storeSetLevel(res.data.new_level, res.data.new_title);
         }
         // Show achievement toasts
         if (res.data.new_achievements?.length) {
@@ -356,8 +362,8 @@ export default function VowChamberPage() {
           </div>
 
           {/* Stats bar */}
-          {profile && !dataLoading && (
-            <div className="mb-10">
+          <div className="mb-10">
+            {profile ? (
               <StatsBar
                 totalXp={profile.total_xp}
                 currentStreak={profile.current_streak}
@@ -365,12 +371,17 @@ export default function VowChamberPage() {
                 heroTitle={profile.hero_title}
                 streakMultiplier={profile.streak_multiplier}
               />
-            </div>
-          )}
+            ) : (
+              <StatsBarSkeleton />
+            )}
+          </div>
 
 
           {dataLoading ? (
-            <p style={{ color: "var(--text-muted)" }}>Loading your vows…</p>
+            <div className="grid gap-4">
+              <TreeCardSkeleton />
+              <TreeCardSkeleton />
+            </div>
           ) : trees.length === 0 ? (
             /* Empty state — atmospheric */
             <div

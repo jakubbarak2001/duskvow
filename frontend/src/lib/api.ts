@@ -18,9 +18,40 @@ import type {
   LevelUnlock,
   ProfileStats,
   LootClaimResult,
+  LeaderboardEntry,
+  LeaderboardRank,
 } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+// ---------------------------------------------------------------------------
+// Simple in-memory response cache (30s TTL)
+// ---------------------------------------------------------------------------
+
+const _cache = new Map<string, { data: unknown; ts: number }>();
+const CACHE_TTL = 30_000;
+
+function cached<T>(
+  key: string,
+  fetcher: () => Promise<ApiResponse<T>>,
+): Promise<ApiResponse<T>> {
+  const hit = _cache.get(key);
+  if (hit && Date.now() - hit.ts < CACHE_TTL) {
+    return Promise.resolve(hit.data as ApiResponse<T>);
+  }
+  return fetcher().then((result) => {
+    if (result.data) _cache.set(key, { data: result, ts: Date.now() });
+    return result;
+  });
+}
+
+function invalidate(...prefixes: string[]) {
+  for (const key of _cache.keys()) {
+    if (prefixes.some((p) => key.startsWith(p))) {
+      _cache.delete(key);
+    }
+  }
+}
 
 async function request<T>(
   path: string,
@@ -83,15 +114,19 @@ function authHeader(token: string): Record<string, string> {
 export const api = {
   // Profile
   getProfile: (token: string) =>
-    request<UserProfile>("/api/v1/profile", {
-      headers: authHeader(token),
-    }),
+    cached("profile", () =>
+      request<UserProfile>("/api/v1/profile", {
+        headers: authHeader(token),
+      }),
+    ),
 
   // Trees
   listTrees: (token: string) =>
-    request<TalentTree[]>("/api/v1/trees", {
-      headers: authHeader(token),
-    }),
+    cached("trees", () =>
+      request<TalentTree[]>("/api/v1/trees", {
+        headers: authHeader(token),
+      }),
+    ),
 
   getTree: (treeId: string, token: string) =>
     request<TalentTree>(`/api/v1/trees/${treeId}`, {
@@ -109,23 +144,27 @@ export const api = {
     sessionId: string,
     answers: Record<string, string>,
     token: string,
-  ) =>
-    request<TreeGenerationResult>("/api/v1/trees/followup", {
+  ) => {
+    invalidate("trees", "profile", "profile-stats");
+    return request<TreeGenerationResult>("/api/v1/trees/followup", {
       method: "POST",
       headers: authHeader(token),
       body: JSON.stringify({ session_id: sessionId, answers }),
-    }),
+    });
+  },
 
   getGenerationStatus: (token: string) =>
     request<GenerationStatus>("/api/v1/trees/generation-status", {
       headers: authHeader(token),
     }),
 
-  deleteTree: (treeId: string, token: string) =>
-    request<{ deleted: boolean; tree_id: string }>(`/api/v1/trees/${treeId}`, {
+  deleteTree: (treeId: string, token: string) => {
+    invalidate("trees", "profile-stats");
+    return request<{ deleted: boolean; tree_id: string }>(`/api/v1/trees/${treeId}`, {
       method: "DELETE",
       headers: authHeader(token),
-    }),
+    });
+  },
 
   // Profile
   updateProfile: (heroName: string, token: string) =>
@@ -136,11 +175,13 @@ export const api = {
     }),
 
   // Nodes
-  completeNode: (nodeId: string, token: string) =>
-    request<NodeCompletionResult>(
+  completeNode: (nodeId: string, token: string) => {
+    invalidate("profile", "trees", "profile-stats");
+    return request<NodeCompletionResult>(
       `/api/v1/nodes/${nodeId}/complete`,
       { method: "PATCH", headers: authHeader(token) },
-    ),
+    );
+  },
 
   startNode: (nodeId: string, token: string) =>
     request<{ node_id: string; new_state: string }>(
@@ -177,23 +218,29 @@ export const api = {
       headers: authHeader(token),
     }),
 
-  completeQuest: (questId: string, token: string) =>
-    request<DailyQuestCompletionResult>(`/api/v1/quests/${questId}/complete`, {
+  completeQuest: (questId: string, token: string) => {
+    invalidate("profile", "profile-stats");
+    return request<DailyQuestCompletionResult>(`/api/v1/quests/${questId}/complete`, {
       method: "POST",
       headers: authHeader(token),
-    }),
+    });
+  },
 
-  uncompleteQuest: (questId: string, token: string) =>
-    request<{ quest_id: string; uncompleted: boolean }>(
+  uncompleteQuest: (questId: string, token: string) => {
+    invalidate("profile", "profile-stats");
+    return request<{ quest_id: string; uncompleted: boolean }>(
       `/api/v1/quests/${questId}/complete`,
       { method: "DELETE", headers: authHeader(token) },
-    ),
+    );
+  },
 
   // Dungeon
   getDungeonTiers: (token: string) =>
-    request<DungeonTier[]>("/api/v1/dungeon/tiers", {
-      headers: authHeader(token),
-    }),
+    cached("dungeon-tiers", () =>
+      request<DungeonTier[]>("/api/v1/dungeon/tiers", {
+        headers: authHeader(token),
+      }),
+    ),
 
   getActiveDungeon: (token: string) =>
     request<DungeonRun | null>("/api/v1/dungeon/active", {
@@ -218,17 +265,21 @@ export const api = {
       }),
     }),
 
-  completeDungeon: (token: string) =>
-    request<DungeonCompleteResult>("/api/v1/dungeon/complete", {
+  completeDungeon: (token: string) => {
+    invalidate("profile", "profile-stats", "achievements");
+    return request<DungeonCompleteResult>("/api/v1/dungeon/complete", {
       method: "POST",
       headers: authHeader(token),
-    }),
+    });
+  },
 
-  retreatDungeon: (token: string) =>
-    request<DungeonCompleteResult>("/api/v1/dungeon/retreat", {
+  retreatDungeon: (token: string) => {
+    invalidate("profile", "profile-stats");
+    return request<DungeonCompleteResult>("/api/v1/dungeon/retreat", {
       method: "POST",
       headers: authHeader(token),
-    }),
+    });
+  },
 
   getDungeonHistory: (token: string) =>
     request<DungeonRun[]>("/api/v1/dungeon/history", {
@@ -237,9 +288,11 @@ export const api = {
 
   // Achievements
   getAchievements: (token: string) =>
-    request<Achievement[]>("/api/v1/achievements", {
-      headers: authHeader(token),
-    }),
+    cached("achievements", () =>
+      request<Achievement[]>("/api/v1/achievements", {
+        headers: authHeader(token),
+      }),
+    ),
 
   // Inventory
   getInventory: (token: string, used?: boolean) =>
@@ -258,26 +311,56 @@ export const api = {
       headers: authHeader(token),
     }),
 
-  claimLoot: (runId: string, token: string) =>
-    request<LootClaimResult>(`/api/v1/inventory/claim/${runId}`, {
+  claimLoot: (runId: string, token: string) => {
+    invalidate("profile", "profile-stats");
+    return request<LootClaimResult>(`/api/v1/inventory/claim/${runId}`, {
       method: "POST",
       headers: authHeader(token),
-    }),
+    });
+  },
 
-  useItem: (itemId: string, token: string) =>
-    request<InventoryItem>(`/api/v1/inventory/${itemId}/use`, {
+  useItem: (itemId: string, token: string) => {
+    invalidate("profile", "profile-stats");
+    return request<InventoryItem>(`/api/v1/inventory/${itemId}/use`, {
       method: "POST",
       headers: authHeader(token),
-    }),
+    });
+  },
 
   // Profile — unlocks & stats
   getLevelUnlocks: (token: string) =>
-    request<LevelUnlock[]>("/api/v1/profile/unlocks", {
-      headers: authHeader(token),
-    }),
+    cached("unlocks", () =>
+      request<LevelUnlock[]>("/api/v1/profile/unlocks", {
+        headers: authHeader(token),
+      }),
+    ),
 
   getProfileStats: (token: string) =>
-    request<ProfileStats>("/api/v1/profile/stats", {
-      headers: authHeader(token),
-    }),
+    cached("profile-stats", () =>
+      request<ProfileStats>("/api/v1/profile/stats", {
+        headers: authHeader(token),
+      }),
+    ),
+
+  // Leaderboard
+  getLeaderboard: (
+    token: string,
+    metric: "total_xp" | "current_streak" = "total_xp",
+    period: "weekly" | "all_time" = "weekly",
+    limit: number = 50,
+  ) =>
+    request<LeaderboardEntry[]>(
+      `/api/v1/leaderboard?metric=${metric}&period=${period}&limit=${limit}`,
+      { headers: authHeader(token) },
+    ),
+
+  getMyRank: (
+    token: string,
+    metric: "total_xp" | "current_streak" = "total_xp",
+    period: "weekly" | "all_time" = "weekly",
+  ) =>
+    request<LeaderboardRank>(
+      `/api/v1/leaderboard/me?metric=${metric}&period=${period}`,
+      { headers: authHeader(token) },
+    ),
 };

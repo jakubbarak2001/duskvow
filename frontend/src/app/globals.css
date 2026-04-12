@@ -793,3 +793,133 @@ h1, h2, h3, h4, h5, h6 {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Skeleton shimmer for loading states ── */
+@keyframes skeleton-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-elevated);
+  border-radius: 4px;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(224,216,200,0.04) 40%,
+    rgba(224,216,200,0.08) 50%,
+    rgba(224,216,200,0.04) 60%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+/* ── XP Pop: floating +XP number after earning ── */
+@keyframes xp-pop {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-24px); opacity: 0; }
+}
+
+.xp-pop {
+  animation: xp-pop 1.2s ease-out forwards;
+  pointer-events: none;
+  position: absolute;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold);
+  text-shadow: 0 0 12px rgba(255,215,0,0.6);
+}
+
+/* ── XP bar flash on XP gain ── */
+@keyframes xp-bar-flash {
+  0%   { box-shadow: 0 0 8px rgba(255,215,0,0.8), 0 0 20px rgba(255,215,0,0.4); }
+  100% { box-shadow: none; }
+}
+
+.xp-bar-flash {
+  animation: xp-bar-flash 0.8s ease-out;
+}
+
+/* ── Dungeon atmosphere: torch flicker vignette ── */
+@keyframes torch-flicker {
+  0%, 100% { opacity: 0.6; }
+  15%  { opacity: 0.72; }
+  35%  { opacity: 0.58; }
+  55%  { opacity: 0.69; }
+  75%  { opacity: 0.62; }
+  90%  { opacity: 0.7; }
+}
+
+.torch-vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(10,10,18,0.75) 100%);
+  animation: torch-flicker 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Dungeon: boss event screen flash ── */
+@keyframes boss-flash {
+  0%   { opacity: 0.15; }
+  100% { opacity: 0; }
+}
+
+.boss-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, var(--accent-blood) 100%);
+  animation: boss-flash 0.4s ease-out forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ── Dungeon: floor transition pulse ── */
+@keyframes floor-pulse {
+  0%   { box-shadow: 0 0 12px rgba(255,215,0,0.8), 0 0 24px rgba(255,215,0,0.4); }
+  100% { box-shadow: none; }
+}
+
+.floor-pulse {
+  animation: floor-pulse 0.6s ease-out;
+}
+
+/* ── Dungeon: urgent timer pulse (< 60s remaining) ── */
+.dungeon-pulse-urgent {
+  animation: dungeon-pulse 1s ease-in-out infinite;
+}
+
+/* ── Dungeon: slow floating particles (darker, more ominous) ── */
+@keyframes dungeon-float-a {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: 0.35; }
+  50%  { transform: translateY(-45vh) translateX(15px); opacity: 0.25; }
+  90%  { opacity: 0.1; }
+  100% { transform: translateY(-90vh) translateX(-10px); opacity: 0; }
+}
+
+@keyframes dungeon-float-b {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  15%  { opacity: 0.3; }
+  50%  { transform: translateY(-40vh) translateX(-20px); opacity: 0.2; }
+  85%  { opacity: 0.08; }
+  100% { transform: translateY(-85vh) translateX(8px); opacity: 0; }
+}
+
+@keyframes dungeon-float-c {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  12%  { opacity: 0.25; }
+  50%  { transform: translateY(-50vh) translateX(12px); opacity: 0.15; }
+  88%  { opacity: 0.05; }
+  100% { transform: translateY(-95vh) translateX(-15px); opacity: 0; }
+}

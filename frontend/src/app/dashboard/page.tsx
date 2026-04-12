@@ -4,21 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { useProfile } from "@/hooks/useProfile";
+import { useUserStore } from "@/stores/userStore";
 import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { HeroNamingModal } from "@/components/ui/HeroNamingModal";
-import type { DungeonRun, UserProfile } from "@/types";
+import type { DungeonRun } from "@/types";
 
 
 export default function DashboardPage() {
   const { user, session, loading } = useUser();
+  const { profile, profileLoading } = useProfile();
+  const setProfile = useUserStore((s) => s.setProfile);
   const router = useRouter();
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [activeVowCount, setActiveVowCount] = useState<number | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [earnedXp, setEarnedXp] = useState<number>(0);
   const [activeDungeon, setActiveDungeon] = useState<DungeonRun | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
@@ -32,33 +31,21 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
+  // Check naming once profile loads
+  useEffect(() => {
+    if (profile && !profile.hero_name) {
+      setShowNaming(true);
+    }
+  }, [profile]);
+
   useEffect(() => {
     if (!session?.access_token) return;
     const token = session.access_token;
     Promise.allSettled([
-      api.getProfile(token),
       api.listTrees(token),
       api.getActiveDungeon(token),
       api.getUnclaimedLootCount(token),
-    ]).then(([profileResult, treesResult, dungeonResult, lootResult]) => {
-      if (profileResult.status === "fulfilled" && profileResult.value.data) {
-        setProfile(profileResult.value.data);
-        if (!profileResult.value.data.hero_name) {
-          setShowNaming(true);
-        }
-      }
-      if (treesResult.status === "fulfilled" && treesResult.value.data) {
-        const activeTrees = treesResult.value.data.filter(
-          (t: { status: string; earned_xp: number }) => t.status === "active"
-        );
-        setActiveVowCount(activeTrees.length);
-        setEarnedXp(
-          activeTrees.reduce(
-            (sum: number, t: { earned_xp: number }) => sum + (t.earned_xp ?? 0),
-            0
-          )
-        );
-      }
+    ]).then(([treesResult, dungeonResult, lootResult]) => {
       if (dungeonResult.status === "fulfilled" && dungeonResult.value.data) {
         setActiveDungeon(dungeonResult.value.data);
       }
@@ -95,57 +82,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading || dataLoading || (!user && loading)) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "var(--bg-abyss)",
-          gap: "1.2rem",
-        }}
-      >
-        {/* Radial glow */}
-        <div
-          style={{
-            position: "absolute",
-            width: "400px",
-            height: "400px",
-            background: "radial-gradient(ellipse at center, rgba(200,75,17,0.06) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "1.4rem",
-            fontWeight: 700,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-          }}
-        >
-          <span style={{ color: "var(--text-primary)" }}>Dusk</span>
-          <span style={{ color: "var(--accent-ember)" }}>vow</span>
-        </div>
-        <div
-          className="dungeon-pulse"
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "0.55rem",
-            letterSpacing: "0.35em",
-            textTransform: "uppercase",
-            color: "var(--text-muted)",
-          }}
-        >
-          Entering the sanctum
-        </div>
-      </div>
-    );
-  }
-
+  if (loading) return null;
   if (!user) return null;
 
   // Gate: show naming modal on a clean background before rendering the hub
@@ -219,7 +156,7 @@ export default function DashboardPage() {
       >
         {/* Logo */}
         <Link
-          href="/"
+          href="/dashboard"
           style={{
             fontFamily: "var(--font-heading)",
             fontSize: "1.3rem",
@@ -234,7 +171,7 @@ export default function DashboardPage() {
         </Link>
 
         {/* Hero Level + Streak */}
-        {!dataLoading && profile && (
+        {profile && (
           <div
             style={{
               display: "flex",

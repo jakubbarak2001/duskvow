@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { useProfile } from "@/hooks/useProfile";
 import { api } from "@/lib/api";
+import { xpForLevel, nextTitleInfo } from "@/lib/levels";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import type {
-  UserProfile,
   Achievement,
   InventoryItem,
   LevelUnlock,
@@ -15,16 +17,8 @@ import type {
 } from "@/types";
 
 const ICON_MAP: Record<string, string> = {
-  scroll: "◆",
-  shield: "⛊",
-  sword: "⚔",
-  flame: "✦",
-  road: "═",
-  chest: "⬡",
-  abyss: "◈",
-  mountain: "▲",
-  crown: "♔",
-  star: "✦",
+  scroll: "◆", shield: "⛊", sword: "⚔", flame: "✦", road: "═",
+  chest: "⬡", abyss: "◈", mountain: "▲", crown: "♔", star: "✦",
 };
 
 const RARITY_COLORS: Record<string, string> = {
@@ -36,43 +30,30 @@ const RARITY_COLORS: Record<string, string> = {
   ashen_token: "var(--rarity-uncommon)",
 };
 
-function xpForLevel(level: number): number {
-  return level * level * 25;
-}
+const CATEGORY_LABELS: Record<string, string> = {
+  tree: "Vow Mastery",
+  dungeon: "Dungeon Trials",
+  quest: "Quest Pursuits",
+  meta: "Legendary Feats",
+};
 
-function titleForLevel(level: number): string {
-  if (level >= 50) return "Vow Eternal";
-  if (level >= 40) return "Mythbreaker";
-  if (level >= 30) return "Shadowforged";
-  if (level >= 20) return "Duskwalker";
-  if (level >= 15) return "Flamewarden";
-  if (level >= 10) return "Ironsworn";
-  if (level >= 5) return "Oath-Bound";
-  return "Wanderer";
-}
-
-function nextTitleInfo(level: number): { title: string; atLevel: number } | null {
-  const thresholds = [
-    { level: 5, title: "Oath-Bound" },
-    { level: 10, title: "Ironsworn" },
-    { level: 15, title: "Flamewarden" },
-    { level: 20, title: "Duskwalker" },
-    { level: 30, title: "Shadowforged" },
-    { level: 40, title: "Mythbreaker" },
-    { level: 50, title: "Vow Eternal" },
-  ];
-  for (const t of thresholds) {
-    if (t.level > level) return { title: t.title, atLevel: t.level };
-  }
-  return null;
-}
+const STAT_ACCENTS: Record<string, string> = {
+  "Total XP": "var(--accent-gold)",
+  "Trees Completed": "var(--accent-gold)",
+  "Trees Active": "var(--accent-gold)",
+  "Nodes Completed": "var(--accent-gold)",
+  "Dungeons Completed": "var(--accent-ember)",
+  "Dungeon Time": "var(--accent-ember)",
+  "Quests Completed": "var(--state-available)",
+  "Items Collected": "var(--rarity-rare)",
+};
 
 export default function ProfilePage() {
   const { user, session, loading } = useUser();
+  const { profile, profileLoading } = useProfile();
   const router = useRouter();
   const { showAchievements: _showAchievements } = useAchievementToast();
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [unlocks, setUnlocks] = useState<LevelUnlock[]>([]);
@@ -81,37 +62,26 @@ export default function ProfilePage() {
   const [usingItem, setUsingItem] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/auth");
-    }
+    if (!loading && !user) router.replace("/auth");
   }, [user, loading, router]);
 
   useEffect(() => {
     if (!session?.access_token) return;
     const token = session.access_token;
-
     Promise.allSettled([
-      api.getProfile(token),
       api.getAchievements(token),
       api.getInventory(token, false),
       api.getLevelUnlocks(token),
       api.getProfileStats(token),
-    ]).then(([profileRes, achievementsRes, inventoryRes, unlocksRes, statsRes]) => {
-      if (profileRes.status === "fulfilled" && profileRes.value.data) {
-        setProfile(profileRes.value.data);
-      }
-      if (achievementsRes.status === "fulfilled" && achievementsRes.value.data) {
+    ]).then(([achievementsRes, inventoryRes, unlocksRes, statsRes]) => {
+      if (achievementsRes.status === "fulfilled" && achievementsRes.value.data)
         setAchievements(achievementsRes.value.data);
-      }
-      if (inventoryRes.status === "fulfilled" && inventoryRes.value.data) {
+      if (inventoryRes.status === "fulfilled" && inventoryRes.value.data)
         setInventory(inventoryRes.value.data);
-      }
-      if (unlocksRes.status === "fulfilled" && unlocksRes.value.data) {
+      if (unlocksRes.status === "fulfilled" && unlocksRes.value.data)
         setUnlocks(unlocksRes.value.data);
-      }
-      if (statsRes.status === "fulfilled" && statsRes.value.data) {
+      if (statsRes.status === "fulfilled" && statsRes.value.data)
         setStats(statsRes.value.data);
-      }
       setDataLoading(false);
     });
   }, [session]);
@@ -126,624 +96,378 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading || dataLoading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "var(--bg-abyss)",
-        }}
-      >
-        <div
-          className="dungeon-pulse"
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "0.55rem",
-            letterSpacing: "0.35em",
-            textTransform: "uppercase",
-            color: "var(--text-muted)",
-          }}
-        >
-          Loading profile
-        </div>
-      </div>
-    );
-  }
+  if (loading) return null;
+  if (!user) return null;
 
-  if (!user || !profile) return null;
-
-  const currentLevelXp = xpForLevel(profile.hero_level);
-  const nextLevelXp = xpForLevel(profile.hero_level + 1);
-  const xpProgress = profile.total_xp - currentLevelXp;
+  const currentLevelXp = profile ? xpForLevel(profile.hero_level) : 0;
+  const nextLevelXp = profile ? xpForLevel(profile.hero_level + 1) : 100;
+  const xpProgress = profile ? profile.total_xp - currentLevelXp : 0;
   const xpNeeded = nextLevelXp - currentLevelXp;
   const xpPercent = xpNeeded > 0 ? Math.min(100, (xpProgress / xpNeeded) * 100) : 100;
-
   const earnedCount = achievements.filter((a) => a.unlocked).length;
-  const nextTitle = nextTitleInfo(profile.hero_level);
-
-  const streakPct = profile.streak_multiplier > 1.0
-    ? Math.round((profile.streak_multiplier - 1.0) * 100)
-    : 0;
-
-  // Separate level-gated unlocks from streak bonuses
+  const nextTitle = profile ? nextTitleInfo(profile.hero_level) : null;
+  const streakPct = profile && profile.streak_multiplier > 1.0 ? Math.round((profile.streak_multiplier - 1.0) * 100) : 0;
   const levelUnlocks = unlocks.filter((u) => !u.feature.startsWith("streak_"));
 
+  // Group achievements by category
+  const achievementsByCategory = achievements.reduce<Record<string, Achievement[]>>((acc, a) => {
+    const cat = a.category ?? "meta";
+    (acc[cat] ??= []).push(a);
+    return acc;
+  }, {});
+
+  const statRows = stats && profile ? [
+    { label: "Total XP", value: profile.total_xp.toLocaleString() },
+    { label: "Trees Completed", value: stats.trees_completed },
+    { label: "Trees Active", value: stats.trees_active },
+    { label: "Nodes Completed", value: stats.nodes_completed },
+    { label: "Dungeons Completed", value: stats.dungeons_completed },
+    { label: "Dungeon Time", value: `${Math.floor(stats.total_dungeon_minutes / 60)}h ${stats.total_dungeon_minutes % 60}m` },
+    { label: "Quests Completed", value: stats.quests_completed },
+    { label: "Items Collected", value: stats.total_loot_collected },
+  ] : [];
+
   return (
-    <div
-      style={{
-        backgroundColor: "var(--bg-abyss)",
-        minHeight: "100vh",
-        position: "relative",
-      }}
-    >
+    <div style={{ backgroundColor: "var(--bg-abyss)", minHeight: "100vh", position: "relative" }}>
       {/* Noise overlay */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: 'url("/noise.png")',
-          backgroundRepeat: "repeat",
-          backgroundSize: "200px 200px",
-          opacity: 0.04,
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
+      <div style={{ position: "fixed", inset: 0, backgroundImage: 'url("/noise.png")', backgroundRepeat: "repeat", backgroundSize: "200px 200px", opacity: 0.04, pointerEvents: "none", zIndex: 0 }} />
+
+      {/* Ambient glow behind hero sigil */}
+      <div style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", width: "600px", height: "400px", background: "radial-gradient(ellipse at center, rgba(255,215,0,0.04) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0 }} />
 
       {/* Header */}
-      <header
-        style={{
-          position: "relative",
-          zIndex: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "1.25rem 2rem",
-          borderBottom: "1px solid rgba(224,216,200,0.07)",
-        }}
-      >
-        <Link
-          href="/dashboard"
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "0.65rem",
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color: "var(--text-muted)",
-            textDecoration: "none",
-            transition: "color 0.2s",
-          }}
-        >
+      <header style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 2rem", borderBottom: "1px solid rgba(224,216,200,0.07)" }}>
+        <Link href="/dashboard" style={{ fontFamily: "var(--font-heading)", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--text-muted)", textDecoration: "none", transition: "color 0.2s" }}>
           ← Return to Hub
         </Link>
       </header>
 
       {/* Main content */}
-      <main
-        style={{
-          position: "relative",
-          zIndex: 2,
-          maxWidth: "700px",
-          margin: "0 auto",
-          padding: "2rem 1.5rem 4rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "2.5rem",
-        }}
-      >
-        {/* ── Hero Identity ── */}
+      <main style={{ position: "relative", zIndex: 2, maxWidth: "700px", margin: "0 auto", padding: "2rem 1.5rem 4rem", display: "flex", flexDirection: "column", gap: "2.5rem" }}>
+
+        {/* ═══════════ HERO SIGIL ═══════════ */}
+        {profile ? (
         <section style={{ textAlign: "center" }}>
-          {/* Level badge */}
-          <div
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontSize: "3.5rem",
-              fontWeight: 700,
-              color: "var(--accent-gold)",
-              textShadow: "0 0 40px rgba(255,215,0,0.4)",
-              lineHeight: 1,
-            }}
-          >
-            {profile.hero_level}
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontSize: "0.6rem",
-              letterSpacing: "0.3em",
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-              marginTop: "0.25rem",
-            }}
-          >
-            Level
+          {/* Hexagonal level sigil with XP ring */}
+          <div style={{ position: "relative", display: "inline-block", marginBottom: "1rem" }}>
+            <svg width="130" height="130" viewBox="0 0 130 130">
+              {/* Background track */}
+              <circle cx="65" cy="65" r="60" fill="none" stroke="rgba(224,216,200,0.1)" strokeWidth="2.5" />
+              {/* XP progress arc */}
+              <circle
+                cx="65" cy="65" r="60"
+                fill="none"
+                stroke="var(--accent-gold)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeDasharray={`${(xpPercent / 100) * 2 * Math.PI * 60} ${2 * Math.PI * 60}`}
+                transform="rotate(-90 65 65)"
+                style={{ filter: "drop-shadow(0 0 6px rgba(255,215,0,0.4))", transition: "stroke-dasharray 0.6s ease" }}
+              />
+              {/* Level number */}
+              <text
+                x="65" y="65"
+                textAnchor="middle"
+                dominantBaseline="central"
+                style={{
+                  fontFamily: "var(--font-heading), 'Cinzel', serif",
+                  fontSize: "2.8rem",
+                  fontWeight: 700,
+                  fill: "var(--accent-gold)",
+                }}
+              >
+                {profile.hero_level}
+              </text>
+            </svg>
           </div>
 
           {/* Hero name & title */}
-          <div style={{ marginTop: "1rem" }}>
-            <div
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.4rem",
-                fontWeight: 600,
-                color: "var(--text-primary)",
-                letterSpacing: "0.1em",
-              }}
-            >
-              {profile.hero_name ?? "Unnamed Hero"}
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "0.7rem",
-                letterSpacing: "0.15em",
-                textTransform: "uppercase",
-                color: "var(--accent-gold)",
-                marginTop: "0.2rem",
-              }}
-            >
-              {profile.hero_title}
-            </div>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.5rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.1em" }}>
+            {profile.hero_name ?? "Unnamed Hero"}
+          </div>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--accent-gold)", marginTop: "0.2rem" }}>
+            {profile.hero_title}
           </div>
 
-          {/* XP Progress bar */}
-          <div style={{ marginTop: "1.25rem", maxWidth: "400px", margin: "1.25rem auto 0" }}>
-            <div
-              style={{
-                height: "6px",
-                backgroundColor: "rgba(224,216,200,0.08)",
-                borderRadius: "3px",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${xpPercent}%`,
-                  background: "linear-gradient(90deg, var(--accent-gold), rgba(255,215,0,0.6))",
-                  borderRadius: "3px",
-                  transition: "width 0.5s ease",
-                }}
-              />
+          {/* XP bar with overlaid numbers */}
+          <div style={{ maxWidth: "420px", margin: "1.5rem auto 0", position: "relative" }}>
+            <div style={{ height: "8px", backgroundColor: "rgba(224,216,200,0.08)", borderRadius: "4px", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${xpPercent}%`, background: "linear-gradient(90deg, var(--accent-gold), rgba(255,215,0,0.6))", borderRadius: "4px", transition: "width 0.5s ease", boxShadow: "0 0 12px rgba(255,215,0,0.3)" }} />
             </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: "0.35rem",
-                fontFamily: "var(--font-heading)",
-                fontSize: "0.55rem",
-                letterSpacing: "0.1em",
-                color: "var(--text-muted)",
-              }}
-            >
-              <span>{profile.total_xp.toLocaleString()} XP</span>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.4rem", fontFamily: "var(--font-heading)", fontSize: "0.6rem", letterSpacing: "0.08em", color: "var(--text-muted)" }}>
+              <span style={{ color: "var(--accent-gold)" }}>{profile.total_xp.toLocaleString()} XP</span>
               <span>{nextLevelXp.toLocaleString()} XP</span>
             </div>
           </div>
 
-          {/* Next title */}
+          {/* Next title hint */}
           {nextTitle && (
-            <div
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "0.55rem",
-                letterSpacing: "0.15em",
-                color: "var(--text-muted)",
-                marginTop: "0.5rem",
-              }}
-            >
+            <div style={{ fontFamily: "var(--font-heading)", fontSize: "0.55rem", letterSpacing: "0.15em", color: "var(--text-muted)", marginTop: "0.5rem" }}>
               Next title: <span style={{ color: "var(--text-secondary)" }}>{nextTitle.title}</span> at Lv.{nextTitle.atLevel}
             </div>
           )}
 
-          {/* Streak */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: "2rem",
-              marginTop: "1rem",
-            }}
-          >
-            <div style={{ textAlign: "center" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "1.4rem",
-                  fontWeight: 700,
-                  color: "var(--accent-ember)",
-                  textShadow: "0 0 12px rgba(200,75,17,0.5)",
-                }}
-              >
-                {profile.current_streak}
-              </span>
-              <div
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "0.5rem",
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Current Streak
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "1.4rem",
-                  fontWeight: 700,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {profile.longest_streak}
-              </span>
-              <div
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "0.5rem",
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Longest Streak
-              </div>
-            </div>
-            {streakPct > 0 && (
-              <div style={{ textAlign: "center" }}>
-                <span
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "1.4rem",
-                    fontWeight: 700,
-                    color: "var(--accent-gold)",
-                    textShadow: "0 0 12px rgba(255,215,0,0.3)",
-                  }}
-                >
-                  +{streakPct}%
-                </span>
-                <div
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "0.5rem",
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  XP Bonus
-                </div>
-              </div>
-            )}
+          {/* Streak runes */}
+          <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", marginTop: "1.5rem" }}>
+            <StreakRune label="Current Streak" value={profile.current_streak} color="var(--accent-ember)" />
+            <StreakRune label="Longest Streak" value={profile.longest_streak} color="var(--text-secondary)" />
+            {streakPct > 0 && <StreakRune label="XP Bonus" value={`+${streakPct}%`} color="var(--accent-gold)" />}
           </div>
         </section>
+        ) : (
+        <section style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+          <Skeleton width="130px" height="130px" borderRadius="50%" />
+          <Skeleton width="8rem" height="1rem" />
+          <Skeleton width="5rem" height="0.7rem" />
+          <Skeleton width="min(400px, 90%)" height="8px" borderRadius="4px" />
+        </section>
+        )}
 
-        {/* Gold divider */}
-        <div
-          style={{
-            width: "120px",
-            height: "1px",
-            background: "linear-gradient(90deg, transparent, rgba(255,215,0,0.25), transparent)",
-            margin: "0 auto",
-          }}
-        />
+        {/* Ornamental divider */}
+        <Divider />
 
-        {/* ── Stats Grid ── */}
-        {stats && (
+        {/* ═══════════ STATS — Dark Souls attribute style ═══════════ */}
+        {statRows.length > 0 ? (
           <section>
-            <div
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "0.6rem",
-                letterSpacing: "0.4em",
-                textTransform: "uppercase",
-                color: "var(--text-muted)",
-                textAlign: "center",
-                marginBottom: "1rem",
-              }}
-            >
-              ◆&nbsp;&nbsp;Hero Stats&nbsp;&nbsp;◆
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                gap: "0.75rem",
-              }}
-            >
-              {[
-                { label: "Total XP", value: profile.total_xp.toLocaleString() },
-                { label: "Trees Completed", value: stats.trees_completed },
-                { label: "Trees Active", value: stats.trees_active },
-                { label: "Nodes Completed", value: stats.nodes_completed },
-                { label: "Dungeons Completed", value: stats.dungeons_completed },
-                { label: "Dungeon Time", value: `${Math.floor(stats.total_dungeon_minutes / 60)}h ${stats.total_dungeon_minutes % 60}m` },
-                { label: "Quests Completed", value: stats.quests_completed },
-                { label: "Items Collected", value: stats.total_loot_collected },
-              ].map((stat) => (
+            <SectionTitle>Hero Stats</SectionTitle>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              {statRows.map((stat, i) => (
                 <div
                   key={stat.label}
                   style={{
-                    padding: "0.75rem",
-                    backgroundColor: "rgba(224,216,200,0.03)",
-                    border: "1px solid rgba(224,216,200,0.06)",
-                    borderRadius: "4px",
-                    textAlign: "center",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "0.6rem 0.75rem",
+                    borderLeft: `3px solid ${STAT_ACCENTS[stat.label] ?? "var(--text-muted)"}`,
+                    backgroundColor: i % 2 === 0 ? "rgba(224,216,200,0.02)" : "transparent",
+                    animation: `fadeIn 0.4s ease ${i * 0.06}s both`,
                   }}
                 >
-                  <div
-                    style={{
-                      fontFamily: "var(--font-heading)",
-                      fontSize: "1.1rem",
-                      fontWeight: 700,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {stat.value}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-heading)",
-                      fontSize: "0.5rem",
-                      letterSpacing: "0.15em",
-                      textTransform: "uppercase",
-                      color: "var(--text-muted)",
-                      marginTop: "0.2rem",
-                    }}
-                  >
+                  <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.65rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--text-muted)" }}>
                     {stat.label}
-                  </div>
+                  </span>
+                  <span style={{ fontFamily: "var(--font-heading)", fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "0.05em" }}>
+                    {stat.value}
+                  </span>
                 </div>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section>
+            <SectionTitle>Hero Stats</SectionTitle>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: "2.5rem", borderRadius: "0" }} />
               ))}
             </div>
           </section>
         )}
 
-        {/* ── Achievements ── */}
+        {/* Ornamental divider */}
+        <Divider />
+
+        {/* ═══════════ ACHIEVEMENTS — grouped by category ═══════════ */}
         <section>
-          <div
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontSize: "0.6rem",
-              letterSpacing: "0.4em",
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-              textAlign: "center",
-              marginBottom: "1rem",
-            }}
-          >
-            ◆&nbsp;&nbsp;Achievements ({earnedCount} of {achievements.length})&nbsp;&nbsp;◆
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-              gap: "0.75rem",
-            }}
-          >
-            {achievements.map((a) => (
-              <div
-                key={a.key}
-                title={a.unlocked ? `${a.name}\n${a.description}` : "???"}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "0.4rem",
-                  padding: "0.75rem 0.5rem",
-                  backgroundColor: a.unlocked ? "rgba(255,215,0,0.04)" : "rgba(224,216,200,0.02)",
-                  border: `1px solid ${a.unlocked ? "rgba(255,215,0,0.2)" : "rgba(224,216,200,0.05)"}`,
-                  borderRadius: "4px",
-                  opacity: a.unlocked ? 1 : 0.3,
-                  cursor: a.unlocked ? "default" : "not-allowed",
-                  transition: "opacity 0.2s",
-                }}
-              >
-                <div
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    border: `2px solid ${a.unlocked ? "var(--accent-gold)" : "rgba(224,216,200,0.15)"}`,
-                    backgroundColor: a.unlocked ? "rgba(255,215,0,0.08)" : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1rem",
-                    color: a.unlocked ? "var(--accent-gold)" : "var(--text-muted)",
-                  }}
-                >
-                  {a.unlocked ? (ICON_MAP[a.icon] ?? "◆") : "?"}
+          <SectionTitle>Achievements ({earnedCount} of {achievements.length})</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {Object.entries(achievementsByCategory).map(([cat, achs]) => (
+              <div key={cat}>
+                {/* Category header */}
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                  <div style={{ height: "1px", flex: 1, background: "linear-gradient(90deg, transparent, rgba(224,216,200,0.1))" }} />
+                  <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.5rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                    {CATEGORY_LABELS[cat] ?? cat}
+                  </span>
+                  <div style={{ height: "1px", flex: 1, background: "linear-gradient(90deg, rgba(224,216,200,0.1), transparent)" }} />
                 </div>
-                <span
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "0.55rem",
-                    letterSpacing: "0.05em",
-                    color: a.unlocked ? "var(--text-primary)" : "var(--text-muted)",
-                    textAlign: "center",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {a.unlocked ? a.name : "???"}
-                </span>
+                {/* Achievement grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: "0.6rem" }}>
+                  {achs.map((a) => (
+                    <div
+                      key={a.key}
+                      title={a.unlocked ? `${a.name}\n${a.description}` : "???"}
+                      style={{
+                        display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem",
+                        padding: "0.75rem 0.5rem",
+                        backgroundColor: a.unlocked ? "rgba(255,215,0,0.04)" : "rgba(224,216,200,0.03)",
+                        border: `1px solid ${a.unlocked ? "rgba(255,215,0,0.2)" : "rgba(224,216,200,0.1)"}`,
+                        borderRadius: "4px",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <div style={{
+                        width: "40px", height: "40px", borderRadius: "50%",
+                        border: `2px solid ${a.unlocked ? "var(--accent-gold)" : "rgba(224,216,200,0.2)"}`,
+                        backgroundColor: a.unlocked ? "rgba(255,215,0,0.08)" : "rgba(224,216,200,0.03)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "1.1rem", color: a.unlocked ? "var(--accent-gold)" : "var(--text-muted)",
+                        boxShadow: a.unlocked ? "0 0 12px rgba(255,215,0,0.15)" : "none",
+                      }}>
+                        {a.unlocked ? (ICON_MAP[a.icon] ?? "◆") : "?"}
+                      </div>
+                      <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.55rem", letterSpacing: "0.05em", color: a.unlocked ? "var(--text-primary)" : "var(--text-secondary)", textAlign: "center", lineHeight: 1.2 }}>
+                        {a.unlocked ? a.name : "???"}
+                      </span>
+                      {a.unlocked && a.description && (
+                        <span style={{ fontSize: "0.5rem", color: "var(--text-muted)", textAlign: "center", lineHeight: 1.3 }}>
+                          {a.description}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── Inventory ── */}
+        {/* Ornamental divider */}
+        <Divider />
+
+        {/* ═══════════ INVENTORY — grid cards with rarity ═══════════ */}
         <section>
-          <div
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontSize: "0.6rem",
-              letterSpacing: "0.4em",
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-              textAlign: "center",
-              marginBottom: "1rem",
-            }}
-          >
-            ◆&nbsp;&nbsp;Inventory ({inventory.length})&nbsp;&nbsp;◆
-          </div>
+          <SectionTitle>Inventory ({inventory.length})</SectionTitle>
           {inventory.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                fontFamily: "var(--font-heading)",
-                fontSize: "0.65rem",
-                letterSpacing: "0.1em",
-                color: "var(--text-muted)",
-                padding: "2rem 0",
-              }}
-            >
-              Your pack is empty. Delve deeper.
+            <div style={{ textAlign: "center", padding: "2rem 0" }}>
+              <div style={{ fontFamily: "var(--font-heading)", fontSize: "0.65rem", letterSpacing: "0.1em", color: "var(--text-muted)" }}>
+                Your pack is empty. Delve deeper.
+              </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {inventory.map((item) => (
-                <div
-                  key={item.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    padding: "0.75rem 1rem",
-                    backgroundColor: "rgba(224,216,200,0.03)",
-                    border: `1px solid ${RARITY_COLORS[item.item_type] ?? "rgba(224,216,200,0.06)"}33`,
-                    borderRadius: "4px",
-                  }}
-                >
-                  {/* Rarity dot */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "0.75rem" }}>
+              {inventory.map((item) => {
+                const rColor = RARITY_COLORS[item.item_type] ?? "var(--rarity-common)";
+                return (
                   <div
+                    key={item.id}
                     style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      backgroundColor: RARITY_COLORS[item.item_type] ?? "var(--rarity-common)",
-                      flexShrink: 0,
-                      boxShadow: `0 0 6px ${RARITY_COLORS[item.item_type] ?? "var(--rarity-common)"}`,
-                    }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-heading)",
-                        fontSize: "0.7rem",
-                        fontWeight: 600,
-                        color: "var(--text-primary)",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {item.item_name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.65rem",
-                        color: "var(--text-muted)",
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {item.effect}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleUseItem(item.id)}
-                    disabled={usingItem === item.id}
-                    style={{
-                      fontFamily: "var(--font-heading)",
-                      fontSize: "0.55rem",
-                      letterSpacing: "0.15em",
-                      textTransform: "uppercase",
-                      padding: "0.4rem 0.8rem",
-                      borderRadius: "2px",
-                      border: "1px solid rgba(255,215,0,0.3)",
-                      backgroundColor: "transparent",
-                      color: "var(--accent-gold)",
-                      cursor: usingItem === item.id ? "not-allowed" : "pointer",
-                      opacity: usingItem === item.id ? 0.5 : 1,
-                      transition: "all 0.2s",
+                      padding: "0.75rem",
+                      backgroundColor: "rgba(224,216,200,0.025)",
+                      borderTop: `3px solid ${rColor}`,
+                      border: `1px solid rgba(224,216,200,0.06)`,
+                      borderTopWidth: "3px",
+                      borderTopColor: rColor,
+                      borderRadius: "4px",
+                      display: "flex", flexDirection: "column", gap: "0.4rem",
+                      transition: "border-color 0.2s, box-shadow 0.2s",
                     }}
                   >
-                    {usingItem === item.id ? "..." : "Use"}
-                  </button>
-                </div>
-              ))}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: rColor, boxShadow: `0 0 6px ${rColor}`, flexShrink: 0 }} />
+                      <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.7rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.05em" }}>
+                        {item.item_name}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.6rem", color: "var(--text-muted)", lineHeight: 1.4, flex: 1 }}>
+                      {item.effect}
+                    </div>
+                    <button
+                      onClick={() => handleUseItem(item.id)}
+                      disabled={usingItem === item.id}
+                      style={{
+                        fontFamily: "var(--font-heading)", fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase",
+                        padding: "0.35rem 0.6rem", borderRadius: "2px",
+                        border: `1px solid ${rColor}33`, backgroundColor: "transparent",
+                        color: rColor, cursor: usingItem === item.id ? "not-allowed" : "pointer",
+                        opacity: usingItem === item.id ? 0.5 : 1, transition: "all 0.2s", alignSelf: "flex-start",
+                      }}
+                    >
+                      {usingItem === item.id ? "..." : "Use"}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
 
-        {/* ── Path of Ascension (Level Unlocks) ── */}
+        {/* Ornamental divider */}
+        <Divider />
+
+        {/* ═══════════ PATH OF ASCENSION — vertical timeline ═══════════ */}
         <section>
-          <div
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontSize: "0.6rem",
-              letterSpacing: "0.4em",
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-              textAlign: "center",
-              marginBottom: "1rem",
-            }}
-          >
-            ◆&nbsp;&nbsp;Path of Ascension&nbsp;&nbsp;◆
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-            {levelUnlocks.map((u) => (
-              <div
-                key={u.feature}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  padding: "0.5rem 0.75rem",
-                  opacity: u.unlocked ? 1 : 0.45,
-                }}
-              >
-                <span
+          <SectionTitle>Path of Ascension</SectionTitle>
+          <div style={{ position: "relative", paddingLeft: "2rem" }}>
+            {/* Gold timeline line */}
+            <div style={{ position: "absolute", left: "0.5rem", top: "0.5rem", bottom: "0.5rem", width: "2px", background: "linear-gradient(180deg, var(--accent-gold), rgba(255,215,0,0.1))" }} />
+
+            {levelUnlocks.map((u, i) => {
+              const heroLevel = profile?.hero_level ?? 1;
+              const isCurrentLevel = heroLevel >= u.required_level &&
+                (i === levelUnlocks.length - 1 || heroLevel < (levelUnlocks[i + 1]?.required_level ?? Infinity));
+              return (
+                <div
+                  key={u.feature}
                   style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "0.7rem",
-                    color: u.unlocked ? "var(--accent-gold)" : "var(--text-muted)",
-                    width: "20px",
-                    textAlign: "center",
+                    display: "flex", alignItems: "center", gap: "0.75rem",
+                    padding: "0.5rem 0", position: "relative",
+                    opacity: u.unlocked ? 1 : 0.35 - (i * 0.02),
                   }}
                 >
-                  {u.unlocked ? "✓" : "⬡"}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "0.6rem",
-                    letterSpacing: "0.05em",
-                    color: "var(--text-muted)",
-                    width: "40px",
-                    flexShrink: 0,
-                  }}
-                >
-                  Lv.{u.required_level}
-                </span>
-                <span
-                  style={{
-                    fontSize: "0.7rem",
-                    color: u.unlocked ? "var(--text-primary)" : "var(--text-secondary)",
-                  }}
-                >
-                  {u.description}
-                </span>
-              </div>
-            ))}
+                  {/* Timeline node */}
+                  <div
+                    className={isCurrentLevel ? "glow-breathe" : ""}
+                    style={{
+                      position: "absolute", left: "-1.65rem",
+                      width: "14px", height: "14px", borderRadius: "50%",
+                      border: `2px solid ${u.unlocked ? "var(--accent-gold)" : "rgba(224,216,200,0.2)"}`,
+                      backgroundColor: u.unlocked ? "var(--accent-gold)" : "transparent",
+                      boxShadow: isCurrentLevel ? "0 0 10px rgba(255,215,0,0.5)" : "none",
+                    }}
+                  />
+                  <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.6rem", letterSpacing: "0.05em", color: u.unlocked ? "var(--accent-gold)" : "var(--text-muted)", width: "40px", flexShrink: 0 }}>
+                    Lv.{u.required_level}
+                  </span>
+                  <span style={{ fontSize: "0.7rem", color: u.unlocked ? "var(--text-primary)" : "var(--text-secondary)" }}>
+                    {u.description}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
       </main>
     </div>
+  );
+}
+
+// ── Sub-components ──
+
+function StreakRune({ label, value, color }: { label: string; value: string | number; color: string }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div style={{
+        width: "52px", height: "52px", margin: "0 auto 0.3rem",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+        backgroundColor: "rgba(224,216,200,0.03)",
+        border: `1px solid ${color}33`,
+      }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontSize: "1.1rem", fontWeight: 700, color, textShadow: `0 0 10px ${color}55` }}>
+          {value}
+        </span>
+      </div>
+      <div style={{ fontFamily: "var(--font-heading)", fontSize: "0.45rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--text-muted)" }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+      <div style={{ height: "1px", flex: 1, background: "linear-gradient(90deg, transparent, rgba(255,215,0,0.15))" }} />
+      <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.6rem", letterSpacing: "0.35em", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+        ◆&nbsp;&nbsp;{children}&nbsp;&nbsp;◆
+      </span>
+      <div style={{ height: "1px", flex: 1, background: "linear-gradient(90deg, rgba(255,215,0,0.15), transparent)" }} />
+    </div>
+  );
+}
+
+function Divider() {
+  return (
+    <div style={{ width: "140px", height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent)", margin: "0 auto" }} />
   );
 }

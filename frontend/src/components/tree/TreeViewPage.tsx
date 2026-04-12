@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { Node } from "@xyflow/react";
 import { useUser } from "@/hooks/useUser";
+import { useProfile } from "@/hooks/useProfile";
+import { useUserStore } from "@/stores/userStore";
 import { useTreeStore } from "@/stores/treeStore";
 import { Navbar } from "@/components/layout/Navbar";
 import { TreeCanvas } from "@/components/tree/TreeCanvas";
@@ -14,24 +16,18 @@ import { api } from "@/lib/api";
 import type { LevelUpEvent } from "@/components/tree/NodeDetailPanel";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
 import { useAchievementToast } from "@/components/ui/AchievementProvider";
+import { titleForLevel } from "@/lib/levels";
 import type { SkillNode, TalentTree, DailyQuest } from "@/types";
-
-function titleForLevel(level: number): string {
-  if (level >= 50) return "Vow Eternal";
-  if (level >= 40) return "Mythbreaker";
-  if (level >= 30) return "Shadowforged";
-  if (level >= 20) return "Duskwalker";
-  if (level >= 15) return "Flamewarden";
-  if (level >= 10) return "Ironsworn";
-  if (level >= 5) return "Oath-Bound";
-  return "Wanderer";
-}
 
 export function TreeViewPage() {
   const params = useParams<{ id: string }>();
   const { id: treeId } = params;
 
   const { user, session, loading: authLoading } = useUser();
+  const { profile } = useProfile();
+  const addXp = useUserStore((s) => s.addXp);
+  const updateFromCompletion = useUserStore((s) => s.updateFromCompletion);
+  const storeSetLevel = useUserStore((s) => s.setLevel);
   const router = useRouter();
 
   const {
@@ -43,11 +39,6 @@ export function TreeViewPage() {
   const { showAchievements, showStreakMilestone } = useAchievementToast();
 
   const [loadingTree, setLoadingTree] = useState(true);
-  const [currentStreak, setCurrentStreak] = useState(0);
-  const [heroLevel, setHeroLevel] = useState(1);
-  const [heroTitle, setHeroTitle] = useState("Wanderer");
-  const [profileTotalXp, setProfileTotalXp] = useState(0);
-  const [streakMultiplier, setStreakMultiplier] = useState(1);
   const [levelUpEvent, setLevelUpEvent] = useState<LevelUpEvent | null>(null);
   const [treeQuests, setTreeQuests] = useState<DailyQuest[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -57,16 +48,15 @@ export function TreeViewPage() {
     if (!authLoading && !user) router.replace("/auth");
   }, [user, authLoading, router]);
 
-  // Fetch tree + profile (for streak)
+  // Fetch tree + quests (profile comes from store via useProfile)
   useEffect(() => {
     if (!session?.access_token || !treeId) return;
     const token = session.access_token;
 
     Promise.allSettled([
       api.getTree(treeId, token),
-      api.getProfile(token),
       api.getTodayQuests(token),
-    ]).then(([treeResult, profileResult, questsResult]) => {
+    ]).then(([treeResult, questsResult]) => {
       if (treeResult.status === "fulfilled" && treeResult.value.data) {
         setActiveTree(treeResult.value.data);
       } else {
@@ -76,15 +66,7 @@ export function TreeViewPage() {
             : "Failed to load tree.",
         );
       }
-      if (profileResult.status === "fulfilled" && profileResult.value.data) {
-        setCurrentStreak(profileResult.value.data.current_streak);
-        setHeroLevel(profileResult.value.data.hero_level);
-        setHeroTitle(profileResult.value.data.hero_title);
-        setProfileTotalXp(profileResult.value.data.total_xp);
-        setStreakMultiplier(profileResult.value.data.streak_multiplier);
-      }
       if (questsResult.status === "fulfilled" && questsResult.value.data) {
-        // Only keep quests for this specific tree
         setTreeQuests(questsResult.value.data.filter((q) => q.tree_id === treeId));
       }
       setLoadingTree(false);
@@ -139,14 +121,13 @@ export function TreeViewPage() {
   );
 
   const handleXpEarned = useCallback((xp: number) => {
-    setProfileTotalXp((prev) => prev + xp);
-  }, []);
+    addXp(xp);
+  }, [addXp]);
 
   const handleLevelUp = useCallback((event: LevelUpEvent) => {
     setLevelUpEvent(event);
-    setHeroLevel(event.newLevel);
-    setHeroTitle(event.newTitle);
-  }, []);
+    storeSetLevel(event.newLevel, event.newTitle);
+  }, [storeSetLevel]);
 
   const handleQuestToggle = useCallback(
     async (quest: DailyQuest) => {
@@ -169,7 +150,11 @@ export function TreeViewPage() {
             ),
           );
         } else if (res.data) {
-          setProfileTotalXp(res.data.total_xp);
+          updateFromCompletion({
+            total_xp: res.data.total_xp,
+            new_level: res.data.new_level,
+            new_title: res.data.new_title,
+          });
           if (res.data.leveled_up) {
             setLevelUpEvent({
               newLevel: res.data.new_level,
@@ -177,8 +162,6 @@ export function TreeViewPage() {
               newTitle: res.data.new_title,
               xpEarned: res.data.xp_earned,
             });
-            setHeroLevel(res.data.new_level);
-            setHeroTitle(res.data.new_title);
           }
           if (res.data.new_achievements?.length) {
             showAchievements(res.data.new_achievements);
@@ -252,15 +235,15 @@ export function TreeViewPage() {
           )}
         </div>
 
-        {tree && (
+        {tree && profile && (
           <StatsBar
-            totalXp={profileTotalXp}
-            currentStreak={currentStreak}
-            heroLevel={heroLevel}
-            heroTitle={heroTitle}
+            totalXp={profile.total_xp}
+            currentStreak={profile.current_streak}
+            heroLevel={profile.hero_level}
+            heroTitle={profile.hero_title}
             nodesCompleted={tree.completed_nodes}
             totalNodes={tree.total_nodes}
-            streakMultiplier={streakMultiplier}
+            streakMultiplier={profile.streak_multiplier}
           />
         )}
       </div>
@@ -270,9 +253,21 @@ export function TreeViewPage() {
         {loadingTree ? (
           <div
             className="flex items-center justify-center h-full"
-            style={{ color: "var(--text-muted)" }}
+            style={{ position: "relative" }}
           >
-            Summoning your talent tree…
+            {/* Skeleton tree nodes */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem", opacity: 0.5 }}>
+              <div className="skeleton" style={{ width: "48px", height: "48px", borderRadius: "50%" }} />
+              <div style={{ display: "flex", gap: "3rem" }}>
+                <div className="skeleton" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+                <div className="skeleton" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+              </div>
+              <div style={{ display: "flex", gap: "2rem" }}>
+                <div className="skeleton" style={{ width: "36px", height: "36px", borderRadius: "50%" }} />
+                <div className="skeleton" style={{ width: "36px", height: "36px", borderRadius: "50%" }} />
+                <div className="skeleton" style={{ width: "36px", height: "36px", borderRadius: "50%" }} />
+              </div>
+            </div>
           </div>
         ) : error ? (
           <div

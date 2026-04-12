@@ -308,6 +308,32 @@ export interface LootClaimResult {
 }
 
 // ============================================================
+// Leaderboard Types
+// ============================================================
+
+export interface LeaderboardEntry {
+  id: string;
+  hero_name: string | null;
+  display_name: string | null;
+  hero_level: number;
+  hero_title: string;
+  total_xp: number;
+  weekly_xp: number;
+  current_streak: number;
+  rank: number;
+  score: number;
+}
+
+export interface LeaderboardRank {
+  rank: number;
+  score: number;
+  total_participants: number;
+  hero_name: string | null;
+  hero_level: number;
+  hero_title: string;
+}
+
+// ============================================================
 // API Response Types
 // ============================================================
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useAuthStore } from "@/stores/authStore";
 
 interface UseUserReturn {
   user: User | null;
@@ -12,36 +12,18 @@ interface UseUserReturn {
 
 /**
  * Returns the current Supabase user, session, and loading state.
- * Stays reactive via onAuthStateChange.
+ * Backed by a singleton Zustand store — no matter how many components
+ * call this hook, getSession() runs exactly once.
  */
 export function useUser(): UseUserReturn {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(() => isSupabaseConfigured());
+  const user = useAuthStore((s) => s.user);
+  const session = useAuthStore((s) => s.session);
+  const loading = useAuthStore((s) => s.loading);
+  const hydrate = useAuthStore((s) => s.hydrate);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      return;
-    }
-
-    getSupabase()
-      .auth.getSession()
-      .then(({ data }) => {
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-        setLoading(false);
-      });
-
-    const {
-      data: { subscription },
-    } = getSupabase().auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    hydrate();
+  }, [hydrate]);
 
   return { user, session, loading };
 }

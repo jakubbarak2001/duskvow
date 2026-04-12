@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { xpForLevel } from "@/lib/levels";
+
 interface StatsBarProps {
   totalXp: number;
   currentStreak: number;
@@ -8,11 +11,6 @@ interface StatsBarProps {
   nodesCompleted?: number;
   totalNodes?: number;
   streakMultiplier?: number;
-}
-
-/** XP required to reach a given level: 25 * level^2 */
-function xpForLevel(level: number): number {
-  return 25 * level * level;
 }
 
 /** Streak bonus thresholds — mirrors backend level_unlocks.json */
@@ -52,6 +50,29 @@ export function StatsBar({
   const xpProgress = xpNeeded > 0 ? Math.min(1, Math.max(0, xpIntoLevel / xpNeeded)) : 1;
   const xpToNext = Math.max(0, nextLevelXp - totalXp);
 
+  // XP pop animation — track previous XP to detect gains
+  const prevXpRef = useRef(totalXp);
+  const [xpDelta, setXpDelta] = useState<number | null>(null);
+  const [barFlash, setBarFlash] = useState(false);
+  const popKey = useRef(0);
+
+  useEffect(() => {
+    const prev = prevXpRef.current;
+    if (totalXp > prev && prev > 0) {
+      const gained = totalXp - prev;
+      popKey.current += 1;
+      setXpDelta(gained);
+      setBarFlash(true);
+      const timer = setTimeout(() => {
+        setXpDelta(null);
+        setBarFlash(false);
+      }, 1200);
+      prevXpRef.current = totalXp;
+      return () => clearTimeout(timer);
+    }
+    prevXpRef.current = totalXp;
+  }, [totalXp]);
+
   return (
     <div
       className="w-full rounded-lg"
@@ -63,7 +84,7 @@ export function StatsBar({
     >
       <div className="flex items-stretch">
         {/* Level + Title */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-6">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-6 relative">
           <div
             className="text-5xl font-bold mb-1 dash-stat-xp"
             style={{
@@ -82,15 +103,16 @@ export function StatsBar({
           </div>
           {/* XP progress to next level */}
           <div
-            className="h-1 rounded-full overflow-hidden w-24"
+            className={`h-1 rounded-full overflow-hidden w-24${barFlash ? " xp-bar-flash" : ""}`}
             style={{ backgroundColor: "var(--bg-highlight)" }}
           >
             <div
-              className="h-full rounded-full transition-all"
+              className="h-full rounded-full"
               style={{
                 width: `${xpProgress * 100}%`,
                 backgroundColor: "var(--accent-gold)",
                 boxShadow: "0 0 6px rgba(255,215,0,0.7)",
+                transition: "width 0.4s ease-out",
               }}
             />
           </div>
@@ -100,6 +122,13 @@ export function StatsBar({
           >
             {xpToNext} XP to next level
           </div>
+
+          {/* Floating +XP pop */}
+          {xpDelta !== null && (
+            <span key={popKey.current} className="xp-pop" style={{ top: "0.5rem", right: "1rem" }}>
+              +{xpDelta} XP
+            </span>
+          )}
         </div>
 
         {/* Separator */}

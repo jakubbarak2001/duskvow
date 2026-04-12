@@ -4,10 +4,13 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
+import { useUserStore } from "@/stores/userStore";
 import { Navbar } from "@/components/layout/Navbar";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
 import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import { BattleReport } from "@/components/dungeon/BattleReport";
+import { DungeonParticles } from "@/components/dungeon/DungeonParticles";
+import { TierCardSkeleton } from "@/components/ui/Skeleton";
 import { api } from "@/lib/api";
 import type {
   DungeonTier,
@@ -18,29 +21,43 @@ import type {
   DailyQuest,
   SkillNode,
 } from "@/types";
+import { titleForLevel } from "@/lib/levels";
 
 const DURATION_PRESETS = [25, 45, 60];
-
-function titleForLevel(level: number): string {
-  if (level >= 50) return "Vow Eternal";
-  if (level >= 40) return "Mythbreaker";
-  if (level >= 30) return "Shadowforged";
-  if (level >= 20) return "Duskwalker";
-  if (level >= 15) return "Flamewarden";
-  if (level >= 10) return "Ironsworn";
-  if (level >= 5) return "Oath-Bound";
-  return "Wanderer";
-}
 
 export default function DungeonPage() {
   return (
     <Suspense
       fallback={
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{ backgroundColor: "var(--bg-abyss)" }}
-        >
-          <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+        <div style={{ backgroundColor: "var(--bg-abyss)", minHeight: "100vh", position: "relative" }}>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundImage: 'url("/noise.png")',
+              backgroundRepeat: "repeat",
+              backgroundSize: "200px 200px",
+              opacity: 0.04,
+              pointerEvents: "none",
+            }}
+          />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <Navbar />
+            <main className="max-w-5xl mx-auto px-4 py-10">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gap: "1rem",
+                  marginTop: "2rem",
+                }}
+              >
+                <TierCardSkeleton />
+                <TierCardSkeleton />
+                <TierCardSkeleton />
+              </div>
+            </main>
+          </div>
         </div>
       }
     >
@@ -51,6 +68,7 @@ export default function DungeonPage() {
 
 function DungeonPageInner() {
   const { user, session, loading } = useUser();
+  const updateFromCompletion = useUserStore((s) => s.updateFromCompletion);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showAchievements, showStreakMilestone } = useAchievementToast();
@@ -265,6 +283,12 @@ function DungeonPageInner() {
         durationMinutes: runDuration,
         runId: completedRunId,
       });
+      // Update global store — instant XP everywhere
+      updateFromCompletion({
+        total_xp: res.data.total_xp,
+        new_level: res.data.new_level,
+        new_title: res.data.new_title,
+      });
       if (res.data.leveled_up) {
         setLevelUpEvent({
           level: res.data.new_level,
@@ -280,7 +304,7 @@ function DungeonPageInner() {
         showStreakMilestone(res.data.streak_milestone);
       }
     }
-  }, [session, activeRun, showAchievements, showStreakMilestone]);
+  }, [session, activeRun, showAchievements, showStreakMilestone, updateFromCompletion]);
 
   const handleRetreat = useCallback(async () => {
     if (!session?.access_token || !activeRun) return;
@@ -296,6 +320,11 @@ function DungeonPageInner() {
         durationMinutes: runDuration,
         runId: retreatedRunId,
       });
+      updateFromCompletion({
+        total_xp: res.data.total_xp,
+        new_level: res.data.new_level,
+        new_title: res.data.new_title,
+      });
       if (res.data.leveled_up) {
         setLevelUpEvent({
           level: res.data.new_level,
@@ -305,7 +334,7 @@ function DungeonPageInner() {
         });
       }
     }
-  }, [session, activeRun]);
+  }, [session, activeRun, updateFromCompletion]);
 
   const handleDelveAgain = useCallback(() => {
     // Keep last tier selected, clear report
@@ -324,11 +353,35 @@ function DungeonPageInner() {
 
   if (loading || (!user && loading)) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: "var(--bg-abyss)" }}
-      >
-        <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+      <div style={{ backgroundColor: "var(--bg-abyss)", minHeight: "100vh", position: "relative" }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundImage: 'url("/noise.png")',
+            backgroundRepeat: "repeat",
+            backgroundSize: "200px 200px",
+            opacity: 0.04,
+            pointerEvents: "none",
+          }}
+        />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <Navbar />
+          <main className="max-w-5xl mx-auto px-4 py-10">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: "1rem",
+                marginTop: "2rem",
+              }}
+            >
+              <TierCardSkeleton />
+              <TierCardSkeleton />
+              <TierCardSkeleton />
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
@@ -414,6 +467,12 @@ function DungeonPageInner() {
           zIndex: 0,
         }}
       />
+
+      {/* Floating ember particles */}
+      <DungeonParticles />
+
+      {/* Torch flicker vignette (only during active run) */}
+      {activeRun && <div className="torch-vignette" />}
 
       {/* Content wrapper */}
       <div
@@ -522,9 +581,18 @@ function DungeonPageInner() {
               </div>
 
               {dataLoading ? (
-                <p style={{ color: "var(--text-muted)" }}>
-                  Scouting the depths...
-                </p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                    gap: "0.75rem",
+                    width: "100%",
+                  }}
+                >
+                  <TierCardSkeleton />
+                  <TierCardSkeleton />
+                  <TierCardSkeleton />
+                </div>
               ) : (
                 <>
                   {/* ── Tier Selection Cards ── */}
@@ -1016,12 +1084,40 @@ function ActiveRunView({
   const [completeHover, setCompleteHover] = useState(false);
   const [retreatHover, setRetreatHover] = useState(false);
   const [confirmRetreat, setConfirmRetreat] = useState(false);
+  const [bossFlash, setBossFlash] = useState(false);
+  const prevFloorRef = useRef(0);
+  const [floorPulse, setFloorPulse] = useState(false);
   const eventLogRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll event log to bottom
   useEffect(() => {
     if (eventLogRef.current) {
       eventLogRef.current.scrollTop = eventLogRef.current.scrollHeight;
+    }
+  }, [revealedEvents.length]);
+
+  // Floor transition pulse + boss flash
+  useEffect(() => {
+    const maxFloor = revealedEvents.length > 0
+      ? Math.max(...revealedEvents.map((e) => e.floor_number))
+      : 0;
+    if (maxFloor > prevFloorRef.current && prevFloorRef.current > 0) {
+      setFloorPulse(true);
+      const timer = setTimeout(() => setFloorPulse(false), 600);
+      prevFloorRef.current = maxFloor;
+      return () => clearTimeout(timer);
+    }
+    prevFloorRef.current = maxFloor;
+  }, [revealedEvents]);
+
+  // Boss event screen flash
+  useEffect(() => {
+    if (revealedEvents.length === 0) return;
+    const latest = revealedEvents[revealedEvents.length - 1];
+    if (latest.event_type === "boss") {
+      setBossFlash(true);
+      const timer = setTimeout(() => setBossFlash(false), 400);
+      return () => clearTimeout(timer);
     }
   }, [revealedEvents.length]);
 
@@ -1083,6 +1179,9 @@ function ActiveRunView({
         maxWidth: "520px",
       }}
     >
+      {/* Boss event screen flash */}
+      {bossFlash && <div className="boss-flash" />}
+
       {/* Tier name */}
       <p
         style={{
@@ -1100,6 +1199,7 @@ function ActiveRunView({
       {/* Floor progress bar */}
       <div style={{ width: "100%" }}>
         <div
+          className={floorPulse ? "floor-pulse" : ""}
           style={{
             display: "flex",
             gap: "3px",
@@ -1148,14 +1248,15 @@ function ActiveRunView({
       {/* Timer */}
       <div style={{ textAlign: "center" }}>
         <p
-          className={!timerDone ? "dungeon-pulse" : ""}
+          className={!timerDone ? (secondsLeft <= 60 ? "dungeon-pulse-urgent" : "dungeon-pulse") : ""}
           style={{
             fontFamily: "var(--font-cinzel)",
             fontSize: "4rem",
-            color: "var(--text-primary)",
+            color: secondsLeft <= 60 && !timerDone ? "var(--accent-ember)" : "var(--text-primary)",
             letterSpacing: "0.1em",
             margin: 0,
             lineHeight: 1,
+            transition: "color 0.5s ease",
           }}
         >
           {formatTime(secondsLeft)}

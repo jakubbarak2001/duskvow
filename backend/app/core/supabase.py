@@ -69,6 +69,30 @@ async def _patch(
     return res.json()
 
 
+async def _count_fast(table: str, params: dict[str, str]) -> int:
+    """COUNT rows using HEAD + Prefer: count=exact (no row transfer).
+
+    Uses PostgREST's count feature: the count is returned in the
+    content-range header without transferring any row data.
+
+    Args:
+        table: Table name.
+        params: PostgREST filter params.
+
+    Returns:
+        Integer count of matching rows.
+    """
+    res = await _client.head(
+        _url(table),
+        headers={**_SERVICE_HEADERS, "Prefer": "count=exact"},
+        params={**params, "select": "id"},
+    )
+    res.raise_for_status()
+    # content-range header: "0-N/total" or "*/total" if no rows
+    content_range = res.headers.get("content-range", "*/0")
+    return int(content_range.split("/")[-1])
+
+
 async def _delete(table: str, params: dict[str, str]) -> None:
     """DELETE rows matching params."""
     res = await _client.delete(
@@ -914,6 +938,7 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
     """Return aggregated hero stats for the profile page.
 
     Counts trees, nodes, dungeons, quests, and loot across all time.
+    Uses HEAD + Prefer: count=exact for all counts (no row transfer).
 
     Args:
         user_id: Authenticated user's UUID.
@@ -924,10 +949,6 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
         total_loot_collected.
     """
     import asyncio
-
-    async def _count(table: str, params: dict[str, str]) -> int:
-        rows = await _get(table, {**params, "select": "id"})
-        return len(rows)
 
     async def _sum_minutes() -> int:
         rows = await _get(
@@ -940,6 +961,20 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
         )
         return sum(r["duration_minutes"] for r in rows)
 
+    async def _count_user_nodes_completed() -> int:
+        """Count completed nodes across user's trees (2 queries, but fast)."""
+        tree_rows = await _get(
+            "talent_trees",
+            {"user_id": f"eq.{user_id}", "deleted_at": "is.null", "select": "id"},
+        )
+        if not tree_rows:
+            return 0
+        tree_ids = ",".join(t["id"] for t in tree_rows)
+        return await _count_fast(
+            "skill_nodes",
+            {"tree_id": f"in.({tree_ids})", "state": "eq.completed"},
+        )
+
     (
         trees_completed,
         trees_active,
@@ -949,30 +984,14 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
         quests_completed,
         total_loot,
     ) = await asyncio.gather(
-        _count("talent_trees", {"user_id": f"eq.{user_id}", "status": "eq.completed", "deleted_at": "is.null"}),
-        _count("talent_trees", {"user_id": f"eq.{user_id}", "status": "eq.active", "deleted_at": "is.null"}),
-        _count("skill_nodes", {"state": "eq.completed", "tree_id": f"not.is.null"}),  # filtered below
-        _count("dungeon_runs", {"user_id": f"eq.{user_id}", "status": "eq.completed"}),
+        _count_fast("talent_trees", {"user_id": f"eq.{user_id}", "status": "eq.completed", "deleted_at": "is.null"}),
+        _count_fast("talent_trees", {"user_id": f"eq.{user_id}", "status": "eq.active", "deleted_at": "is.null"}),
+        _count_user_nodes_completed(),
+        _count_fast("dungeon_runs", {"user_id": f"eq.{user_id}", "status": "eq.completed"}),
         _sum_minutes(),
-        _count("daily_quest_completions", {"user_id": f"eq.{user_id}"}),
-        _count("hero_inventory", {"user_id": f"eq.{user_id}"}),
+        _count_fast("daily_quest_completions", {"user_id": f"eq.{user_id}"}),
+        _count_fast("hero_inventory", {"user_id": f"eq.{user_id}"}),
     )
-
-    # For nodes_completed, we need to count only nodes belonging to user's trees.
-    # Re-do with a proper approach: get user's tree IDs, then count completed nodes.
-    tree_rows = await _get(
-        "talent_trees",
-        {"user_id": f"eq.{user_id}", "deleted_at": "is.null", "select": "id"},
-    )
-    if tree_rows:
-        tree_ids = ",".join(t["id"] for t in tree_rows)
-        node_rows = await _get(
-            "skill_nodes",
-            {"tree_id": f"in.({tree_ids})", "state": "eq.completed", "select": "id"},
-        )
-        nodes_completed = len(node_rows)
-    else:
-        nodes_completed = 0
 
     return {
         "trees_completed": trees_completed,
@@ -982,6 +1001,103 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
         "total_dungeon_minutes": total_dungeon_minutes,
         "quests_completed": quests_completed,
         "total_loot_collected": total_loot,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Leaderboard
+# ---------------------------------------------------------------------------
+
+
+async def get_leaderboard(
+    metric: str = "total_xp",
+    period: str = "weekly",
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    """Fetch the ranked leaderboard.
+
+    Args:
+        metric: Column to rank by — 'total_xp' or 'current_streak'.
+        period: 'weekly' (weekly_xp) or 'all_time' (total_xp/current_streak).
+        limit: Max rows to return.
+
+    Returns:
+        List of dicts with id, hero_name, display_name, hero_level, hero_title,
+        score, and rank.
+    """
+    # Determine which column to sort by
+    if metric == "current_streak":
+        order_col = "current_streak"
+    elif period == "weekly":
+        order_col = "weekly_xp"
+    else:
+        order_col = "total_xp"
+
+    select = "id,hero_name,display_name,hero_level,hero_title,total_xp,weekly_xp,current_streak"
+    rows = await _get(
+        "profiles",
+        {
+            "select": select,
+            "order": f"{order_col}.desc",
+            "limit": str(limit),
+        },
+    )
+
+    # Add rank and score
+    result = []
+    for i, row in enumerate(rows):
+        result.append({
+            **row,
+            "rank": i + 1,
+            "score": row.get(order_col, 0),
+        })
+    return result
+
+
+async def get_leaderboard_rank(
+    user_id: str,
+    metric: str = "total_xp",
+    period: str = "weekly",
+) -> dict[str, Any]:
+    """Fetch a user's rank and score.
+
+    Args:
+        user_id: Authenticated user's UUID.
+        metric: Column to rank by.
+        period: 'weekly' or 'all_time'.
+
+    Returns:
+        Dict with user's rank, score, and total participants.
+    """
+    import asyncio
+
+    if metric == "current_streak":
+        order_col = "current_streak"
+    elif period == "weekly":
+        order_col = "weekly_xp"
+    else:
+        order_col = "total_xp"
+
+    # Get user's score first (needed for rank query)
+    profile = await get_profile(user_id)
+    if not profile:
+        return {"rank": 0, "score": 0, "total_participants": 0}
+
+    user_score = profile.get(order_col, 0)
+
+    # Parallelize: count higher scores + count total participants
+    higher_count, total = await asyncio.gather(
+        _count_fast("profiles", {order_col: f"gt.{user_score}"}),
+        _count_fast("profiles", {order_col: "gt.0"}),
+    )
+
+    return {
+        "rank": higher_count + 1,
+        "score": user_score,
+        "total_participants": total,
+        "hero_name": profile.get("hero_name"),
+        "hero_level": profile.get("hero_level", 1),
+        "hero_title": profile.get("hero_title", "Wanderer"),
     }
 
 

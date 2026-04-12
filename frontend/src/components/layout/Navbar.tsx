@@ -23,7 +23,7 @@ export function Navbar() {
       }}
     >
       <Link
-        href="/"
+        href={user ? "/dashboard" : "/"}
         style={{
           fontFamily: "var(--font-heading), 'Cinzel', serif",
           fontWeight: 700,
@@ -60,6 +60,13 @@ export function Navbar() {
               style={{ color: "var(--text-secondary)" }}
             >
               New Vow
+            </Link>
+            <Link
+              href="/leaderboard"
+              className="text-sm transition-colors"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Leaderboard
             </Link>
             <button
               onClick={handleSignOut}
