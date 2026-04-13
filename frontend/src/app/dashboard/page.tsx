@@ -9,7 +9,9 @@ import { useUserStore } from "@/stores/userStore";
 import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { HeroNamingModal } from "@/components/ui/HeroNamingModal";
-import type { DungeonRun } from "@/types";
+import { StreakFlame } from "@/components/ui/StreakFlame";
+import { ResumeStrip } from "@/components/ui/ResumeStrip";
+import type { DungeonRun, TalentTree, DailyQuest } from "@/types";
 
 
 export default function DashboardPage() {
@@ -19,11 +21,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [activeDungeon, setActiveDungeon] = useState<DungeonRun | null>(null);
+  const [primaryTree, setPrimaryTree] = useState<TalentTree | null>(null);
+  const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [showNaming, setShowNaming] = useState(false);
-  const [unclaimedLoot, setUnclaimedLoot] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,13 +47,34 @@ export default function DashboardPage() {
     Promise.allSettled([
       api.listTrees(token),
       api.getActiveDungeon(token),
-      api.getUnclaimedLootCount(token),
-    ]).then(([treesResult, dungeonResult, lootResult]) => {
+      api.getTodayQuests(token),
+    ]).then(async ([treesResult, dungeonResult, questsResult]) => {
       if (dungeonResult.status === "fulfilled" && dungeonResult.value.data) {
         setActiveDungeon(dungeonResult.value.data);
       }
-      if (lootResult.status === "fulfilled" && lootResult.value.data) {
-        setUnclaimedLoot(lootResult.value.data.count);
+      if (questsResult.status === "fulfilled" && questsResult.value.data) {
+        setDailyQuests(questsResult.value.data);
+      }
+
+      // listTrees returns trees without nodes. To show the "next node" on
+      // the resume strip we need the full tree detail for the most-recently
+      // updated active tree — fetch it as a follow-up.
+      if (treesResult.status === "fulfilled" && treesResult.value.data) {
+        const list = treesResult.value.data;
+        const mostRecentActive = list
+          .filter((t) => t.status === "active")
+          .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
+        if (mostRecentActive) {
+          const detail = await api.getTree(mostRecentActive.id, token);
+          if (detail.data) {
+            setPrimaryTree(detail.data);
+          } else {
+            // Fallback: getTree failed but we know a tree exists — render
+            // the active state without a "next node" line rather than
+            // showing the empty-state card.
+            setPrimaryTree(mostRecentActive);
+          }
+        }
       }
       setDataLoading(false);
     });
@@ -175,7 +199,7 @@ export default function DashboardPage() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               gap: "1.5rem",
             }}
           >
@@ -195,10 +219,10 @@ export default function DashboardPage() {
                   <span
                     style={{
                       fontFamily: "var(--font-heading)",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
+                      fontSize: "1.1rem",
+                      fontWeight: 700,
                       color: "var(--text-primary)",
-                      letterSpacing: "0.1em",
+                      letterSpacing: "0.05em",
                       display: "block",
                       lineHeight: 1,
                     }}
@@ -208,8 +232,8 @@ export default function DashboardPage() {
                   <span
                     style={{
                       fontFamily: "var(--font-heading)",
-                      fontSize: "0.5rem",
-                      letterSpacing: "0.15em",
+                      fontSize: "0.55rem",
+                      letterSpacing: "0.2em",
                       textTransform: "uppercase",
                       color: "var(--text-muted)",
                     }}
@@ -265,71 +289,12 @@ export default function DashboardPage() {
               }}
             />
 
-            {/* Streak */}
-            <div style={{ textAlign: "center" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "1.1rem",
-                  fontWeight: 700,
-                  color: "var(--accent-ember)",
-                  letterSpacing: "0.05em",
-                  textShadow: "0 0 12px rgba(200,75,17,0.5)",
-                  display: "block",
-                  lineHeight: 1,
-                }}
-              >
-                {profile.current_streak}
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "0.55rem",
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Day Streak
-              </span>
-              {profile.streak_multiplier > 1.0 && (
-                <span
-                  style={{
-                    display: "inline-block",
-                    marginTop: "0.2rem",
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "0.5rem",
-                    letterSpacing: "0.1em",
-                    color: "var(--accent-gold)",
-                    backgroundColor: "rgba(255,215,0,0.1)",
-                    border: "1px solid rgba(255,215,0,0.2)",
-                    borderRadius: "2px",
-                    padding: "0.1rem 0.35rem",
-                  }}
-                  title="Streak XP bonus"
-                >
-                  +{Math.round((profile.streak_multiplier - 1) * 100)}%
-                </span>
-              )}
-              {profile.current_streak >= 3 &&
-                profile.last_activity_date &&
-                profile.last_activity_date !== new Date().toISOString().slice(0, 10) && (
-                <span
-                  className="dungeon-pulse"
-                  style={{
-                    display: "block",
-                    marginTop: "0.2rem",
-                    fontFamily: "var(--font-crimson)",
-                    fontStyle: "italic",
-                    fontSize: "0.5rem",
-                    color: "var(--accent-ember)",
-                    opacity: 0.8,
-                  }}
-                >
-                  Your flame dims...
-                </span>
-              )}
-            </div>
+            {/* Streak — Duolingo-style number + flame */}
+            <StreakFlame
+              currentStreak={profile.current_streak}
+              lastActivityDate={profile.last_activity_date}
+              streakMultiplier={profile.streak_multiplier}
+            />
           </div>
         )}
 
@@ -376,7 +341,14 @@ export default function DashboardPage() {
           gap: "2rem",
         }}
       >
-        {/* Eyebrow label */}
+        {/* Resume strip — primary CTA */}
+        <ResumeStrip
+          primaryTree={primaryTree}
+          dailyQuests={dailyQuests}
+          loading={dataLoading}
+        />
+
+        {/* Downgraded eyebrow: frames doors as alternatives to the resume strip */}
         <div
           style={{
             fontFamily: "var(--font-heading)",
@@ -387,40 +359,8 @@ export default function DashboardPage() {
             textAlign: "center",
           }}
         >
-          ◆&nbsp;&nbsp;Choose Your Path&nbsp;&nbsp;◆
+          ◆&nbsp;&nbsp;Or Explore&nbsp;&nbsp;◆
         </div>
-
-        {/* Unclaimed loot reminder */}
-        {unclaimedLoot > 0 && (
-          <Link
-            href="/profile"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.6rem 1.2rem",
-              background: "rgba(255,215,0,0.06)",
-              border: "1px solid rgba(255,215,0,0.15)",
-              borderRadius: "4px",
-              textDecoration: "none",
-              transition: "border-color 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,215,0,0.35)")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,215,0,0.15)")}
-          >
-            <span style={{ fontSize: "0.9rem" }}>&#x2728;</span>
-            <span
-              style={{
-                fontFamily: "var(--font-crimson)",
-                fontStyle: "italic",
-                fontSize: "0.85rem",
-                color: "var(--accent-gold)",
-              }}
-            >
-              Unclaimed spoils await — {unclaimedLoot} run{unclaimedLoot !== 1 ? "s" : ""} with loot
-            </span>
-          </Link>
-        )}
 
         {/* Three Doors */}
         <div className="hub-doors-grid">
@@ -450,14 +390,14 @@ export default function DashboardPage() {
 
           {/* ── Door 2: The Dungeon (UNLOCKED) ── */}
           <Link href="/dungeon" className="hub-door hub-door-unlocked">
-            {/* Dungeon image */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "320px", paddingTop: "2rem" }}>
+            {/* Dungeon image — bottom-aligned and oversized so the subject lines up with the anvil / brazier */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", height: "320px", paddingTop: "9rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/dungeon_card.webp"
+                src="/images/dungeon.webp"
                 alt="Dungeon"
                 loading="lazy"
-                style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
+                style={{ height: "175%", width: "auto", maxWidth: "175%", objectFit: "contain" }}
               />
             </div>
 

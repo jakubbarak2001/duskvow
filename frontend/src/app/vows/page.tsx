@@ -370,6 +370,7 @@ export default function VowChamberPage() {
                 heroLevel={profile.hero_level}
                 heroTitle={profile.hero_title}
                 streakMultiplier={profile.streak_multiplier}
+                lastActivityDate={profile.last_activity_date}
               />
             ) : (
               <StatsBarSkeleton />

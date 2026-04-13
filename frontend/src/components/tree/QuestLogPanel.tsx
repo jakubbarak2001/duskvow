@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import type { DailyQuest } from "@/types";
+import { useTreeStore } from "@/stores/treeStore";
 
 interface QuestLogPanelProps {
   quests: DailyQuest[];
@@ -9,7 +9,12 @@ interface QuestLogPanelProps {
 }
 
 export function QuestLogPanel({ quests, onToggle }: QuestLogPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  // Persisted in treeStore so the panel remembers its state across mounts;
+  // defaults to collapsed (rail-only) per T8 — the user mostly wants canvas
+  // room and can tap to reveal quests when needed.
+  const expanded = useTreeStore((s) => s.questLogExpanded);
+  const setExpanded = useTreeStore((s) => s.setQuestLogExpanded);
+  const collapsed = !expanded;
 
   const completedCount = quests.filter((q) => q.completed_today).length;
 
@@ -31,7 +36,7 @@ export function QuestLogPanel({ quests, onToggle }: QuestLogPanelProps) {
     >
       {/* Header — always visible */}
       <button
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-3 py-2"
         style={{
           background: "none",

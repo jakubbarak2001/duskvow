@@ -151,15 +151,6 @@ export function NodeDetailPanel({
 
         <div className="flex flex-col gap-2 mb-5">
           <div className="flex items-center justify-between text-xs">
-            <span style={{ color: "var(--text-muted)" }}>Type</span>
-            <span
-              className="capitalize"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {node.node_type}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
             <span style={{ color: "var(--text-muted)" }}>XP Reward</span>
             <span style={{ color: "var(--accent-gold)" }}>
               +{node.xp_reward} XP

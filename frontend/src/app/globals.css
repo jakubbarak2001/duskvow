@@ -923,3 +923,965 @@ h1, h2, h3, h4, h5, h6 {
   88%  { opacity: 0.05; }
   100% { transform: translateY(-95vh) translateX(-15px); opacity: 0; }
 }
+
+/* ── Streak flame indicator (Duolingo-style number + flame) ── */
+.streak-flame-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: default;
+}
+
+.streak-flame-num {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  transition: color 0.4s ease, text-shadow 0.4s ease;
+  text-shadow: 0 0 12px rgba(200, 75, 17, 0.3);
+}
+
+.streak-flame-icon {
+  width: 1.05rem;
+  height: 1.4rem;
+  display: block;
+  overflow: visible;
+}
+
+/* Cold — hollow outline, muted, waiting to be relit */
+.streak-flame-cold .streak-flame-outer {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+.streak-flame-cold .streak-flame-core {
+  display: none;
+}
+
+/* Burning — filled ember with flicker and glow */
+.streak-flame-burning .streak-flame-outer {
+  fill: var(--accent-ember);
+  stroke: none;
+  filter: drop-shadow(0 0 4px rgba(200, 75, 17, 0.65));
+  animation: flame-flicker 2.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.streak-flame-burning .streak-flame-core {
+  fill: var(--accent-gold);
+  opacity: 0.85;
+  animation: flame-flicker 1.8s ease-in-out infinite reverse;
+  transform-origin: center bottom;
+}
+
+/* Ignite — one-shot transition from cold to burning */
+.streak-flame-ignite .streak-flame-outer {
+  fill: var(--accent-ember);
+  stroke: none;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
+  animation: flame-ignite 0.9s ease-out;
+  transform-origin: center bottom;
+}
+.streak-flame-ignite .streak-flame-core {
+  fill: var(--accent-gold);
+  opacity: 1;
+  animation: flame-ignite 0.9s ease-out;
+  transform-origin: center bottom;
+}
+
+@keyframes flame-flicker {
+  0%, 100% { opacity: 0.92; transform: scaleY(1); }
+  25%      { opacity: 1;    transform: scaleY(1.03); }
+  50%      { opacity: 0.85; transform: scaleY(0.98); }
+  75%      { opacity: 0.98; transform: scaleY(1.02); }
+}
+
+@keyframes flame-ignite {
+  0%   { transform: scaleY(0.15) translateY(6px); opacity: 0; }
+  40%  { transform: scaleY(1.15) translateY(-1px); opacity: 1; }
+  70%  { transform: scaleY(0.95); }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
+/* ── Resume strip (dashboard primary action) ── */
+.resume-strip {
+  width: 100%;
+  max-width: 1200px;
+  border-radius: 8px;
+  padding: 1.6rem 1.8rem;
+  display: flex;
+  gap: 2.4rem;
+  align-items: stretch;
+  background-image:
+    linear-gradient(180deg, rgba(10,10,18,0.55) 0%, rgba(18,18,26,0.35) 100%),
+    url('/images/card_texture.webp');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(200,75,17,0.28);
+  box-shadow:
+    0 4px 28px rgba(0,0,0,0.5),
+    inset 0 0 40px rgba(0,0,0,0.35),
+    0 0 32px rgba(200,75,17,0.12);
+  animation: hub-card-glow 3s ease-in-out infinite;
+  position: relative;
+}
+
+.resume-strip-main {
+  flex: 1.3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.resume-strip-eyebrow {
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.resume-strip-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.resume-strip-next {
+  font-family: var(--font-crimson);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.resume-strip-next-sep {
+  color: var(--accent-ember);
+  margin: 0 0.4rem;
+  font-size: 0.7rem;
+}
+
+.resume-strip-cta {
+  align-self: flex-start;
+  margin-top: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.6rem;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bg-abyss);
+  background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-ember) 100%);
+  text-decoration: none;
+  box-shadow: 0 0 18px rgba(255,215,0,0.4), 0 4px 12px rgba(0,0,0,0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.resume-strip-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px rgba(255,215,0,0.6), 0 6px 16px rgba(0,0,0,0.5);
+}
+.resume-strip-cta-arrow {
+  font-size: 0.9rem;
+  transition: transform 0.2s ease;
+}
+.resume-strip-cta:hover .resume-strip-cta-arrow {
+  transform: translateX(3px);
+}
+
+/* Divider between columns */
+.resume-strip-quests {
+  flex: 1;
+  padding-left: 2rem;
+  border-left: 1px solid rgba(224,216,200,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.resume-strip-quests-label {
+  font-family: var(--font-heading);
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.resume-strip-quest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.resume-strip-quest-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+.resume-strip-quest-row:hover {
+  background-color: rgba(255,215,0,0.05);
+}
+.resume-strip-quest-bullet {
+  color: var(--accent-ember);
+  font-size: 0.9rem;
+}
+.resume-strip-quest-title {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-family: var(--font-crimson);
+}
+.resume-strip-quest-xp {
+  color: var(--accent-gold);
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+
+.resume-strip-quests-done {
+  font-family: var(--font-crimson);
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Empty state */
+.resume-strip-empty {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.4rem 1.8rem;
+}
+.resume-strip-empty-copy {
+  font-family: var(--font-crimson);
+  font-style: italic;
+  color: var(--text-secondary);
+  margin: 0.4rem 0 1.3rem;
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+/* Skeleton shimmer placeholders */
+.resume-strip-skeleton {
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 180px;
+}
+.resume-strip-skel-bar {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  border-radius: 3px;
+}
+.resume-strip-skel-eyebrow { width: 30%; height: 0.6rem; }
+.resume-strip-skel-title   { width: 55%; height: 1.6rem; }
+.resume-strip-skel-next    { width: 70%; height: 0.9rem; }
+.resume-strip-skel-cta     { width: 8rem; height: 2.2rem; margin-top: 0.6rem; }
+
+/* Responsive — stack columns below 720px */
+@media (max-width: 720px) {
+  .resume-strip-active {
+    flex-direction: column;
+  }
+  .resume-strip-quests {
+    padding-left: 0;
+    padding-top: 1.4rem;
+    border-left: none;
+    border-top: 1px solid rgba(224,216,200,0.08);
+  }
+}
+
+/* ============================================================
+   SKILL NODE FRAMES (tree refactor sprint — T1, T3, T4)
+   ============================================================ */
+
+/* Wrapper holds frame + label strip stacked vertically */
+.skill-node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.25s ease;
+  position: relative;
+  /* Fixed 130x130 bounding box so React Flow's top/bottom Handles attach
+     at the same y-offset for every node, regardless of the painted frame
+     size inside (88px common, 120px keystone). Without this the keystone's
+     larger frame moves the Handle attachment points and Dagre's pre-computed
+     edge control points become wrong by ±16px — that's the spaghetti edges
+     bug visible whenever a keystone sits adjacent to a non-keystone.
+     The label strip is absolutely positioned below this box (see
+     .skill-node-label) so it doesn't extend the bounding box either. */
+  width: 130px;
+  height: 130px;
+}
+
+/* Painted frame container — the SVG sits inside */
+.skill-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.6));
+  transition: transform 0.2s ease;
+}
+
+.skill-frame-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.skill-frame-inner {
+  fill: var(--bg-elevated);
+}
+
+.skill-frame-glow-wash {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.skill-frame-sweep {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.skill-frame-sweep-path {
+  fill: none;
+}
+
+/* Icon slot — sits absolutely over the painted frame */
+.skill-frame-glyph-slot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.skill-frame-img {
+  width: 87%;
+  height: 87%;
+  object-fit: contain;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+/* Diamond frames have a smaller inscribed area than the other shapes
+   (rotated square — corners are empty), so the choice icon needs to scale
+   up further to feel proportional to its peers. */
+.skill-frame[data-shape="diamond"] .skill-frame-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* Circles get the same bump — the painted compass PNG has internal padding
+   so 87% reads visually small. 100% fills the cavity properly, matching
+   the diamond's perceived weight. */
+.skill-frame[data-shape="circle"] .skill-frame-img {
+  width: 100%;
+  height: 100%;
+}
+
+.skill-frame-rune {
+  position: absolute;
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 2.25rem;
+  line-height: 1;
+  color: var(--accent-ember);
+  text-shadow: 0 0 10px rgba(200, 75, 17, 0.4);
+  transition: opacity 0.25s ease, color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Label strip under the frame — readable at 1.0 zoom.
+   Absolutely positioned so it doesn't extend the wrapper's bounding box,
+   which would push React Flow's bottom Handle below the title text and
+   make outgoing edges exit from below the label instead of the frame. */
+.skill-node-label {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+  text-align: center;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85), 0 0 14px rgba(0, 0, 0, 0.6);
+  max-width: 180px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  pointer-events: none;
+  transition: color 0.25s ease;
+}
+
+/* ── Rarity gradient stops ── */
+.skill-frame-common .skill-frame-grad-start { stop-color: #6b6358; }
+.skill-frame-common .skill-frame-grad-mid   { stop-color: #4a443c; }
+.skill-frame-common .skill-frame-grad-end   { stop-color: #30302c; }
+
+.skill-frame-uncommon .skill-frame-grad-start { stop-color: #8ad68f; }
+.skill-frame-uncommon .skill-frame-grad-mid   { stop-color: var(--rarity-uncommon); }
+.skill-frame-uncommon .skill-frame-grad-end   { stop-color: #1f4822; }
+
+.skill-frame-rare .skill-frame-grad-start { stop-color: #a3d8ff; }
+.skill-frame-rare .skill-frame-grad-mid   { stop-color: var(--rarity-rare); }
+.skill-frame-rare .skill-frame-grad-end   { stop-color: #1b3a6b; }
+
+.skill-frame-epic .skill-frame-grad-start { stop-color: #d29bff; }
+.skill-frame-epic .skill-frame-grad-mid   { stop-color: var(--rarity-epic); }
+.skill-frame-epic .skill-frame-grad-end   { stop-color: #421554; }
+
+.skill-frame-legendary .skill-frame-grad-start { stop-color: #ffd79a; }
+.skill-frame-legendary .skill-frame-grad-mid   { stop-color: var(--rarity-legendary); }
+.skill-frame-legendary .skill-frame-grad-end   { stop-color: #5c2e00; }
+
+.skill-frame-mythic .skill-frame-grad-start { stop-color: #fff6bf; }
+.skill-frame-mythic .skill-frame-grad-mid   { stop-color: var(--accent-gold); }
+.skill-frame-mythic .skill-frame-grad-end   { stop-color: #6b4900; }
+
+/* ── Rarity inner glow wash (epic+) ── */
+.skill-frame-epic .skill-frame-glow-wash,
+.skill-frame-legendary .skill-frame-glow-wash,
+.skill-frame-mythic .skill-frame-glow-wash {
+  opacity: 0.55;
+}
+
+.skill-frame-epic .skill-frame-glow-stop   { stop-color: rgba(156, 39, 176, 0.45); }
+.skill-frame-legendary .skill-frame-glow-stop { stop-color: rgba(255, 140, 0, 0.45); }
+.skill-frame-mythic .skill-frame-glow-stop { stop-color: rgba(255, 215, 0, 0.55); }
+
+/* Commons / uncommons / rares get no inner glow (kept crisp) */
+.skill-frame-common .skill-frame-glow-stop,
+.skill-frame-uncommon .skill-frame-glow-stop,
+.skill-frame-rare .skill-frame-glow-stop {
+  stop-color: transparent;
+}
+
+/* ── Rarity outer halo via filter drop-shadow ── */
+.skill-frame-uncommon { filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.35)); }
+.skill-frame-rare     { filter: drop-shadow(0 0 10px rgba(75, 178, 249, 0.45)); }
+.skill-frame-epic     { filter: drop-shadow(0 0 14px rgba(156, 39, 176, 0.55)); animation: skill-frame-epic-pulse 4s ease-in-out infinite; }
+.skill-frame-legendary { filter: drop-shadow(0 0 16px rgba(255, 140, 0, 0.6)); animation: skill-frame-legendary-flicker 2.8s ease-in-out infinite; }
+.skill-frame-mythic   { filter: drop-shadow(0 0 22px rgba(255, 215, 0, 0.7)); animation: skill-frame-mythic-glow 3.2s ease-in-out infinite; }
+
+@keyframes skill-frame-epic-pulse {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(156, 39, 176, 0.4)); }
+  50%      { filter: drop-shadow(0 0 20px rgba(156, 39, 176, 0.75)); }
+}
+
+@keyframes skill-frame-legendary-flicker {
+  0%, 100% { filter: drop-shadow(0 0 14px rgba(255, 140, 0, 0.55)); }
+  40%      { filter: drop-shadow(0 0 22px rgba(255, 180, 40, 0.8)); }
+  65%      { filter: drop-shadow(0 0 16px rgba(255, 140, 0, 0.6)); }
+}
+
+@keyframes skill-frame-mythic-glow {
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.6)); }
+  50%      { filter: drop-shadow(0 0 32px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 50px rgba(255, 215, 0, 0.3)); }
+}
+
+/* Mythic rotating sweep overlay — a stroked path that spins */
+.skill-frame-mythic .skill-frame-sweep {
+  opacity: 1;
+  animation: skill-frame-sweep-rotate 6s linear infinite;
+  transform-origin: center center;
+  transform-box: fill-box;
+}
+.skill-frame-mythic .skill-frame-sweep-path {
+  stroke: rgba(255, 246, 191, 0.65);
+  stroke-width: 1.5;
+  stroke-dasharray: 10 36;
+  stroke-linecap: round;
+}
+
+@keyframes skill-frame-sweep-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── State overlays ── */
+.skill-frame-locked {
+  filter: grayscale(0.8) brightness(0.55) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+  animation: none !important;
+}
+.skill-frame-locked .skill-frame-rune { color: var(--text-muted); text-shadow: none; }
+
+.skill-frame-available::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: skill-frame-available-ring 2.2s ease-in-out infinite;
+}
+@keyframes skill-frame-available-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(75, 178, 249, 0.55); }
+  50%      { box-shadow: 0 0 0 10px rgba(75, 178, 249, 0); }
+}
+
+.skill-frame-in-progress {
+  animation: skill-frame-in-progress-pulse 1.8s ease-in-out infinite;
+}
+@keyframes skill-frame-in-progress-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 140, 0, 0.45)); }
+  50%      { filter: drop-shadow(0 0 18px rgba(255, 180, 40, 0.8)); }
+}
+
+.skill-frame-completed .skill-frame-inner {
+  fill: rgba(255, 215, 0, 0.1);
+}
+.skill-frame-completed .skill-frame-rune {
+  color: var(--accent-gold);
+  text-shadow: 0 0 14px rgba(255, 215, 0, 0.85);
+}
+.skill-frame-completed {
+  filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.55));
+  animation: none !important;
+}
+
+.skill-frame-selected {
+  transform: scale(1.08);
+}
+.skill-frame-selected .skill-frame-outer {
+  stroke-width: 4;
+}
+
+.skill-frame-completed + .skill-node-label,
+.skill-node-wrapper:has(.skill-frame-completed) .skill-node-label {
+  color: var(--accent-gold);
+}
+
+/* ── Hover tooltip card (T4) ── */
+.node-tooltip {
+  position: absolute;
+  bottom: calc(100% + 0.8rem);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 280px;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(180deg, rgba(18,18,26,0.96), rgba(10,10,18,0.96));
+  border: 1px solid rgba(200, 75, 17, 0.45);
+  border-radius: 6px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 24px rgba(200, 75, 17, 0.2),
+    inset 0 0 24px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  pointer-events: none;
+  animation: node-tooltip-appear 0.18s ease-out;
+}
+
+@keyframes node-tooltip-appear {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.node-tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.node-tooltip-tier {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+}
+.node-tooltip-tier-common     { color: var(--rarity-common); }
+.node-tooltip-tier-uncommon   { color: var(--rarity-uncommon); }
+.node-tooltip-tier-rare       { color: var(--rarity-rare); }
+.node-tooltip-tier-epic       { color: var(--rarity-epic); }
+.node-tooltip-tier-legendary  { color: var(--rarity-legendary); }
+.node-tooltip-tier-mythic     { color: var(--rarity-mythic); }
+
+.node-tooltip-xp {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.68rem;
+  color: var(--accent-gold);
+  letter-spacing: 0.1em;
+}
+
+.node-tooltip-title {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 0.3rem;
+}
+
+.node-tooltip-desc {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+  font-style: italic;
+}
+
+.node-tooltip-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.node-tooltip-state-locked      { color: var(--text-muted); }
+.node-tooltip-state-available   { color: var(--state-available); }
+.node-tooltip-state-in_progress { color: var(--state-progress); }
+.node-tooltip-state-completed   { color: var(--state-complete); }
+
+.node-tooltip-prereqs {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(224,216,200,0.08);
+  font-family: var(--font-crimson), Georgia, serif;
+  font-style: italic;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   TREE CANVAS ATMOSPHERE (T2 · T6)
+   ============================================================ */
+
+.tree-canvas-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-abyss);
+  background-image:
+    radial-gradient(ellipse 90% 70% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.65) 100%),
+    linear-gradient(180deg, rgba(10, 10, 18, 0.85) 0%, rgba(18, 18, 26, 0.7) 100%),
+    url('/images/card_texture.webp');
+  background-size: cover, cover, 620px 620px;
+  background-position: center, center, center;
+  background-repeat: no-repeat, no-repeat, repeat;
+  overflow: hidden;
+}
+
+.tree-canvas-flow {
+  position: absolute !important;
+  inset: 0;
+  background: transparent !important;
+}
+
+/* ReactFlow internal layers — ensure they don't paint a solid background over our stage */
+.tree-canvas-stage .react-flow,
+.tree-canvas-stage .react-flow__pane,
+.tree-canvas-stage .react-flow__viewport,
+.tree-canvas-stage .react-flow__renderer {
+  background: transparent !important;
+}
+
+/* Drifting ember layer — decorative */
+.tree-canvas-embers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.tree-canvas-ember {
+  position: absolute;
+  bottom: -10%;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 190, 60, 0.85), rgba(200, 75, 17, 0.2) 60%, transparent);
+  filter: blur(0.3px);
+  opacity: 0;
+  animation-duration: 11s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+.tree-canvas-ember-1 { animation-name: tree-ember-float-a; }
+.tree-canvas-ember-2 { animation-name: tree-ember-float-b; animation-duration: 14s; width: 1.5px; height: 1.5px; }
+.tree-canvas-ember-3 { animation-name: tree-ember-float-c; animation-duration: 9s; width: 2.5px; height: 2.5px; }
+
+@keyframes tree-ember-float-a {
+  0%   { bottom: -5%; opacity: 0; transform: translateX(0); }
+  10%  { opacity: 0.6; }
+  88%  { opacity: 0.15; }
+  100% { bottom: 105%; opacity: 0; transform: translateX(16px); }
+}
+@keyframes tree-ember-float-b {
+  0%   { bottom: -5%; opacity: 0; transform: translateX(0); }
+  10%  { opacity: 0.45; }
+  85%  { opacity: 0.12; }
+  100% { bottom: 105%; opacity: 0; transform: translateX(-12px); }
+}
+@keyframes tree-ember-float-c {
+  0%   { bottom: -5%; opacity: 0; transform: translateX(0); }
+  10%  { opacity: 0.55; }
+  80%  { opacity: 0.1; }
+  100% { bottom: 105%; opacity: 0; transform: translateX(8px); }
+}
+
+/* Corner ornaments framing the canvas like a manuscript page */
+.tree-canvas-corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.tree-canvas-corner {
+  position: absolute;
+  font-size: 1.2rem;
+  color: rgba(200, 75, 17, 0.45);
+  text-shadow: 0 0 10px rgba(200, 75, 17, 0.3);
+  animation: hub-ember-pulse 4s ease-in-out infinite;
+}
+.tree-canvas-corner-tl { top: 1rem; left: 1rem; }
+.tree-canvas-corner-tr { top: 1rem; right: 1rem; }
+.tree-canvas-corner-bl { bottom: 1rem; left: 1rem; }
+.tree-canvas-corner-br { bottom: 1rem; right: 1rem; }
+
+/* ── Custom edge styling (T2 · T6) ── */
+.skill-edge-lit .skill-edge-core-lit {
+  stroke-dasharray: 6 10;
+  animation: skill-edge-flow 2.4s linear infinite;
+}
+
+@keyframes skill-edge-flow {
+  from { stroke-dashoffset: 32; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ReactFlow control buttons — inherit our token palette */
+.tree-canvas-stage .react-flow__controls-button {
+  background-color: var(--bg-elevated) !important;
+  border-bottom: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+}
+.tree-canvas-stage .react-flow__controls-button:hover {
+  background-color: var(--bg-highlight) !important;
+}
+.tree-canvas-stage .react-flow__controls-button svg {
+  fill: var(--text-primary) !important;
+}
+
+/* ============================================================
+   TREE HEADER — manuscript artifact block (T7)
+   ============================================================ */
+
+.tree-header {
+  position: relative;
+  width: 100%;
+  padding: 1.4rem 2rem 1rem;
+  background-color: var(--bg-shadow);
+  background-image:
+    linear-gradient(180deg, rgba(10,10,18,0.75) 0%, rgba(18,18,26,0.6) 100%),
+    url('/images/card_texture.webp');
+  background-size: cover;
+  background-position: center;
+  border-bottom: 1px solid rgba(200, 75, 17, 0.25);
+  box-shadow:
+    inset 0 -14px 32px rgba(0, 0, 0, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.tree-header-back {
+  position: absolute;
+  top: 1.1rem;
+  left: 1.4rem;
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid rgba(224, 216, 200, 0.15);
+  padding: 0.45rem 0.85rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  z-index: 2;
+}
+.tree-header-back:hover {
+  color: var(--accent-gold);
+  border-color: rgba(255, 215, 0, 0.35);
+  background-color: rgba(255, 215, 0, 0.04);
+}
+
+.tree-header-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.tree-header-eyebrow {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.tree-header-title {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: clamp(1.5rem, 3vw, 2.3rem);
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  margin: 0;
+  text-shadow: 0 0 22px rgba(255, 215, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.tree-header-subtitle {
+  font-family: var(--font-crimson), Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  max-width: 680px;
+  line-height: 1.5;
+  margin: 0.5rem 0 0;
+}
+
+.tree-header-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0.85rem 0 0.65rem;
+  width: 60%;
+  max-width: 480px;
+}
+.tree-header-divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(200, 75, 17, 0.5) 50%,
+    transparent 100%
+  );
+}
+.tree-header-divider-mark {
+  color: var(--accent-ember);
+  font-size: 0.75rem;
+  text-shadow: 0 0 8px rgba(200, 75, 17, 0.55);
+}
+
+.tree-header-pills {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.25rem 0;
+}
+
+.tree-header-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+.tree-header-pill-value {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+.tree-header-pill-value-sep {
+  color: var(--text-muted);
+  font-weight: 400;
+  margin: 0 0.1rem;
+  font-size: 1.1rem;
+}
+.tree-header-pill-label {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+.tree-header-pill-sep {
+  width: 1px;
+  height: 22px;
+  background-color: rgba(224, 216, 200, 0.1);
+}
+
+/* ============================================================
+   TIER ROW CHAPTER LABELS (T5)
+   ============================================================ */
+
+.tree-tier-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.9rem;
+  background: linear-gradient(
+    90deg,
+    rgba(200, 75, 17, 0.12) 0%,
+    rgba(200, 75, 17, 0.04) 70%,
+    transparent 100%
+  );
+  border-left: 2px solid rgba(200, 75, 17, 0.6);
+  color: var(--text-secondary);
+  font-family: var(--font-heading), "Cinzel", serif;
+  letter-spacing: 0.15em;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.tree-tier-label-roman {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+}
+.tree-tier-label-divider {
+  color: var(--text-muted);
+  font-weight: 400;
+  opacity: 0.6;
+}
+.tree-tier-label-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--text-primary);
+}

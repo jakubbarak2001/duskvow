@@ -24,7 +24,13 @@ class Settings(BaseSettings):
     # Google Gemini
     gemini_api_key: str = ""
     gemini_model_fast: str = "gemini-2.0-flash"
-    gemini_model_quality: str = "gemini-2.5-pro"
+    # Tree generation moved from gemini-2.5-pro to gemini-2.5-flash on
+    # 2026-04-13. Reason: pro has p50 ~30s and p95 ~60s+ for our 18-22 node
+    # JSON output, which sat right at the timeout band and produced flaky
+    # "AI generation timed out" errors. Flash is 3-5x faster (~8-15s p50)
+    # and the new template-based prompt (see prompts/generate_tree.txt) is
+    # strict enough that flash follows it just as well as pro did.
+    gemini_model_quality: str = "gemini-2.5-flash"
 
     # CORS
     cors_origins: list[str] = [
@@ -41,7 +47,10 @@ class Settings(BaseSettings):
     free_tier_daily_generations: int = 2
 
     # AI
-    ai_timeout_seconds: int = 60
+    # 90s gives flash plenty of headroom (it usually finishes in 8-15s) and
+    # leaves a safety net in case Gemini has a slow day. 60s was too tight —
+    # it sat right at pro's p95 latency band.
+    ai_timeout_seconds: int = 90
 
 
 settings = Settings()

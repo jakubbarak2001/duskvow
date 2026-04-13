@@ -38,3 +38,6 @@ supabase/.branches
 supabase/.temp
 supabase/.env
 
+# Claude Code session state
+.claude/
+

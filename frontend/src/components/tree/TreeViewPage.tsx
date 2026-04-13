@@ -9,6 +9,7 @@ import { useUserStore } from "@/stores/userStore";
 import { useTreeStore } from "@/stores/treeStore";
 import { Navbar } from "@/components/layout/Navbar";
 import { TreeCanvas } from "@/components/tree/TreeCanvas";
+import { TreeHeader } from "@/components/tree/TreeHeader";
 import { NodeDetailPanel } from "@/components/tree/NodeDetailPanel";
 import { QuestLogPanel } from "@/components/tree/QuestLogPanel";
 import { StatsBar } from "@/components/ui/StatsBar";
@@ -206,47 +207,28 @@ export function TreeViewPage() {
     >
       <Navbar />
 
-      {/* Tree header bar */}
-      <div
-        className="flex items-center justify-between px-5 py-3 shrink-0"
-        style={{
-          backgroundColor: "var(--bg-shadow)",
-          borderBottom: "1px solid var(--border-default)",
-        }}
-      >
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/vows")}
-            className="text-sm"
-            style={{ color: "var(--text-muted)" }}
-          >
-            ← Vow Chamber
-          </button>
-          {tree && (
-            <h1
-              className="text-lg font-bold"
-              style={{
-                fontFamily: "var(--font-heading)",
-                color: "var(--accent-gold)",
-              }}
-            >
-              {tree.title}
-            </h1>
-          )}
-        </div>
+      {/* Tree header — manuscript-style artifact block */}
+      {tree && <TreeHeader tree={tree} />}
 
-        {tree && profile && (
+      {/* Profile stats row — level + streak (Nodes column omitted; TreeHeader owns that metric) */}
+      {tree && profile && (
+        <div
+          className="px-5 pb-3 shrink-0"
+          style={{
+            backgroundColor: "var(--bg-shadow)",
+            borderBottom: "1px solid var(--border-default)",
+          }}
+        >
           <StatsBar
             totalXp={profile.total_xp}
             currentStreak={profile.current_streak}
             heroLevel={profile.hero_level}
             heroTitle={profile.hero_title}
-            nodesCompleted={tree.completed_nodes}
-            totalNodes={tree.total_nodes}
             streakMultiplier={profile.streak_multiplier}
+            lastActivityDate={profile.last_activity_date}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Canvas + detail panel */}
       <div className="flex-1 relative overflow-hidden">

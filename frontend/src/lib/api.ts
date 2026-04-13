@@ -306,11 +306,6 @@ export const api = {
       headers: authHeader(token),
     }),
 
-  getUnclaimedLootCount: (token: string) =>
-    request<{ count: number }>("/api/v1/inventory/unclaimed", {
-      headers: authHeader(token),
-    }),
-
   claimLoot: (runId: string, token: string) => {
     invalidate("profile", "profile-stats");
     return request<LootClaimResult>(`/api/v1/inventory/claim/${runId}`, {

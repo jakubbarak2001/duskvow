@@ -56,6 +56,11 @@ class _AIDailyQuest(BaseModel):
     title: str
     description: str
     xp_reward: int = 15
+    # Optional minute estimate for timed activities (practice, study, etc).
+    # Was missing from the schema before — Pydantic was silently stripping it
+    # during validation, so supabase.py:507's `q.get("estimated_minutes")`
+    # check could never succeed. Restored 2026-04-13.
+    estimated_minutes: int | None = None
 
 
 class _AITreeResponse(BaseModel):
@@ -133,8 +138,14 @@ class GeminiService:
             response_mime_type="application/json",
             temperature=0.8,
         )
+        # Quality config uses response_schema to constrain Gemini's output to
+        # the exact tree shape we expect. This both speeds up generation
+        # (~10-20% per Google docs — fewer model "choices" per token) and
+        # eliminates entire classes of validation failures (no more parsing
+        # markdown fences, no more missing fields, no more wrong key names).
         self._quality_config = types.GenerateContentConfig(
             response_mime_type="application/json",
+            response_schema=_AITreeResponse,
             temperature=0.7,
         )
 

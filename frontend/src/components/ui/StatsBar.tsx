@@ -11,23 +11,7 @@ interface StatsBarProps {
   nodesCompleted?: number;
   totalNodes?: number;
   streakMultiplier?: number;
-}
-
-/** Streak bonus thresholds — mirrors backend level_unlocks.json */
-const STREAK_THRESHOLDS = [
-  { days: 3, multiplier: 1.05 },
-  { days: 7, multiplier: 1.10 },
-  { days: 14, multiplier: 1.15 },
-  { days: 30, multiplier: 1.20 },
-];
-
-function getNextStreakMilestone(currentStreak: number): { days: number; bonus: number } | null {
-  for (const t of STREAK_THRESHOLDS) {
-    if (currentStreak < t.days) {
-      return { days: t.days, bonus: Math.round((t.multiplier - 1) * 100) };
-    }
-  }
-  return null;
+  lastActivityDate?: string | null;
 }
 
 export function StatsBar({
@@ -38,6 +22,7 @@ export function StatsBar({
   nodesCompleted,
   totalNodes,
   streakMultiplier,
+  lastActivityDate,
 }: StatsBarProps) {
   const showNodes = nodesCompleted !== undefined && totalNodes !== undefined;
   const level = heroLevel ?? 1;
@@ -137,62 +122,59 @@ export function StatsBar({
           style={{ backgroundColor: "var(--border-default)" }}
         />
 
-        {/* Streak */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-6">
-          <div
-            className="text-5xl font-bold mb-1 dash-stat-streak"
-            style={{
-              fontFamily: "var(--font-heading)",
-              color: "var(--accent-ember)",
-            }}
-          >
-            {currentStreak}
-          </div>
-          <div
-            className="text-xs uppercase"
-            style={{ color: "var(--text-muted)", letterSpacing: "0.25em" }}
-          >
-            Day Streak
-          </div>
-          {(streakMultiplier ?? 1) > 1.0 && (
+        {/* Streak — Brilliant-style minimal: big number + flame, tooltip carries the rest */}
+        {(() => {
+          const today = new Date().toISOString().slice(0, 10);
+          const isBurning = lastActivityDate === today;
+          const bonusPct = Math.round(((streakMultiplier ?? 1) - 1) * 100);
+          const tooltip =
+            !isBurning
+              ? `${currentStreak}-day streak \u2014 complete today\u2019s activity to relight`
+              : bonusPct > 0
+                ? `${currentStreak}-day streak \u00b7 +${bonusPct}% XP bonus`
+                : `${currentStreak}-day streak \u2014 active today`;
+          return (
             <div
-              className="mt-1.5"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.3em",
-                fontFamily: "var(--font-heading)",
-                fontSize: "0.55rem",
-                letterSpacing: "0.1em",
-                color: "var(--accent-gold)",
-                backgroundColor: "rgba(255,215,0,0.08)",
-                border: "1px solid rgba(255,215,0,0.2)",
-                borderRadius: "2px",
-                padding: "0.15rem 0.4rem",
-              }}
+              className="flex-1 flex items-center justify-center px-6 py-6"
+              title={tooltip}
+              aria-label={tooltip}
             >
-              <span style={{ color: "var(--accent-ember)", fontSize: "0.65rem" }}>&#x25CF;</span>
-              +{Math.round(((streakMultiplier ?? 1) - 1) * 100)}% XP
-            </div>
-          )}
-          {(() => {
-            const next = getNextStreakMilestone(currentStreak);
-            if (!next) return null;
-            const daysNeeded = next.days - currentStreak;
-            return (
               <div
-                className="mt-1"
+                className="flex items-center gap-3"
                 style={{
-                  fontSize: "0.55rem",
-                  color: "var(--text-muted)",
-                  letterSpacing: "0.05em",
+                  color: isBurning ? "var(--accent-ember)" : "var(--text-muted)",
                 }}
               >
-                {daysNeeded} more day{daysNeeded !== 1 ? "s" : ""} until +{next.bonus}% XP
+                <span
+                  className="text-5xl font-bold dash-stat-streak"
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    lineHeight: 1,
+                  }}
+                >
+                  {currentStreak}
+                </span>
+                <svg
+                  className={
+                    isBurning ? "streak-flame-icon streak-flame-burning" : "streak-flame-icon streak-flame-cold"
+                  }
+                  viewBox="0 0 24 32"
+                  aria-hidden="true"
+                  style={{ width: "2.25rem", height: "3rem" }}
+                >
+                  <path
+                    className="streak-flame-outer"
+                    d="M12 2 C 8 8, 4 12, 4 18 C 4 25, 8 30, 12 30 C 16 30, 20 25, 20 18 C 20 14, 17 12, 15 8 C 14 11, 13 12, 12 11 C 12 8, 13 5, 12 2 Z"
+                  />
+                  <path
+                    className="streak-flame-core"
+                    d="M12 14 C 10 17, 9 19, 9 22 C 9 26, 10 28, 12 28 C 14 28, 15 26, 15 22 C 15 19, 13 17, 12 14 Z"
+                  />
+                </svg>
               </div>
-            );
-          })()}
-        </div>
+            </div>
+          );
+        })()}
 
         {showNodes && (
           <>

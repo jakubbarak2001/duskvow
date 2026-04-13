@@ -8,6 +8,10 @@ interface UserStore {
   loading: boolean;
   initialized: boolean;
 
+  /** ISO date (YYYY-MM-DD) for which the streak-flame ignite animation has
+   *  already been played this session. Null = not yet animated. */
+  streakAnimatedFor: string | null;
+
   /** Hydrate profile from API. Only fetches once unless force=true. */
   hydrate: (token: string, force?: boolean) => Promise<void>;
 
@@ -27,12 +31,16 @@ interface UserStore {
 
   setHeroName: (name: string) => void;
   setLevel: (level: number, title: string) => void;
+
+  /** Mark the streak flame ignite animation as played for the given date. */
+  markStreakAnimated: (date: string) => void;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
   profile: null,
   loading: false,
   initialized: false,
+  streakAnimatedFor: null,
 
   hydrate: async (token, force) => {
     const state = get();
@@ -95,4 +103,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
         profile: { ...store.profile, hero_level: level, hero_title: title },
       };
     }),
+
+  markStreakAnimated: (date) => set({ streakAnimatedFor: date }),
 }));

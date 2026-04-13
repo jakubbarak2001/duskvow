@@ -7,7 +7,7 @@ User Context:
 - {{ question_id }}: {{ answer }}
 {% endfor %}
 
-Create a talent tree with 15-20 nodes. Return ONLY valid JSON matching this exact structure:
+Create a talent tree with 18-22 nodes organized into 6 horizontal tiers (rows). Return ONLY valid JSON matching this exact structure:
 
 {
   "title": "Short evocative tree title (e.g. 'Python Mastery', 'Iron Body')",
@@ -40,28 +40,69 @@ Create a talent tree with 15-20 nodes. Return ONLY valid JSON matching this exac
   ]
 }
 
-TREE STRUCTURE RULES (critical — follow exactly):
-- The tree must form a clean DAG (directed acyclic graph) that flows top-to-bottom
-- Start with exactly 1 root node (no prerequisites)
-- Each node lists ONLY its DIRECT parent node in prerequisites — never skip levels or list grandparents
-- Maximum 2 prerequisites per node
-- Maximum 3 nodes branching FROM a single parent
-- Branches should MERGE back together at choice/milestone nodes before diverging again
-- The final capstone keystone node should have exactly 1-2 prerequisites (the final merge point)
+TREE STRUCTURE — FILL IN THIS TEMPLATE EXACTLY
 
-TIER + TYPE RULES:
-- First 3-4 nodes: tier = common
-- Middle nodes: tier = uncommon or rare
-- Later nodes: tier = epic or legendary
-- Final capstone: tier = mythic, type = keystone
-- Mix types: ~40% action, ~30% habit, ~20% choice, ~10% keystone
-- XP rewards: common=10, uncommon=20, rare=35, epic=50, legendary=75, mythic=100
+The tree has exactly 6 tiers. A tier is a horizontal row of nodes the player
+can attempt at the same time. Total nodes: 18-22.
 
-EXAMPLE of clean structure (for a "learn guitar" goal):
-node_1 (root) → node_2 → node_3 (choice: branch A or B)
-node_3 → node_4a, node_3 → node_4b  (two branches)
-node_4a → node_5, node_4b → node_5  (branches merge)
-node_5 → node_6 (keystone)
+TIER COMPOSITION (count and rarity per tier):
+- Tier 1 (Foundation): 2-3 nodes, all common, no prerequisites
+- Tier 2 (Trials):     3-4 nodes, all uncommon, each prereqs to 1-2 Tier 1 nodes
+- Tier 3 (Rites):      3-4 nodes, all rare,     each prereqs to 1-2 Tier 2 nodes
+- Tier 4 (Mastery):    3-4 nodes, all epic,     each prereqs to 1-2 Tier 3 nodes
+- Tier 5 (Ascension):  2-3 nodes, all legendary, each prereqs to 1-2 Tier 4 nodes
+- Tier 6 (Capstone):   exactly 1 node, mythic, type = keystone,
+                       prereqs to 1-2 Tier 5 nodes
+
+WHY THESE RULES MATTER (do not skip any of them):
+The player must always have 2+ available nodes to choose between at every
+unlock point. A row with only 1 node forces a corridor and removes the entire
+point of building "your own" tree. Therefore:
+
+1. Every tier from Tier 2 through Tier 5 MUST contain at least 2 nodes.
+   A Tier 2-5 row with only 1 node is a generation failure — go back and add
+   a sibling.
+2. No node may be the only child of its parent — every parent must have at
+   least 2 children. The single exception is the Capstone keystone (Tier 6)
+   which is the only one-of-its-tier node in the whole tree.
+3. A node's prerequisites should usually come from the tier immediately above
+   it. About one node per tier should have a SECOND prerequisite from a
+   different parent in the same tier above — these are CONVERGENCE nodes
+   that reward players who took both branches.
+4. Use only DIRECT parents in prerequisites — never list grandparents or skip
+   tiers.
+5. Max 2 prerequisites per node.
+
+TYPE MIX (across the whole tree, not per tier):
+- ~40% action  (one-time tasks)
+- ~30% habit   (daily/recurring)
+- ~25% choice  (branching milestones — usually convergence nodes)
+- 1 keystone   (the Capstone, always at Tier 6)
+
+XP REWARDS (must match tier exactly):
+- common=10, uncommon=20, rare=35, epic=50, legendary=75, mythic=100
+
+EXAMPLE STRUCTURE (for a "Learn Guitar" goal — 19 nodes, 6 tiers):
+
+Tier 1 (common):     [Tune by Ear]  [Hold a Chord]
+Tier 2 (uncommon):   [Open Chords]  [Power Chords]  [Strumming Patterns]
+                     (each prereqs from one Tier 1 node)
+Tier 3 (rare):       [Barre Chords] [Pentatonic Scale] [Fingerpicking] [Reading Tabs]
+                     (each prereqs from one Tier 2 node;
+                      "Barre Chords" ALSO prereqs "Open Chords" — convergence)
+Tier 4 (epic):       [Lead Improv]  [Songwriting]  [Performance Stamina]
+                     (each prereqs from one Tier 3 node)
+Tier 5 (legendary):  [Recording a Demo]  [Live Set Practice]
+                     (each prereqs from one Tier 4 node)
+Tier 6 (mythic):     [The First Show] (keystone, prereqs from BOTH Tier 5 nodes)
+
+That's a 19-node tree, 6 tiers, every tier has at least 2 nodes except the
+Capstone, every parent has at least 2 children, and there is one convergence
+node in Tier 3. The player always has multiple unlocked options at every step.
+
+Generate YOUR tree following this exact template — same tier counts, same
+"every tier has 2+ nodes" rule, same convergence pattern. Adapt only the node
+TITLES and DESCRIPTIONS to the user's specific goal.
 
 Position values are ignored — set them all to {"x": 0, "y": 0}.
 
