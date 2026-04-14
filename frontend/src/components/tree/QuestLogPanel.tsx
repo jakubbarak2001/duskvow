@@ -20,6 +20,7 @@ export function QuestLogPanel({ quests, onToggle }: QuestLogPanelProps) {
 
   return (
     <div
+      className={`quest-log-panel${collapsed ? " quest-log-panel-collapsed" : " quest-log-panel-expanded"}`}
       style={{
         position: "absolute",
         top: "16px",

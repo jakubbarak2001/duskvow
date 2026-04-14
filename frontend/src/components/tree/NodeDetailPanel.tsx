@@ -101,20 +101,29 @@ export function NodeDetailPanel({
   };
 
   return (
-    <div
-      className="absolute top-0 right-0 h-full w-80 flex flex-col"
-      style={{
-        backgroundColor: "var(--bg-shadow)",
-        borderLeft: "1px solid var(--border-default)",
-        zIndex: 10,
-        animation: "tree-reveal 0.2s ease-out",
-      }}
-    >
-      {/* Header */}
+    <>
+      {/* Mobile-only backdrop — tap to dismiss. Hidden on desktop via CSS. */}
       <div
-        className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid var(--border-default)" }}
+        className="node-detail-backdrop"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className="node-detail-panel flex flex-col"
+        style={{
+          backgroundColor: "var(--bg-shadow)",
+          borderLeft: "1px solid var(--border-default)",
+          zIndex: 20,
+        }}
       >
+        {/* Drag handle — visible only on mobile, purely decorative affordance */}
+        <div className="node-detail-drag-handle" aria-hidden="true" />
+
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: "1px solid var(--border-default)" }}
+        >
         <span
           className="text-xs font-medium uppercase tracking-wider px-2 py-0.5 rounded"
           style={{
@@ -279,7 +288,8 @@ export function NodeDetailPanel({
             Reset Node
           </button>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

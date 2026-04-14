@@ -2138,3 +2138,158 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 0.5rem !important;
   }
 }
+
+/* ============================================================
+   NODE DETAIL PANEL — desktop rail, mobile bottom sheet (M4)
+   Desktop: right-docked full-height rail (original behavior).
+   Mobile:  bottom-docked sheet with backdrop + drag affordance.
+   ============================================================ */
+
+.node-detail-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 20rem;
+  animation: tree-reveal 0.2s ease-out;
+}
+
+/* Drag handle — only visible on mobile where the panel is a sheet */
+.node-detail-drag-handle {
+  display: none;
+}
+
+/* Backdrop — only visible on mobile */
+.node-detail-backdrop {
+  display: none;
+}
+
+/* ============================================================
+   QUEST LOG PANEL — desktop & mobile sizing (M5)
+   Desktop defaults live on the component via inline style so this
+   block only needs to carry mobile overrides (below).
+   ============================================================ */
+
+/* ============================================================
+   TREE CANVAS CONTROLS — larger tap targets on touch (M6)
+   React Flow's default controls are ~26px — fine for mouse, too
+   small for thumb. Mobile rules below bump them to 44x44.
+   ============================================================ */
+
+/* ============================================================
+   MOBILE: NodeDetailPanel bottom sheet (M4), QuestLog compact (M5),
+           React Flow controls + fitView tuning (M6)
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* ── M4: NodeDetailPanel bottom sheet ── */
+  .node-detail-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(10, 10, 18, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 19;
+    animation: mobile-nav-fade 0.2s ease-out;
+  }
+
+  .node-detail-panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    max-height: 72vh;
+    border-left: none !important;
+    border-top: 1px solid var(--border-default);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.65),
+      inset 0 1px 0 rgba(255, 215, 0, 0.05);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: node-detail-sheet-up 0.24s ease-out;
+  }
+
+  @keyframes node-detail-sheet-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0.4;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .node-detail-drag-handle {
+    display: block;
+    width: 42px;
+    height: 4px;
+    margin: 0.55rem auto 0.35rem;
+    border-radius: 2px;
+    background-color: rgba(224, 216, 200, 0.25);
+    flex-shrink: 0;
+  }
+
+  /* Tighten internal padding on the sheet so action buttons clear the
+     soft keyboard / gesture bar without the content feeling cramped. */
+  .node-detail-panel > div:nth-child(2) {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+
+  /* ── M5: QuestLogPanel compact pill + expanded sheet ── */
+  .quest-log-panel {
+    top: 10px !important;
+    left: 10px !important;
+    right: auto;
+    width: auto !important;
+    max-width: calc(100vw - 20px);
+  }
+  .quest-log-panel-collapsed {
+    /* Small pill — just enough for the label + count badge */
+    width: auto !important;
+  }
+  .quest-log-panel-collapsed > button {
+    padding: 0.4rem 0.7rem !important;
+    gap: 0.55rem;
+    min-height: 36px;
+  }
+  .quest-log-panel-expanded {
+    /* Expanded: full width rail under the stats bar, capped height so
+       the canvas remains tappable behind/beside the list */
+    width: calc(100vw - 20px) !important;
+    max-width: 420px;
+  }
+  .quest-log-panel-expanded > div:last-child {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  /* ── M6: React Flow controls — thumb-friendly tap targets ── */
+  .tree-canvas-flow .react-flow__controls {
+    bottom: 1rem !important;
+    left: 1rem !important;
+    gap: 4px;
+  }
+  .tree-canvas-flow .react-flow__controls-button {
+    width: 44px !important;
+    height: 44px !important;
+    background-color: var(--bg-elevated) !important;
+    border-bottom: 1px solid var(--border-default) !important;
+    color: var(--text-secondary) !important;
+  }
+  .tree-canvas-flow .react-flow__controls-button svg {
+    width: 18px;
+    height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    fill: currentColor;
+  }
+  .tree-canvas-flow .react-flow__controls-button:last-child {
+    border-bottom: none !important;
+  }
+}

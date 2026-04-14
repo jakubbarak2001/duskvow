@@ -285,13 +285,19 @@ export function TreeCanvas({ nodes, onNodeClick, selectedNodeId }: TreeCanvasPro
         edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}
         fitView
-        fitViewOptions={{ padding: 0.2, maxZoom: 1.1 }}
-        minZoom={0.3}
+        // Bumped padding to 0.28 (from 0.2) so narrow viewports don't crop
+        // edge nodes. The tree-canvas-flow CSS enlarges Controls on mobile.
+        fitViewOptions={{ padding: 0.28, maxZoom: 1.1 }}
+        minZoom={0.25}
         maxZoom={2}
+        panOnDrag
+        zoomOnPinch
+        zoomOnDoubleClick={false}
         className="tree-canvas-flow"
         proOptions={{ hideAttribution: true }}
       >
         <Controls
+          className="tree-canvas-controls"
           style={{
             backgroundColor: "var(--bg-elevated)",
             border: "1px solid var(--border-default)",
