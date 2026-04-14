@@ -90,8 +90,10 @@ export function SkillNodeComponent({ data, selected }: NodeProps) {
         selected={selected}
       />
 
-      {/* Label strip — readable at 1.0 zoom, Cinzel 11px */}
-      <div className="skill-node-label" style={{ maxWidth: frameSize + 40 }}>
+      {/* Label strip — readable at 1.0 zoom, Cinzel 11px.
+          Width ceiling lives in .skill-node-label (globals.css) — 190px
+          fits comfortably within Dagre nodesep:110 between common frames. */}
+      <div className="skill-node-label">
         {node.title}
       </div>
 

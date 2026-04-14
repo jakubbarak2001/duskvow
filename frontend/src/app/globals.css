@@ -1330,11 +1330,20 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.05em;
   padding: 2px 6px;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85), 0 0 14px rgba(0, 0, 0, 0.6);
-  max-width: 180px;
+  /* Explicit width (not max-width) because this element is abs-pos with
+     left:50% and no right set — CSS shrink-to-fit would otherwise clamp the
+     layout width to (containing_block − left) ≈ 65px, and every title,
+     however short, would render clipped with ellipsis. With Dagre nodesep:110
+     + NODE_WIDTH 150 = 260px center-to-center, two 190px labels leave ~70px
+     clearance between sibling labels. Clamp at 3 lines as a safety net for
+     genuinely long AI-generated titles (ranksep:150 has ~80px of vertical
+     slack below a 3-line label, still safe). */
+  width: 190px;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
   pointer-events: none;
   transition: color 0.25s ease;
 }
