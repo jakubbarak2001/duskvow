@@ -61,6 +61,14 @@
 
 [2026-04-14] DECISION: `ai_timeout_seconds` 90 → 45; frontend client timeout 55s in `api.ts submitFollowUp` — REASON: With thinking disabled, 45s is ~3x our p95 target so it catches real stalls without making users stare at a spinner for 1.5 minutes. The 55s / 45s gap (10s slack) ensures the backend's 504 usually wins the race over the client's abort — Vercel edge + Next.js overhead eats most of that gap. On client abort, `request()` returns a distinct `TIMEOUT` error code with a user-friendly message instead of the stale `NETWORK_ERROR` ("check your connection") which was wrong for the timeout case.
 
+[2026-04-14] DECISION: Upgraded pre-commit git hook from `tsc --noEmit` to full `npm run validate` (tsc + eslint + build) and added `PostToolUse` hook that runs tsc on every Edit/Write to `frontend/src/**/*.ts(x)` — REASON: The tsc-only gate was letting ESLint violations and build failures through to DONE status. `validate.mjs` existed but wasn't enforced anywhere. Trade-off: immediately surfaced 12 pre-existing React 19 Compiler violations in committed code, which now block commits until fixed (see P0 tech debt in TASKS.md backlog). Fixing the hook without fixing the tech debt is the right order — violations are real cascading-render bugs that needed visibility.
+
+[2026-04-14] DECISION: Doc hygiene pass — archived `SPEC.md` → `SPEC.archive.md` (was old LAYER 1-4 STATE.md); rotated completed Sprint C/D from `TASKS.md` into `docs/sprints/sprint-c-dungeon.md` + `docs/sprints/sprint-d-progression.md` (1258 → 35 lines); moved 695-line Octalysis audit to `docs/strategy/octalysis-audit-2026-04-11.md` with a 66-line summary remaining in `STRATEGY.md`; created `CONTEXT.md` as a 30-second session-bootstrap file — REASON: Per-session context load was dominated by completed work and historical audits. Live docs should carry only the smallest footprint needed for "what's happening now"; archives and reasoning trails live in `docs/`. Total session context for TASKS+STRATEGY+STATE+CONTEXT+CLAUDE went from ~2200 lines to ~380.
+
+[2026-04-14] DECISION: Created 4 custom slash commands in `.claude/commands/` (`/validate`, `/new-task`, `/close-sprint`, `/state-update`) and 2 specialized subagents in `.claude/agents/` (`duskvow-design-reviewer`, `supabase-migration-reviewer`) — REASON: Kills the "what command do I run for X" friction and stops the general-purpose agent from rediscovering Duskvow conventions (design tokens, RLS patterns, CHECK constraint style) on every invocation. Subagents are cached prompt files — zero runtime cost, big accuracy win on repeated review tasks.
+
+[2026-04-14] DECISION: Wired existing `ErrorBoundary` component into `TreeViewPage.tsx` around `TreeCanvas`; added Next.js App Router `app/error.tsx` (route-segment catch-all) and `app/global-error.tsx` (root-layout catch) — REASON: "No error boundaries" has been a Known Issue since 2026-03-30; `ErrorBoundary.tsx` existed in `components/ui/` but was imported in zero files. React Flow crashes in TreeCanvas were taking down the whole page. Three-layer approach (component-level for known-fragile React Flow + route-level Next.js convention file + root-layout fallback) covers every crash path without over-wrapping.
+
 ---
 
 ## CURRENT STATE
@@ -89,9 +97,10 @@
 ### Known Issues
 - [ ] Tree layout can be ugly with 25+ nodes (Dagre nodesep/ranksep tuning needed)
 - [ ] Node completion visual feedback is flat (no particle burst yet)
-- [ ] No automated tests (backend has minimal scaffolding only)
-- [ ] No error boundaries (React Flow crashes can take down the page)
-- [ ] Unpushed migrations: `20260410_hero_level_system.sql`, `20260411_daily_quests.sql`, `20260412_dungeon_system.sql`, `20260413_progression_system.sql`, `20260413_streak_multiplier_in_rpc.sql`
+- [ ] No automated frontend tests (backend has test scaffolding for auth/embers/nodes/profile/trees)
+- [x] ~~No error boundaries~~ — ErrorBoundary wired to TreeCanvas + app/error.tsx + app/global-error.tsx added 2026-04-14
+- [ ] **P0 TECH DEBT**: 12 pre-existing React 19 Compiler lint violations block `npm run validate` and therefore the upgraded pre-commit hook. See TASKS.md backlog for file list. Fix required before next commit.
+- [x] ~~Unpushed migrations~~ — all migrations pushed as of 2026-04-14
 
 ### What's Next
 1. Sprint E — Daily Quest Enhancement (quest pools, rotation, streak bonuses)
@@ -99,6 +108,26 @@
 3. Sprint G — Hearth Page + Ember Economy (ember buffs, journal → XP, loot spending)
 
 ### File Change Log (Current Session)
+
+**Session: 2026-04-14 (Workflow overhaul — pre-commit hook, doc hygiene, error boundaries)**
+- `.claude/settings.local.json` — PreToolUse `tsc` → `npm run validate` (timeout 60→300); added PostToolUse hook matching Edit|Write|MultiEdit with stdin-scoped tsc run for `frontend/src/**/*.ts(x)`
+- `SPEC.md` → `SPEC.archive.md` — renamed with header note pointing to STATE.md + CLAUDE.md
+- `TASKS.md` — rotated Sprint C + D to `docs/sprints/`; added P0 tech-debt section for React 19 Compiler violations; 1258 → 56 lines
+- `STRATEGY.md` — trimmed 695 → 66 lines; full audit moved to `docs/strategy/octalysis-audit-2026-04-11.md`
+- `STATE.md` — decisions log entries, Known Issues updated, this session log
+- `CONTEXT.md` — new 30-second session bootstrap file
+- `docs/sprints/sprint-c-dungeon.md` — new archive (Sprint C tasks)
+- `docs/sprints/sprint-d-progression.md` — new archive (Sprint D tasks)
+- `docs/strategy/octalysis-audit-2026-04-11.md` — full audit archive
+- `.claude/commands/validate.md` — new slash command
+- `.claude/commands/new-task.md` — new slash command
+- `.claude/commands/close-sprint.md` — new slash command
+- `.claude/commands/state-update.md` — new slash command
+- `.claude/agents/duskvow-design-reviewer.md` — new specialized subagent (design-token + aesthetic compliance)
+- `.claude/agents/supabase-migration-reviewer.md` — new specialized subagent (RLS + index + constraint review)
+- `frontend/src/components/tree/TreeViewPage.tsx` — import ErrorBoundary, wrap TreeCanvas
+- `frontend/src/app/error.tsx` — new route-segment error boundary with Cinzel/ember styling + reset + return-to-hub
+- `frontend/src/app/global-error.tsx` — new root-layout error boundary with inlined styling (tokens may not be loaded)
 
 **Session: 2026-04-14 (Tree generation latency fix — thinking mode off)**
 - `backend/app/services/gemini.py` — `thinking_config=ThinkingConfig(thinking_budget=0)` on `_quality_config`; removed `_AIEdge` class and `edges` field; added structural validation in `_validate_tree` (mythic count, Tier 2-5 cardinality); added 502/504 retry in `generate_tree` with lower temperature; structured `gemini_call` logging in `_call`; added `logging`/`time` imports and module logger

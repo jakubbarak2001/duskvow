@@ -1,9 +1,11 @@
-# STATE.md — Duskvow Living Project State
+# SPEC.archive.md — Historical Snapshot (DO NOT READ FOR SESSION CONTEXT)
 
-> **Purpose**: This file is the single source of truth for every Claude session.
-> Read this BEFORE touching any code. Update this BEFORE ending any session.
+> **ARCHIVED 2026-04-14.** This file is the original LAYER 1-4 STATE.md from 2026-03-30.
+> It has been superseded by the slimmer STATE.md + CLAUDE.md. Kept only for historical reference.
 >
-> Last updated: 2026-03-30
+> **For current state, read**: `CLAUDE.md`, `STATE.md`, `CONTEXT.md`.
+>
+> Last meaningful update: 2026-03-30
 
 ---
 

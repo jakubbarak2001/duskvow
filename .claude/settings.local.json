@@ -37,8 +37,20 @@
           {
             "type": "command",
             "if": "Bash(git commit *)",
-            "command": "cd frontend && npx tsc --noEmit 2>&1",
-            "timeout": 60
+            "command": "cd frontend && npm run validate 2>&1",
+            "timeout": 300
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat 2>/dev/null); case \"$input\" in *frontend/src*.ts*|*frontend/src*.tsx*) cd frontend && npx tsc --noEmit 2>&1 | tail -30 ;; *) ;; esac",
+            "timeout": 90
           }
         ]
       }

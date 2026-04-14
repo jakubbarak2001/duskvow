@@ -12,6 +12,7 @@ import { TreeCanvas } from "@/components/tree/TreeCanvas";
 import { TreeHeader } from "@/components/tree/TreeHeader";
 import { NodeDetailPanel } from "@/components/tree/NodeDetailPanel";
 import { QuestLogPanel } from "@/components/tree/QuestLogPanel";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { api } from "@/lib/api";
 import type { LevelUpEvent } from "@/components/tree/NodeDetailPanel";
@@ -258,11 +259,13 @@ export function TreeViewPage() {
           </div>
         ) : tree ? (
           <>
-            <TreeCanvas
-              nodes={tree.nodes}
-              onNodeClick={handleNodeClick}
-              selectedNodeId={selectedNode?.id}
-            />
+            <ErrorBoundary>
+              <TreeCanvas
+                nodes={tree.nodes}
+                onNodeClick={handleNodeClick}
+                selectedNodeId={selectedNode?.id}
+              />
+            </ErrorBoundary>
 
             {treeQuests.length > 0 && (
               <QuestLogPanel
