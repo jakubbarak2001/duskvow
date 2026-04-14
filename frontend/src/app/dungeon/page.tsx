@@ -80,11 +80,21 @@ function DungeonPageInner() {
   const [quests, setQuests] = useState<DailyQuest[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Selection state
+  // Selection state — lazy initializers pull from URL params at mount so
+  // we don't need a sync-setState-in-effect pre-fill pass.
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
-  const [durationMinutes, setDurationMinutes] = useState(45);
+  const [durationMinutes, setDurationMinutes] = useState<number>(() => {
+    const duration = searchParams.get("duration");
+    if (duration) {
+      const mins = parseInt(duration, 10);
+      if (mins >= 15 && mins <= 120) return mins;
+    }
+    return 45;
+  });
   const [linkedNodeId, setLinkedNodeId] = useState<string | null>(null);
-  const [linkedQuestId, setLinkedQuestId] = useState<string | null>(null);
+  const [linkedQuestId, setLinkedQuestId] = useState<string | null>(
+    () => searchParams.get("quest"),
+  );
 
   // UI state
   const [starting, setStarting] = useState(false);
@@ -107,32 +117,6 @@ function DungeonPageInner() {
   const [revealedEvents, setRevealedEvents] = useState<DungeonEvent[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Pre-fill from query params (quest-to-dungeon flow)
-  useEffect(() => {
-    if (dataLoading || activeRun) return;
-
-    const questId = searchParams.get("quest");
-    const duration = searchParams.get("duration");
-
-    if (questId) {
-      setLinkedQuestId(questId);
-    }
-    if (duration) {
-      const mins = parseInt(duration, 10);
-      if (mins >= 15 && mins <= 120) {
-        setDurationMinutes(mins);
-      }
-    }
-
-    // Auto-select highest unlocked tier
-    if (questId && tiers.length > 0 && !selectedTier) {
-      const unlocked = tiers.filter((t) => t.unlocked);
-      if (unlocked.length > 0) {
-        setSelectedTier(unlocked[unlocked.length - 1].key);
-      }
-    }
-  }, [dataLoading, activeRun, searchParams, tiers, selectedTier]);
-
   // Auth redirect
   useEffect(() => {
     if (!loading && !user) {
@@ -151,8 +135,19 @@ function DungeonPageInner() {
       api.listTrees(token),
       api.getTodayQuests(token),
     ]).then(([tiersRes, activeRes, treesRes, questsRes]) => {
-      if (tiersRes.status === "fulfilled" && tiersRes.value.data)
-        setTiers(tiersRes.value.data);
+      if (tiersRes.status === "fulfilled" && tiersRes.value.data) {
+        const loadedTiers = tiersRes.value.data;
+        setTiers(loadedTiers);
+        // Auto-select the highest unlocked tier when entering via a quest URL.
+        // Done here (inside the fetch callback) instead of a separate effect so
+        // the setState is not synchronous in an effect body.
+        if (searchParams.get("quest")) {
+          const unlocked = loadedTiers.filter((t) => t.unlocked);
+          if (unlocked.length > 0) {
+            setSelectedTier(unlocked[unlocked.length - 1].key);
+          }
+        }
+      }
       if (activeRes.status === "fulfilled" && activeRes.value.data)
         setActiveRun(activeRes.value.data);
       if (treesRes.status === "fulfilled" && treesRes.value.data)
@@ -161,7 +156,7 @@ function DungeonPageInner() {
         setQuests(questsRes.value.data);
       setDataLoading(false);
     });
-  }, [session]);
+  }, [session, searchParams]);
 
   // Track whether we already fired a notification for this run
   const notifiedRef = useRef(false);
@@ -200,9 +195,12 @@ function DungeonPageInner() {
       return;
     }
 
-    computeTimerState();
+    // First tick deferred to next macrotask so the setSecondsLeft/setRevealedEvents
+    // calls inside computeTimerState are not synchronous in the effect body.
+    const initial = setTimeout(computeTimerState, 0);
     intervalRef.current = setInterval(computeTimerState, 1000);
     return () => {
+      clearTimeout(initial);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [activeRun, computeTimerState]);
@@ -1102,10 +1100,14 @@ function ActiveRunView({
       ? Math.max(...revealedEvents.map((e) => e.floor_number))
       : 0;
     if (maxFloor > prevFloorRef.current && prevFloorRef.current > 0) {
-      setFloorPulse(true);
+      // rAF defers setFloorPulse(true) out of the synchronous effect body.
+      const rafId = requestAnimationFrame(() => setFloorPulse(true));
       const timer = setTimeout(() => setFloorPulse(false), 600);
       prevFloorRef.current = maxFloor;
-      return () => clearTimeout(timer);
+      return () => {
+        cancelAnimationFrame(rafId);
+        clearTimeout(timer);
+      };
     }
     prevFloorRef.current = maxFloor;
   }, [revealedEvents]);
@@ -1115,11 +1117,15 @@ function ActiveRunView({
     if (revealedEvents.length === 0) return;
     const latest = revealedEvents[revealedEvents.length - 1];
     if (latest.event_type === "boss") {
-      setBossFlash(true);
+      // rAF defers setBossFlash(true) out of the synchronous effect body.
+      const rafId = requestAnimationFrame(() => setBossFlash(true));
       const timer = setTimeout(() => setBossFlash(false), 400);
-      return () => clearTimeout(timer);
+      return () => {
+        cancelAnimationFrame(rafId);
+        clearTimeout(timer);
+      };
     }
-  }, [revealedEvents.length]);
+  }, [revealedEvents]);
 
   const eventIcon = (type: DungeonEvent["event_type"]) => {
     switch (type) {

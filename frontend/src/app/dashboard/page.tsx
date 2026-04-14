@@ -16,7 +16,7 @@ import type { DungeonRun, TalentTree, DailyQuest } from "@/types";
 
 export default function DashboardPage() {
   const { user, session, loading } = useUser();
-  const { profile, profileLoading } = useProfile();
+  const { profile } = useProfile();
   const setProfile = useUserStore((s) => s.setProfile);
   const router = useRouter();
 

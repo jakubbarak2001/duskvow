@@ -802,24 +802,34 @@ function TreeCard({
 // ResetTimer — shows "Resets in Xh Ym" until midnight UTC
 // ---------------------------------------------------------------------------
 
+function computeTimeLeft(): string {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setUTCHours(24, 0, 0, 0);
+  const diffMs = midnight.getTime() - now.getTime();
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  return `${hours}h ${minutes}m`;
+}
+
 function ResetTimer() {
-  const [timeLeft, setTimeLeft] = useState("");
+  // null until the first client-side tick runs, preventing SSR/CSR mismatch
+  // from the Date.now() drift and avoiding sync setState inside the effect.
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
 
   useEffect(() => {
-    function computeTimeLeft() {
-      const now = new Date();
-      const midnight = new Date(now);
-      midnight.setUTCHours(24, 0, 0, 0);
-      const diffMs = midnight.getTime() - now.getTime();
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      return `${hours}h ${minutes}m`;
-    }
-
-    setTimeLeft(computeTimeLeft());
-    const interval = setInterval(() => setTimeLeft(computeTimeLeft()), 60_000);
-    return () => clearInterval(interval);
+    const update = () => setTimeLeft(computeTimeLeft());
+    // First tick deferred to next macrotask so the setState is not
+    // synchronous in the effect body (react-hooks/set-state-in-effect).
+    const initial = setTimeout(update, 0);
+    const interval = setInterval(update, 60_000);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
   }, []);
+
+  if (timeLeft === null) return null;
 
   return (
     <span

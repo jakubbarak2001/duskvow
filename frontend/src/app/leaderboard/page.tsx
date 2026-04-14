@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { Navbar } from "@/components/layout/Navbar";
@@ -68,24 +68,40 @@ export default function LeaderboardPage() {
     if (!authLoading && !user) router.replace("/auth");
   }, [user, authLoading, router]);
 
-  const fetchData = useCallback(async () => {
+  // Fetch leaderboard whenever the session or active filters change.
+  // The loading flag is flipped at the event source (tab handlers below) so
+  // this effect has no synchronous setState in its body.
+  useEffect(() => {
     if (!session?.access_token) return;
     const token = session.access_token;
-    setLoadingData(true);
 
-    const [boardRes, rankRes] = await Promise.all([
+    let cancelled = false;
+    Promise.all([
       api.getLeaderboard(token, metric, period),
       api.getMyRank(token, metric, period),
-    ]);
+    ]).then(([boardRes, rankRes]) => {
+      if (cancelled) return;
+      if (boardRes.data) setEntries(boardRes.data);
+      if (rankRes.data) setMyRank(rankRes.data);
+      setLoadingData(false);
+    });
 
-    if (boardRes.data) setEntries(boardRes.data);
-    if (rankRes.data) setMyRank(rankRes.data);
-    setLoadingData(false);
-  }, [session?.access_token, metric, period]);
+    return () => {
+      cancelled = true;
+    };
+  }, [session, metric, period]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const handleMetricChange = (m: Metric) => {
+    if (m === metric) return;
+    setLoadingData(true);
+    setMetric(m);
+  };
+
+  const handlePeriodChange = (p: Period) => {
+    if (p === period) return;
+    setLoadingData(true);
+    setPeriod(p);
+  };
 
   if (authLoading) {
     return (
@@ -135,7 +151,7 @@ export default function LeaderboardPage() {
           {(["total_xp", "current_streak"] as Metric[]).map((m) => (
             <button
               key={m}
-              onClick={() => setMetric(m)}
+              onClick={() => handleMetricChange(m)}
               className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors"
               style={{
                 backgroundColor:
@@ -163,7 +179,7 @@ export default function LeaderboardPage() {
           {(["weekly", "all_time"] as Period[]).map((p) => (
             <button
               key={p}
-              onClick={() => setPeriod(p)}
+              onClick={() => handlePeriodChange(p)}
               className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors"
               style={{
                 backgroundColor:

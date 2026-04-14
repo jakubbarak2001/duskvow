@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useUserStore } from "@/stores/userStore";
 
 interface StreakFlameProps {
@@ -33,16 +33,18 @@ export function StreakFlame({
 
   const streakAnimatedFor = useUserStore((s) => s.streakAnimatedFor);
   const markStreakAnimated = useUserStore((s) => s.markStreakAnimated);
-  const [igniting, setIgniting] = useState(false);
+
+  // Derive ignite state directly from the store — avoids setState-in-effect.
+  // The store flip (900ms later) re-renders and ends the animation.
+  const igniting = isBurning && streakAnimatedFor !== today;
 
   useEffect(() => {
-    if (!isBurning) return;
-    if (streakAnimatedFor === today) return;
-    setIgniting(true);
-    markStreakAnimated(today);
-    const t = setTimeout(() => setIgniting(false), 900);
+    if (!igniting) return;
+    // Delay the store write so the ignite class stays active for the full
+    // animation window; cleanup clears the pending write on unmount/change.
+    const t = setTimeout(() => markStreakAnimated(today), 900);
     return () => clearTimeout(t);
-  }, [isBurning, streakAnimatedFor, today, markStreakAnimated]);
+  }, [igniting, today, markStreakAnimated]);
 
   const tooltip = isBurning
     ? streakMultiplier && streakMultiplier > 1

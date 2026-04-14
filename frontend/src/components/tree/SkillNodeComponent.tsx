@@ -47,6 +47,10 @@ export function SkillNodeComponent({ data, selected }: NodeProps) {
   const glyph = (
     <>
       {!imgFailed && (
+        // Plain <img> is intentional: these are tiny (88/120px) decorative
+        // icons with a rune fallback — next/image's optimization pipeline
+        // would add overhead without a meaningful LCP win.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={iconPath}
           alt=""

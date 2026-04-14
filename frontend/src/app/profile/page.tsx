@@ -8,7 +8,6 @@ import { useProfile } from "@/hooks/useProfile";
 import { api } from "@/lib/api";
 import { xpForLevel, nextTitleInfo } from "@/lib/levels";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import type {
   Achievement,
   InventoryItem,
@@ -50,15 +49,13 @@ const STAT_ACCENTS: Record<string, string> = {
 
 export default function ProfilePage() {
   const { user, session, loading } = useUser();
-  const { profile, profileLoading } = useProfile();
+  const { profile } = useProfile();
   const router = useRouter();
-  const { showAchievements: _showAchievements } = useAchievementToast();
 
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [unlocks, setUnlocks] = useState<LevelUnlock[]>([]);
   const [stats, setStats] = useState<ProfileStats | null>(null);
-  const [dataLoading, setDataLoading] = useState(true);
   const [usingItem, setUsingItem] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,7 +79,6 @@ export default function ProfilePage() {
         setUnlocks(unlocksRes.value.data);
       if (statsRes.status === "fulfilled" && statsRes.value.data)
         setStats(statsRes.value.data);
-      setDataLoading(false);
     });
   }, [session]);
 
