@@ -160,7 +160,7 @@ export function GeneratingStep() {
         className="text-xs mt-2"
         style={{ color: "var(--text-muted)", fontStyle: "italic", position: "relative", zIndex: 1 }}
       >
-        This may take up to 30 seconds
+        This may take up to a minute
       </p>
     </div>
   );

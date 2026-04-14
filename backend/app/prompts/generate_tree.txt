@@ -7,38 +7,11 @@ User Context:
 - {{ question_id }}: {{ answer }}
 {% endfor %}
 
-Create a talent tree with 18-22 nodes organized into 6 horizontal tiers (rows). Return ONLY valid JSON matching this exact structure:
+Create a talent tree with 18-22 nodes organized into 6 horizontal tiers (rows). The JSON output schema is enforced — return `title`, `description`, `nodes`, and `daily_quests`.
 
-{
-  "title": "Short evocative tree title (e.g. 'Python Mastery', 'Iron Body')",
-  "description": "One sentence describing the journey",
-  "nodes": [
-    {
-      "id": "node_1",
-      "title": "Short action title (3-4 words max)",
-      "description": "Clear, specific description of what the user does to complete this node.",
-      "type": "action|habit|choice|keystone",
-      "tier": "common|uncommon|rare|epic|legendary|mythic",
-      "prerequisites": [],
-      "optional": false,
-      "xp_reward": 10,
-      "estimated_time": "30 minutes",
-      "position": { "x": 0, "y": 0 }
-    }
-  ],
-  "edges": [
-    { "from": "node_1", "to": "node_2" }
-  ],
-  "daily_quests": [
-    {
-      "id": "dq_1",
-      "title": "Short daily habit title (3-6 words)",
-      "description": "Clear description of what to do each day.",
-      "xp_reward": 15,
-      "estimated_minutes": 25
-    }
-  ]
-}
+Node fields: `id` (e.g. "node_1"), `title` (3-4 words), `description` (clear, specific action the user takes), `type` (one of: action | habit | choice | keystone), `tier` (one of: common | uncommon | rare | epic | legendary | mythic), `prerequisites` (list of node ids, max 2), `optional` (bool, usually false), `xp_reward` (int — see XP REWARDS below), `estimated_time` (e.g. "30 minutes"), `position` (always `{"x": 0, "y": 0}` — values are ignored).
+
+Daily quest fields: `id` (e.g. "dq_1"), `title`, `description`, `xp_reward`, and optionally `estimated_minutes` for timed activities.
 
 TREE STRUCTURE — FILL IN THIS TEMPLATE EXACTLY
 
@@ -46,13 +19,15 @@ The tree has exactly 6 tiers. A tier is a horizontal row of nodes the player
 can attempt at the same time. Total nodes: 18-22.
 
 TIER COMPOSITION (count and rarity per tier):
-- Tier 1 (Foundation): 2-3 nodes, all common, no prerequisites
-- Tier 2 (Trials):     3-4 nodes, all uncommon, each prereqs to 1-2 Tier 1 nodes
-- Tier 3 (Rites):      3-4 nodes, all rare,     each prereqs to 1-2 Tier 2 nodes
-- Tier 4 (Mastery):    3-4 nodes, all epic,     each prereqs to 1-2 Tier 3 nodes
+- Tier 1 (Foundation): 2-3 nodes, all common,    no prerequisites
+- Tier 2 (Trials):     3-4 nodes, all uncommon,  each prereqs to 1-2 Tier 1 nodes
+- Tier 3 (Rites):      3-4 nodes, all rare,      each prereqs to 1-2 Tier 2 nodes
+                       — include 1 convergence node that prereqs from TWO
+                         different Tier 2 siblings
+- Tier 4 (Mastery):    3-4 nodes, all epic,      each prereqs to 1-2 Tier 3 nodes
 - Tier 5 (Ascension):  2-3 nodes, all legendary, each prereqs to 1-2 Tier 4 nodes
 - Tier 6 (Capstone):   exactly 1 node, mythic, type = keystone,
-                       prereqs to 1-2 Tier 5 nodes
+                       prereqs from 1-2 Tier 5 nodes
 
 WHY THESE RULES MATTER (do not skip any of them):
 The player must always have 2+ available nodes to choose between at every
@@ -81,30 +56,6 @@ TYPE MIX (across the whole tree, not per tier):
 
 XP REWARDS (must match tier exactly):
 - common=10, uncommon=20, rare=35, epic=50, legendary=75, mythic=100
-
-EXAMPLE STRUCTURE (for a "Learn Guitar" goal — 19 nodes, 6 tiers):
-
-Tier 1 (common):     [Tune by Ear]  [Hold a Chord]
-Tier 2 (uncommon):   [Open Chords]  [Power Chords]  [Strumming Patterns]
-                     (each prereqs from one Tier 1 node)
-Tier 3 (rare):       [Barre Chords] [Pentatonic Scale] [Fingerpicking] [Reading Tabs]
-                     (each prereqs from one Tier 2 node;
-                      "Barre Chords" ALSO prereqs "Open Chords" — convergence)
-Tier 4 (epic):       [Lead Improv]  [Songwriting]  [Performance Stamina]
-                     (each prereqs from one Tier 3 node)
-Tier 5 (legendary):  [Recording a Demo]  [Live Set Practice]
-                     (each prereqs from one Tier 4 node)
-Tier 6 (mythic):     [The First Show] (keystone, prereqs from BOTH Tier 5 nodes)
-
-That's a 19-node tree, 6 tiers, every tier has at least 2 nodes except the
-Capstone, every parent has at least 2 children, and there is one convergence
-node in Tier 3. The player always has multiple unlocked options at every step.
-
-Generate YOUR tree following this exact template — same tier counts, same
-"every tier has 2+ nodes" rule, same convergence pattern. Adapt only the node
-TITLES and DESCRIPTIONS to the user's specific goal.
-
-Position values are ignored — set them all to {"x": 0, "y": 0}.
 
 DAILY QUEST RULES:
 - Generate 3-5 daily recurring tasks that support the goal

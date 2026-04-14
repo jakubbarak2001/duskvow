@@ -56,7 +56,16 @@ function invalidate(...prefixes: string[]) {
 async function request<T>(
   path: string,
   options: RequestInit = {},
+  timeoutMs?: number,
 ): Promise<ApiResponse<T>> {
+  // Optional client-side abort for long-running endpoints (e.g. tree
+  // generation). When set, gives us a distinct TIMEOUT error path instead
+  // of hanging indefinitely on a stuck backend.
+  const controller = timeoutMs ? new AbortController() : null;
+  const timeoutId = controller
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
@@ -65,8 +74,19 @@ async function request<T>(
         "Content-Type": "application/json",
         ...options.headers,
       },
+      signal: controller?.signal,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return {
+        data: null,
+        error: {
+          message:
+            "Generation is taking longer than expected. Please try again.",
+          code: "TIMEOUT",
+        },
+      };
+    }
     return {
       data: null,
       error: {
@@ -75,6 +95,8 @@ async function request<T>(
         code: "NETWORK_ERROR",
       },
     };
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 
   let json: Record<string, unknown>;
@@ -146,11 +168,20 @@ export const api = {
     token: string,
   ) => {
     invalidate("trees", "profile", "profile-stats");
-    return request<TreeGenerationResult>("/api/v1/trees/followup", {
-      method: "POST",
-      headers: authHeader(token),
-      body: JSON.stringify({ session_id: sessionId, answers }),
-    });
+    // 55s client timeout — 10s slack over the 45s backend ceiling
+    // (backend: ai_timeout_seconds in config.py). The slack covers
+    // Vercel edge + Next.js overhead so the backend's 504 wins the race
+    // most of the time; the client abort only fires if the backend
+    // itself is wedged.
+    return request<TreeGenerationResult>(
+      "/api/v1/trees/followup",
+      {
+        method: "POST",
+        headers: authHeader(token),
+        body: JSON.stringify({ session_id: sessionId, answers }),
+      },
+      55_000,
+    );
   },
 
   getGenerationStatus: (token: string) =>

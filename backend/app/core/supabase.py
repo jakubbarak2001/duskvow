@@ -436,7 +436,7 @@ async def save_generated_tree(
     Args:
         user_id: Owner's UUID.
         goal_prompt: Original user goal text.
-        ai_result: Dict from Gemini with title, description, nodes[], edges[].
+        ai_result: Dict from Gemini with title, description, nodes[], and daily_quests[].
 
     Returns:
         The saved tree dict with 'nodes' key.

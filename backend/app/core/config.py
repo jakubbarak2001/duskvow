@@ -47,10 +47,11 @@ class Settings(BaseSettings):
     free_tier_daily_generations: int = 2
 
     # AI
-    # 90s gives flash plenty of headroom (it usually finishes in 8-15s) and
-    # leaves a safety net in case Gemini has a slow day. 60s was too tight —
-    # it sat right at pro's p95 latency band.
-    ai_timeout_seconds: int = 90
+    # 45s ceiling with thinking disabled on 2.5 Flash. Flash typically
+    # finishes in 5-10s now; 45s is ~3x our p95 target (30s) so it catches
+    # real stalls without letting the user stare at a spinner for minutes.
+    # If you raise this, also bump the frontend client timeout in api.ts.
+    ai_timeout_seconds: int = 45
 
 
 settings = Settings()

@@ -3,7 +3,7 @@
 > **Purpose**: Decisions log + current state snapshot. Updated every session.
 > Coding standards, visual rules, and workflow are in CLAUDE.md (single source of truth).
 >
-> Last updated: 2026-04-11
+> Last updated: 2026-04-14
 
 ---
 
@@ -49,6 +49,18 @@
 
 [2026-04-11] DECISION: Streak milestone toasts reuse AchievementToast with ember variant — REASON: Avoids a separate component. The queue system in AchievementProvider handles both achievement and streak milestone toasts sequentially.
 
+[2026-04-14] DECISION: Disable Gemini 2.5 Flash thinking mode for tree generation (`thinking_config=ThinkingConfig(thinking_budget=0)`) — REASON: Thinking on by default was adding 30-80s of internal reasoning tokens to a task that is "fill a strict schema," not a reasoning task. Verified empirically: long prompts (~600 words) were timing out at 90s in prod. With thinking disabled, the same prompt completes in ~11s. Do NOT set budget to -1 (dynamic is what broke) or 512 (2.5 Flash burns the whole budget unnecessarily). Only 0 or off.
+
+[2026-04-14] DECISION: Post-hoc structural validation in `_validate_tree` (exactly 1 mythic, ≥2 nodes in every Tier 2-5 row) — REASON: Insurance policy for running 2.5 Flash without thinking. The model could theoretically miscount tiers without its reasoning budget; the validator catches violations and raises 502 so the retry path in `generate_tree` picks them up. Defense-in-depth alongside the prompt rules, not a replacement.
+
+[2026-04-14] DECISION: `generate_tree` retries ONCE on 502 OR 504 (not just 504) with `temperature=0.5` — REASON: Real post-thinking-disable flakiness is malformed/structurally-invalid trees (caught as 502 by `_validate_tree`), not timeouts. A 504-only retry papers over almost nothing. Two retries compound latency so we cap at one. Non-502/504 errors (auth, network, rate limit) re-raise immediately.
+
+[2026-04-14] DECISION: Removed `edges` from the AI schema and prompt entirely — REASON: `save_generated_tree` never read `ai_result["edges"]` — React Flow derives edges from `node.prerequisites` in `TreeCanvas.tsx:207-220`. The `edges` field was dead weight, AND the prompt said `{"from","to"}` while the schema expected `{"source","target"}` — a silent mismatch that was costing output tokens and confusing the model. One cleanup fixed both.
+
+[2026-04-14] DECISION: Structured JSON logging for every Gemini call (`gemini_call` event with `model`, `elapsed_ms`, `prompt_chars`, `status`) via stdlib `logging` — REASON: Plain-text `elapsed_ms=8123` makes p50 eyeballable but p95 impossible without shell-fu. JSON lets us `jq '.elapsed_ms' | sort -n` directly from Railway log export. This is the measurement tool that will tell us whether we actually hit the "p95 < 30s" target in prod.
+
+[2026-04-14] DECISION: `ai_timeout_seconds` 90 → 45; frontend client timeout 55s in `api.ts submitFollowUp` — REASON: With thinking disabled, 45s is ~3x our p95 target so it catches real stalls without making users stare at a spinner for 1.5 minutes. The 55s / 45s gap (10s slack) ensures the backend's 504 usually wins the race over the client's abort — Vercel edge + Next.js overhead eats most of that gap. On client abort, `request()` returns a distinct `TIMEOUT` error code with a user-friendly message instead of the stale `NETWORK_ERROR` ("check your connection") which was wrong for the timeout case.
+
 ---
 
 ## CURRENT STATE
@@ -87,6 +99,14 @@
 3. Sprint G — Hearth Page + Ember Economy (ember buffs, journal → XP, loot spending)
 
 ### File Change Log (Current Session)
+
+**Session: 2026-04-14 (Tree generation latency fix — thinking mode off)**
+- `backend/app/services/gemini.py` — `thinking_config=ThinkingConfig(thinking_budget=0)` on `_quality_config`; removed `_AIEdge` class and `edges` field; added structural validation in `_validate_tree` (mythic count, Tier 2-5 cardinality); added 502/504 retry in `generate_tree` with lower temperature; structured `gemini_call` logging in `_call`; added `logging`/`time` imports and module logger
+- `backend/app/prompts/generate_tree.txt` — compressed 118 → 68 lines: dropped the full JSON shape example (source of the `from`/`to` vs `source`/`target` mismatch) and the guitar example; KEPT rules 1-5 and "WHY THESE RULES MATTER" verbatim (load-bearing constraints); added explicit field list in intro since schema example is gone
+- `backend/app/core/config.py` — `ai_timeout_seconds: 90 → 45`
+- `backend/app/core/supabase.py` — `save_generated_tree` docstring no longer references `edges[]`
+- `frontend/src/lib/api.ts` — `request<T>()` gains optional `timeoutMs`: `AbortController` + cleared `setTimeout`, `DOMException AbortError → TIMEOUT` error code with distinct user message; `submitFollowUp` passes `55_000`
+- `frontend/src/components/tree-wizard/GeneratingStep.tsx` — "up to 30 seconds" → "up to a minute"
 
 **Session: 2026-04-11 (Sprint D — Progression & Unlocks)**
 - `supabase/migrations/20260413_progression_system.sql` — hero_inventory, hero_achievements tables + profile columns + RPCs
