@@ -98,6 +98,10 @@
 html {
   background-color: var(--bg-abyss);
   color: var(--text-primary);
+  /* Global safety net — nothing should ever produce a horizontal scrollbar.
+     Any element that needs to exceed viewport width must clip or scroll
+     inside its own container. */
+  overflow-x: hidden;
 }
 
 body {
@@ -106,6 +110,7 @@ body {
   font-family: var(--font-body), "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -1893,4 +1898,243 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: uppercase;
   letter-spacing: 0.25em;
   color: var(--text-primary);
+}
+
+/* ============================================================
+   TREE VIEW SHELL — dynamic viewport height (iOS URL bar aware)
+   Uses 100dvh where supported, falls back to 100vh everywhere else.
+   ============================================================ */
+
+.tree-view-shell {
+  height: 100vh;
+  min-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .tree-view-shell {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
+/* ============================================================
+   MOBILE NAVBAR — hamburger overlay (M1)
+   Desktop layout (≥769px) is untouched; these rules only apply below.
+   ============================================================ */
+
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(224, 216, 200, 0.15);
+  border-radius: 4px;
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.mobile-nav-toggle:hover,
+.mobile-nav-toggle:focus-visible {
+  color: var(--accent-gold);
+  border-color: rgba(255, 215, 0, 0.35);
+  outline: none;
+}
+.mobile-nav-toggle-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.mobile-nav-toggle-bars span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background-color: currentColor;
+  border-radius: 1px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.mobile-nav-toggle[aria-expanded="true"] .mobile-nav-toggle-bars span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.mobile-nav-toggle[aria-expanded="true"] .mobile-nav-toggle-bars span:nth-child(2) {
+  opacity: 0;
+}
+.mobile-nav-toggle[aria-expanded="true"] .mobile-nav-toggle-bars span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: rgba(10, 10, 18, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: mobile-nav-fade 0.2s ease-out;
+}
+@keyframes mobile-nav-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.mobile-nav-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--bg-shadow);
+  border-bottom: 1px solid rgba(200, 75, 17, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 215, 0, 0.05);
+  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  animation: mobile-nav-slide 0.22s ease-out;
+}
+@keyframes mobile-nav-slide {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 0.5rem;
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-muted);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.mobile-nav-link:last-of-type {
+  border-bottom: none;
+}
+.mobile-nav-link:hover,
+.mobile-nav-link:focus-visible {
+  color: var(--accent-gold);
+  background-color: rgba(255, 215, 0, 0.04);
+  outline: none;
+}
+.mobile-nav-link-signout {
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   MOBILE: TreeHeader (M2) + StatsBar (M3) + Navbar (M1)
+   Single media block for cohesion.
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* ── Navbar: hide desktop links, show hamburger ── */
+  .navbar-desktop-links {
+    display: none !important;
+  }
+  .mobile-nav-toggle {
+    display: inline-flex;
+  }
+  .mobile-nav-overlay {
+    display: block;
+  }
+
+  /* ── TreeHeader: compact manuscript block ── */
+  .tree-header {
+    padding: 0.75rem 1rem 0.55rem;
+  }
+  .tree-header-back {
+    position: static;
+    align-self: flex-start;
+    font-size: 0.6rem;
+    padding: 0.4rem 0.7rem;
+    margin-bottom: 0.55rem;
+  }
+  .tree-header-inner {
+    max-width: 100%;
+  }
+  .tree-header-eyebrow {
+    font-size: 0.55rem;
+    letter-spacing: 0.32em;
+    margin-bottom: 0.3rem;
+  }
+  .tree-header-title {
+    font-size: clamp(1rem, 4.4vw, 1.35rem);
+    letter-spacing: 0.02em;
+    /* Clamp any runaway titles to two lines on very narrow viewports. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-shadow: 0 0 14px rgba(255, 215, 0, 0.24), 0 1px 4px rgba(0, 0, 0, 0.7);
+  }
+  /* Description lives in the node detail panel anyway; drop it to reclaim ~50px. */
+  .tree-header-subtitle {
+    display: none;
+  }
+  .tree-header-divider {
+    margin: 0.45rem 0 0.4rem;
+    width: 70%;
+  }
+  .tree-header-pills {
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .tree-header-pill {
+    min-width: 58px;
+  }
+  .tree-header-pill-value {
+    font-size: 1.05rem;
+  }
+  .tree-header-pill-value-sep {
+    font-size: 0.9rem;
+  }
+  .tree-header-pill-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
+    margin-top: 0.22rem;
+  }
+  /* Separators look cluttered at narrow widths — drop them. */
+  .tree-header-pill-sep {
+    display: none;
+  }
+
+  /* ── StatsBar: slim row on /tree only ── */
+  .stats-bar-mobile-wrap {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .stats-bar-mobile-wrap .stats-bar-cell {
+    padding: 0.55rem 0.75rem !important;
+  }
+  .stats-bar-mobile-wrap .dash-stat-xp,
+  .stats-bar-mobile-wrap .dash-stat-streak {
+    font-size: 1.65rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+  .stats-bar-mobile-wrap .stats-bar-title {
+    font-size: 0.55rem !important;
+    letter-spacing: 0.18em !important;
+    margin-bottom: 0.35rem !important;
+  }
+  .stats-bar-mobile-wrap .stats-bar-xp-track {
+    width: 100% !important;
+    max-width: 160px;
+  }
+  .stats-bar-mobile-wrap .stats-bar-xp-caption {
+    display: none !important;
+  }
+  .stats-bar-mobile-wrap .stats-bar-streak-flame {
+    width: 1.6rem !important;
+    height: 2.1rem !important;
+  }
+  .stats-bar-mobile-wrap .stats-bar-separator {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
 }

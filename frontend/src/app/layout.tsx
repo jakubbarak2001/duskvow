@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Crimson_Pro } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
@@ -41,6 +41,13 @@ export const metadata: Metadata = {
   appleWebApp: {
     title: "Duskvow",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0A0A12",
 };
 
 export default function RootLayout({

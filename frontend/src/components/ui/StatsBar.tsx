@@ -35,21 +35,22 @@ export function StatsBar({
   const xpProgress = xpNeeded > 0 ? Math.min(1, Math.max(0, xpIntoLevel / xpNeeded)) : 1;
   const xpToNext = Math.max(0, nextLevelXp - totalXp);
 
-  // XP pop animation — track previous XP to detect gains
+  // XP pop animation — track previous XP to detect gains.
+  // A timestamp-keyed pop (not a counter) forces React to remount the span
+  // on each gain, replaying the CSS animation even when successive deltas
+  // happen to repeat, without needing a functional-updater setState.
   const prevXpRef = useRef(totalXp);
-  const [xpDelta, setXpDelta] = useState<number | null>(null);
+  const [pop, setPop] = useState<{ key: number; delta: number } | null>(null);
   const [barFlash, setBarFlash] = useState(false);
-  const popKey = useRef(0);
 
   useEffect(() => {
     const prev = prevXpRef.current;
     if (totalXp > prev && prev > 0) {
       const gained = totalXp - prev;
-      popKey.current += 1;
-      setXpDelta(gained);
+      setPop({ key: Date.now(), delta: gained });
       setBarFlash(true);
       const timer = setTimeout(() => {
-        setXpDelta(null);
+        setPop(null);
         setBarFlash(false);
       }, 1200);
       prevXpRef.current = totalXp;
@@ -69,7 +70,7 @@ export function StatsBar({
     >
       <div className="flex items-stretch">
         {/* Level + Title */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-6 relative">
+        <div className="stats-bar-cell flex-1 flex flex-col items-center justify-center px-6 py-6 relative">
           <div
             className="text-5xl font-bold mb-1 dash-stat-xp"
             style={{
@@ -81,14 +82,14 @@ export function StatsBar({
             {level}
           </div>
           <div
-            className="text-xs uppercase mb-3"
+            className="stats-bar-title text-xs uppercase mb-3"
             style={{ color: "var(--text-secondary)", letterSpacing: "0.2em", fontFamily: "var(--font-heading)" }}
           >
             {title}
           </div>
           {/* XP progress to next level */}
           <div
-            className={`h-1 rounded-full overflow-hidden w-24${barFlash ? " xp-bar-flash" : ""}`}
+            className={`stats-bar-xp-track h-1 rounded-full overflow-hidden w-24${barFlash ? " xp-bar-flash" : ""}`}
             style={{ backgroundColor: "var(--bg-highlight)" }}
           >
             <div
@@ -102,23 +103,23 @@ export function StatsBar({
             />
           </div>
           <div
-            className="mt-1"
+            className="stats-bar-xp-caption mt-1"
             style={{ color: "var(--text-muted)", fontSize: "0.6rem", letterSpacing: "0.1em" }}
           >
             {xpToNext} XP to next level
           </div>
 
           {/* Floating +XP pop */}
-          {xpDelta !== null && (
-            <span key={popKey.current} className="xp-pop" style={{ top: "0.5rem", right: "1rem" }}>
-              +{xpDelta} XP
+          {pop !== null && (
+            <span key={pop.key} className="xp-pop" style={{ top: "0.5rem", right: "1rem" }}>
+              +{pop.delta} XP
             </span>
           )}
         </div>
 
         {/* Separator */}
         <div
-          className="w-px my-4"
+          className="stats-bar-separator w-px my-4"
           style={{ backgroundColor: "var(--border-default)" }}
         />
 
@@ -135,7 +136,7 @@ export function StatsBar({
                 : `${currentStreak}-day streak \u2014 active today`;
           return (
             <div
-              className="flex-1 flex items-center justify-center px-6 py-6"
+              className="stats-bar-cell flex-1 flex items-center justify-center px-6 py-6"
               title={tooltip}
               aria-label={tooltip}
             >
@@ -156,7 +157,9 @@ export function StatsBar({
                 </span>
                 <svg
                   className={
-                    isBurning ? "streak-flame-icon streak-flame-burning" : "streak-flame-icon streak-flame-cold"
+                    isBurning
+                      ? "stats-bar-streak-flame streak-flame-icon streak-flame-burning"
+                      : "stats-bar-streak-flame streak-flame-icon streak-flame-cold"
                   }
                   viewBox="0 0 24 32"
                   aria-hidden="true"
@@ -185,7 +188,7 @@ export function StatsBar({
             />
 
             {/* Nodes */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 py-6">
+            <div className="stats-bar-cell flex-1 flex flex-col items-center justify-center px-6 py-6">
               <div
                 className="text-5xl font-bold mb-1 dash-stat-nodes"
                 style={{ fontFamily: "var(--font-heading)" }}

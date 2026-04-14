@@ -130,60 +130,58 @@ export function TreeViewPage() {
     storeSetLevel(event.newLevel, event.newTitle);
   }, [storeSetLevel]);
 
-  const handleQuestToggle = useCallback(
-    async (quest: DailyQuest) => {
-      if (!session?.access_token) return;
-      const token = session.access_token;
+  // React Compiler auto-memoizes; no useCallback needed.
+  const handleQuestToggle = async (quest: DailyQuest) => {
+    if (!session?.access_token) return;
+    const token = session.access_token;
 
-      // Optimistic update
-      setTreeQuests((prev) =>
-        prev.map((q) =>
-          q.id === quest.id ? { ...q, completed_today: !q.completed_today } : q,
-        ),
-      );
+    // Optimistic update
+    setTreeQuests((prev) =>
+      prev.map((q) =>
+        q.id === quest.id ? { ...q, completed_today: !q.completed_today } : q,
+      ),
+    );
 
-      if (!quest.completed_today) {
-        const res = await api.completeQuest(quest.id, token);
-        if (res.error) {
-          setTreeQuests((prev) =>
-            prev.map((q) =>
-              q.id === quest.id ? { ...q, completed_today: false } : q,
-            ),
-          );
-        } else if (res.data) {
-          updateFromCompletion({
-            total_xp: res.data.total_xp,
-            new_level: res.data.new_level,
-            new_title: res.data.new_title,
+    if (!quest.completed_today) {
+      const res = await api.completeQuest(quest.id, token);
+      if (res.error) {
+        setTreeQuests((prev) =>
+          prev.map((q) =>
+            q.id === quest.id ? { ...q, completed_today: false } : q,
+          ),
+        );
+      } else if (res.data) {
+        updateFromCompletion({
+          total_xp: res.data.total_xp,
+          new_level: res.data.new_level,
+          new_title: res.data.new_title,
+        });
+        if (res.data.leveled_up) {
+          setLevelUpEvent({
+            newLevel: res.data.new_level,
+            previousLevel: res.data.previous_level,
+            newTitle: res.data.new_title,
+            xpEarned: res.data.xp_earned,
           });
-          if (res.data.leveled_up) {
-            setLevelUpEvent({
-              newLevel: res.data.new_level,
-              previousLevel: res.data.previous_level,
-              newTitle: res.data.new_title,
-              xpEarned: res.data.xp_earned,
-            });
-          }
-          if (res.data.new_achievements?.length) {
-            showAchievements(res.data.new_achievements);
-          }
-          if (res.data.streak_milestone) {
-            showStreakMilestone(res.data.streak_milestone);
-          }
         }
-      } else {
-        const res = await api.uncompleteQuest(quest.id, token);
-        if (res.error) {
-          setTreeQuests((prev) =>
-            prev.map((q) =>
-              q.id === quest.id ? { ...q, completed_today: true } : q,
-            ),
-          );
+        if (res.data.new_achievements?.length) {
+          showAchievements(res.data.new_achievements);
+        }
+        if (res.data.streak_milestone) {
+          showStreakMilestone(res.data.streak_milestone);
         }
       }
-    },
-    [session],
-  );
+    } else {
+      const res = await api.uncompleteQuest(quest.id, token);
+      if (res.error) {
+        setTreeQuests((prev) =>
+          prev.map((q) =>
+            q.id === quest.id ? { ...q, completed_today: true } : q,
+          ),
+        );
+      }
+    }
+  };
 
   if (authLoading || (!user && authLoading)) {
     return (
@@ -202,8 +200,8 @@ export function TreeViewPage() {
 
   return (
     <div
-      className="flex flex-col"
-      style={{ backgroundColor: "var(--bg-abyss)", height: "100vh" }}
+      className="tree-view-shell flex flex-col"
+      style={{ backgroundColor: "var(--bg-abyss)" }}
     >
       <Navbar />
 
@@ -213,7 +211,7 @@ export function TreeViewPage() {
       {/* Profile stats row — level + streak (Nodes column omitted; TreeHeader owns that metric) */}
       {tree && profile && (
         <div
-          className="px-5 pb-3 shrink-0"
+          className="stats-bar-mobile-wrap px-5 pb-3 shrink-0"
           style={{
             backgroundColor: "var(--bg-shadow)",
             borderBottom: "1px solid var(--border-default)",
@@ -231,7 +229,7 @@ export function TreeViewPage() {
       )}
 
       {/* Canvas + detail panel */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden min-h-0">
         {loadingTree ? (
           <div
             className="flex items-center justify-center h-full"
