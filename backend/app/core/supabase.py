@@ -516,19 +516,25 @@ async def save_generated_tree(
     raw_quests: list[dict] = ai_result.get("daily_quests", [])
     daily_quests: list[dict[str, Any]] = []
     if raw_quests:
-        quest_rows = []
-        for i, q in enumerate(raw_quests):
-            row: dict[str, Any] = {
+        # PostgREST PGRST102: every row in a bulk insert must have the
+        # EXACT same set of keys. Previously we added `estimated_minutes`
+        # only when truthy, so a batch like [quest with minutes, quest
+        # without] would 400 the entire insert with "All object keys must
+        # match" — orphaning the tree + nodes that had already been
+        # written in the steps above. Always include the key; let NULL
+        # represent "no time estimate" (the column is INT NULL).
+        quest_rows = [
+            {
                 "tree_id": tree_id,
                 "user_id": user_id,
                 "title": q["title"],
                 "description": q["description"],
                 "xp_reward": q.get("xp_reward", 15),
                 "sort_order": i,
+                "estimated_minutes": q.get("estimated_minutes"),
             }
-            if q.get("estimated_minutes"):
-                row["estimated_minutes"] = q["estimated_minutes"]
-            quest_rows.append(row)
+            for i, q in enumerate(raw_quests)
+        ]
         daily_quests = await _bulk_insert("daily_quests", quest_rows)
 
     return {**tree, "nodes": nodes, "daily_quests": daily_quests}
