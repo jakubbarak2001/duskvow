@@ -28,6 +28,28 @@ def _url(table: str) -> str:
     return f"{settings.supabase_url}/rest/v1/{table}"
 
 
+def _check(res: httpx.Response) -> None:
+    """Like res.raise_for_status() but includes the PostgREST response body.
+
+    PostgREST encodes the actionable diagnostic (missing column, FK
+    violation, RLS denial, null constraint, type mismatch) in the JSON
+    response body. Plain raise_for_status() discards it, leaving only
+    "400 Bad Request" + URL in the traceback — unactionable in prod.
+    This wrapper re-raises with the body preserved in the exception
+    message, which the global handler in main.py then logs via
+    exc_info=True. Body is truncated to 2000 chars to keep log lines
+    bounded on worst-case responses.
+    """
+    if res.is_success:
+        return
+    body = (res.text or "")[:2000]
+    raise httpx.HTTPStatusError(
+        f"supabase {res.status_code} {res.reason_phrase}: {body}",
+        request=res.request,
+        response=res,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Generic helpers
 # ---------------------------------------------------------------------------
@@ -35,21 +57,21 @@ def _url(table: str) -> str:
 async def _get(table: str, params: dict[str, str]) -> list[dict[str, Any]]:
     """SELECT rows matching params."""
     res = await _client.get(_url(table), headers=_SERVICE_HEADERS, params=params)
-    res.raise_for_status()
+    _check(res)
     return res.json()
 
 
 async def _insert_one(table: str, data: dict[str, Any]) -> dict[str, Any]:
     """INSERT one row, returning it."""
     res = await _client.post(_url(table), headers=_SERVICE_HEADERS, json=data)
-    res.raise_for_status()
+    _check(res)
     return res.json()[0]
 
 
 async def _bulk_insert(table: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """INSERT multiple rows, returning them all."""
     res = await _client.post(_url(table), headers=_SERVICE_HEADERS, json=rows)
-    res.raise_for_status()
+    _check(res)
     return res.json()
 
 
@@ -65,7 +87,7 @@ async def _patch(
         params=params,
         json=data,
     )
-    res.raise_for_status()
+    _check(res)
     return res.json()
 
 
@@ -87,7 +109,7 @@ async def _count_fast(table: str, params: dict[str, str]) -> int:
         headers={**_SERVICE_HEADERS, "Prefer": "count=exact"},
         params={**params, "select": "id"},
     )
-    res.raise_for_status()
+    _check(res)
     # content-range header: "0-N/total" or "*/total" if no rows
     content_range = res.headers.get("content-range", "*/0")
     return int(content_range.split("/")[-1])
@@ -100,7 +122,7 @@ async def _delete(table: str, params: dict[str, str]) -> None:
         headers={**_SERVICE_HEADERS, "Prefer": "return=minimal"},
         params=params,
     )
-    res.raise_for_status()
+    _check(res)
 
 
 # ---------------------------------------------------------------------------
