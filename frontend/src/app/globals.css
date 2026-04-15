@@ -359,6 +359,57 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.6), 0 0 16px rgba(255, 215, 0, 0.2);
 }
 
+/* Dashboard mobile menu hero summary — shown inside the hamburger panel
+   on mobile only (the overlay panel itself is gated by .mobile-nav-overlay).
+   No desktop-side rules needed: the parent .mobile-nav-panel is hidden
+   above 768px, so this block never paints on desktop. */
+.dash-mobile-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-muted);
+  margin-bottom: 0.5rem;
+}
+.dash-mobile-hero-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.dash-mobile-hero-name-text {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+.dash-mobile-hero-title-text {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.dash-mobile-hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.dash-mobile-hero-level {
+  font-family: var(--font-heading), "Cinzel", serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
+.dash-mobile-hero-sep {
+  color: var(--accent-ember);
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
+
 /* ============================================================
    AUTH PAGE STYLES
    ============================================================ */
@@ -2136,6 +2187,71 @@ h1, h2, h3, h4, h5, h6 {
   .stats-bar-mobile-wrap .stats-bar-separator {
     margin-top: 0.5rem !important;
     margin-bottom: 0.5rem !important;
+  }
+
+  /* ── Dashboard header: hide desktop hero cluster + sign-out, slim padding ── */
+  .dash-header {
+    padding: 0.85rem 1rem !important;
+  }
+  .dash-header-desktop {
+    display: none !important;
+  }
+
+  /* ── Resume strip empty state: center the "Forge a Vow" CTA ──
+     Parent (.resume-strip-empty) already centers via align-items, but
+     .resume-strip-cta has align-self: flex-start which wins on desktop.
+     Override here so the empty-state CTA centers below 768px only. */
+  .resume-strip-empty .resume-strip-cta {
+    align-self: center;
+  }
+
+  /* ── Tree wizard step indicator: stack vertically with breathing room ──
+     Desktop: row, justify-between. At ~400px wide the indicator + the
+     "X of Y today" generation count collide; stacking them and shrinking
+     the indicator gives the III THE WEAVING label space to breathe. */
+  .wiz-stepbar {
+    flex-direction: column;
+    align-items: center !important;
+    gap: 1rem;
+    margin-bottom: 2rem !important;
+  }
+  .wiz-stepbar-count {
+    order: -1; /* generation count above the indicator on mobile */
+  }
+  /* Trim per-cell width and connector lines so the indicator fits a
+     360–410px viewport with room to spare for the III THE WEAVING label. */
+  .wiz-stepbar-cell {
+    min-width: 56px !important;
+  }
+  .wiz-stepbar-numeral {
+    font-size: 1.45rem !important;
+  }
+  .wiz-stepbar-label {
+    font-size: 0.45rem !important;
+    letter-spacing: 0.25em !important;
+  }
+  .wiz-stepbar-line {
+    width: 28px !important;
+    margin-left: 0.35rem !important;
+    margin-right: 0.35rem !important;
+    margin-top: 0.7rem !important;
+  }
+
+  /* ── Tree wizard intro block: center heading + lede on mobile ──
+     Only the .wiz-step-intro wrapper centers; the form/question grid below
+     keeps its left-aligned layout. The body paragraph has its own inline
+     max-width which we override to a centered max-width. */
+  .wiz-main {
+    padding-top: 2.5rem !important;
+    padding-bottom: 3rem !important;
+  }
+  .wiz-step-intro {
+    text-align: center;
+  }
+  .wiz-step-intro .wiz-step-body {
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }
 

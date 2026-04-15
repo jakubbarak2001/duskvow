@@ -13,6 +13,18 @@ import { StreakFlame } from "@/components/ui/StreakFlame";
 import { ResumeStrip } from "@/components/ui/ResumeStrip";
 import type { DungeonRun, TalentTree, DailyQuest } from "@/types";
 
+// Dashboard mobile menu links. Mirrors the shared Navbar's authed links so
+// users get the same navigation surface from either entry point. "Hub" is
+// included even though the user is already here — it's a no-op tap, but
+// consistency beats cleverness.
+const DASH_NAV_LINKS = [
+  { href: "/dashboard", label: "Hub" },
+  { href: "/vows", label: "Vow Chamber" },
+  { href: "/tree/new", label: "New Vow" },
+  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/profile", label: "Profile" },
+] as const;
+
 
 export default function DashboardPage() {
   const { user, session, loading } = useUser();
@@ -27,6 +39,7 @@ export default function DashboardPage() {
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [showNaming, setShowNaming] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -40,6 +53,27 @@ export default function DashboardPage() {
       setShowNaming(true);
     }
   }, [profile]);
+
+  // Lock body scroll while the mobile menu is open. Captures the previous
+  // overflow value so we don't stomp page-specific overflow rules.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
+  // Close menu on Escape — small a11y affordance.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -166,6 +200,7 @@ export default function DashboardPage() {
 
       {/* ── Hub Header ── */}
       <header
+        className="dash-header"
         style={{
           position: "relative",
           zIndex: 2,
@@ -181,6 +216,7 @@ export default function DashboardPage() {
         {/* Logo */}
         <Link
           href="/dashboard"
+          onClick={() => setMenuOpen(false)}
           style={{
             fontFamily: "var(--font-heading)",
             fontSize: "1.3rem",
@@ -194,9 +230,10 @@ export default function DashboardPage() {
           <span style={{ color: "var(--logo-ember)" }}>vow</span>
         </Link>
 
-        {/* Hero Level + Streak */}
+        {/* Hero Level + Streak — desktop cluster, hidden below 768px via .dash-header-desktop */}
         {profile && (
           <div
+            className="dash-header-desktop"
             style={{
               display: "flex",
               alignItems: "flex-start",
@@ -298,10 +335,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Sign out */}
+        {/* Sign out — desktop only, hidden via .dash-header-desktop on mobile */}
         <button
           onClick={handleSignOut}
           disabled={signingOut}
+          className="dash-header-desktop"
           style={{
             fontFamily: "var(--font-heading)",
             fontSize: "0.6rem",
@@ -325,7 +363,86 @@ export default function DashboardPage() {
         >
           {signingOut ? "Leaving…" : "Sign Out"}
         </button>
+
+        {/* Mobile hamburger — visibility gated by CSS (display: none ≥769px). */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+          aria-controls="dash-mobile-nav-panel"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          className="mobile-nav-toggle"
+        >
+          <span className="mobile-nav-toggle-bars" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+        </button>
       </header>
+
+      {/* Mobile overlay panel — outside the header so it can full-screen.
+          CSS (.mobile-nav-overlay) gates visibility above 768px. */}
+      {menuOpen && (
+        <div
+          className="mobile-nav-overlay"
+          onClick={() => setMenuOpen(false)}
+          role="presentation"
+        >
+          <div
+            id="dash-mobile-nav-panel"
+            className="mobile-nav-panel"
+            onClick={(e) => e.stopPropagation()}
+            role="menu"
+          >
+            {/* Hero summary at the top of the panel — keeps name/level/streak
+                accessible even though the desktop cluster is hidden on mobile. */}
+            {profile && (
+              <div className="dash-mobile-hero">
+                {profile.hero_name && (
+                  <div className="dash-mobile-hero-name">
+                    <span className="dash-mobile-hero-name-text">{profile.hero_name}</span>
+                    {profile.hero_title && (
+                      <span className="dash-mobile-hero-title-text">{profile.hero_title}</span>
+                    )}
+                  </div>
+                )}
+                <div className="dash-mobile-hero-stats">
+                  <span className="dash-mobile-hero-level">Lv.{profile.hero_level}</span>
+                  <span className="dash-mobile-hero-sep" aria-hidden="true">◆</span>
+                  <StreakFlame
+                    currentStreak={profile.current_streak}
+                    lastActivityDate={profile.last_activity_date}
+                    streakMultiplier={profile.streak_multiplier}
+                  />
+                </div>
+              </div>
+            )}
+
+            {DASH_NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="mobile-nav-link"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              role="menuitem"
+              className="mobile-nav-link mobile-nav-link-signout"
+              style={{ textAlign: "left", background: "transparent", width: "100%" }}
+            >
+              {signingOut ? "Leaving…" : "Sign out"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Main Hub Arena ── */}
       <main

@@ -63,43 +63,50 @@ export function FollowUpQuestionsStep({
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Eyebrow label */}
-      <p
-        style={{
-          fontFamily: "var(--font-heading), 'Cinzel', serif",
-          fontSize: "0.7rem",
-          letterSpacing: "0.35em",
-          textTransform: "uppercase",
-          color: "var(--accent-ember)",
-          marginBottom: "1.25rem",
-        }}
-      >
-        ◆ &nbsp; Choose Your Path &nbsp; ◆
-      </p>
+      {/* Intro block — wrapped in .wiz-step-intro so mobile can center it
+          without affecting the question list below. */}
+      <div className="wiz-step-intro">
+        {/* Eyebrow label */}
+        <p
+          className="wiz-step-eyebrow"
+          style={{
+            fontFamily: "var(--font-heading), 'Cinzel', serif",
+            fontSize: "0.7rem",
+            letterSpacing: "0.35em",
+            textTransform: "uppercase",
+            color: "var(--accent-ember)",
+            marginBottom: "1.25rem",
+          }}
+        >
+          ◆ &nbsp; Choose Your Path &nbsp; ◆
+        </p>
 
-      <h2
-        style={{
-          fontFamily: "var(--font-heading), 'Cinzel', serif",
-          fontSize: "clamp(1.8rem, 4vw, 2.6rem)",
-          fontWeight: 900,
-          lineHeight: 1.15,
-          color: "var(--accent-gold)",
-          marginBottom: "0.75rem",
-        }}
-      >
-        Sharpen Your Vision
-      </h2>
-      <p
-        style={{
-          color: "var(--text-secondary)",
-          marginBottom: "3rem",
-          fontSize: "1rem",
-          lineHeight: 1.8,
-          fontStyle: "italic",
-        }}
-      >
-        Each answer shapes the branches of your tree. Choose wisely.
-      </p>
+        <h2
+          className="wiz-step-title"
+          style={{
+            fontFamily: "var(--font-heading), 'Cinzel', serif",
+            fontSize: "clamp(1.8rem, 4vw, 2.6rem)",
+            fontWeight: 900,
+            lineHeight: 1.15,
+            color: "var(--accent-gold)",
+            marginBottom: "0.75rem",
+          }}
+        >
+          Sharpen Your Vision
+        </h2>
+        <p
+          className="wiz-step-body"
+          style={{
+            color: "var(--text-secondary)",
+            marginBottom: "3rem",
+            fontSize: "1rem",
+            lineHeight: 1.8,
+            fontStyle: "italic",
+          }}
+        >
+          Each answer shapes the branches of your tree. Choose wisely.
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-10">
         {questions.map((q, idx) => {

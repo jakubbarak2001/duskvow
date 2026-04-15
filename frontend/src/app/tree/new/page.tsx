@@ -145,18 +145,21 @@ export default function TreeNewPage() {
 
       <Navbar />
 
-      <main className="max-w-3xl mx-auto px-4 py-16" style={{ position: "relative", zIndex: 2 }}>
+      <main className="wiz-main max-w-3xl mx-auto px-4 py-16" style={{ position: "relative", zIndex: 2 }}>
 
-        {/* Ornamental step indicator */}
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-start">
+        {/* Ornamental step indicator + generation count.
+            Desktop: row, justify-between. Mobile: stacked & centered with
+            extra breathing room — see .wiz-stepbar rules in globals.css. */}
+        <div className="wiz-stepbar flex items-center justify-between mb-10">
+          <div className="wiz-stepbar-track flex items-start">
             {STEP_META.map((s, i) => {
               const active = s.id === step;
               const done  = i < currentIndex;
               return (
-                <div key={s.id} className="flex items-start">
-                  <div className="flex flex-col items-center" style={{ minWidth: 64 }}>
+                <div key={s.id} className="wiz-stepbar-step flex items-start">
+                  <div className="wiz-stepbar-cell flex flex-col items-center" style={{ minWidth: 64 }}>
                     <span
+                      className="wiz-stepbar-numeral"
                       style={{
                         fontFamily: "var(--font-heading), 'Cinzel', serif",
                         fontSize: "1.75rem",
@@ -173,6 +176,7 @@ export default function TreeNewPage() {
                       {s.numeral}
                     </span>
                     <span
+                      className="wiz-stepbar-label"
                       style={{
                         fontFamily: "var(--font-heading), 'Cinzel', serif",
                         fontSize: "0.5rem",
@@ -193,6 +197,7 @@ export default function TreeNewPage() {
                   </div>
                   {i < 2 && (
                     <div
+                      className="wiz-stepbar-line"
                       style={{
                         width: 40,
                         height: 1,
@@ -212,7 +217,7 @@ export default function TreeNewPage() {
           </div>
 
           {genStatus && (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            <p className="wiz-stepbar-count text-xs" style={{ color: "var(--text-muted)" }}>
               <span
                 style={{
                   color:
