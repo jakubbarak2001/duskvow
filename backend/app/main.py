@@ -1,10 +1,15 @@
 """Duskvow FastAPI application entry point."""
 
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import router as api_v1_router
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Duskvow API",
@@ -23,6 +28,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Catch-all for unhandled exceptions.
+
+    Without this, Starlette's outer ServerErrorMiddleware returns a 500
+    BEFORE CORSMiddleware can attach CORS headers — browsers then surface
+    the failure as a misleading "CORS blocked" error and the real cause is
+    invisible. This handler runs INSIDE the middleware stack, so the
+    response gets CORS headers and the actual exception type reaches the
+    client console. The full traceback is logged server-side via exc_info.
+    """
+    logger.error(
+        "unhandled_exception",
+        exc_info=True,
+        extra={"path": request.url.path, "method": request.method},
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {type(exc).__name__}"},
+    )
+
 
 app.include_router(api_v1_router, prefix="/api/v1")
 

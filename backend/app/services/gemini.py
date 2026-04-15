@@ -219,7 +219,7 @@ class GeminiService:
         """
         t0 = time.perf_counter()
 
-        def _log(status_label: str) -> None:
+        def _log(status_label: str, **extra_fields: object) -> None:
             logger.info(
                 "gemini_call",
                 extra={
@@ -227,6 +227,7 @@ class GeminiService:
                     "elapsed_ms": int((time.perf_counter() - t0) * 1000),
                     "prompt_chars": len(prompt),
                     "status": status_label,
+                    **extra_fields,
                 },
             )
 
@@ -245,12 +246,31 @@ class GeminiService:
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 detail="AI generation timed out — please try again.",
             )
-        except Exception:
-            _log("error")
+        except Exception as exc:
+            _log("error", error_type=type(exc).__name__)
             raise
 
+        # Defensive: Gemini can return a successful response with text=None
+        # when finish_reason is MAX_TOKENS, SAFETY, RECITATION, or OTHER.
+        # Without this guard, _parse_json(None) would raise AttributeError
+        # on .strip() — an unhandled exception that becomes a raw 500.
+        # Raising 502 here lets generate_tree's retry path pick it up.
+        text = getattr(response, "text", None)
+        if not text:
+            finish_reason = "unknown"
+            try:
+                if response.candidates:
+                    finish_reason = str(response.candidates[0].finish_reason)
+            except Exception:
+                pass
+            _log("empty_response", finish_reason=finish_reason)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"AI returned empty response (finish_reason={finish_reason}).",
+            )
+
         _log("ok")
-        return _parse_json(response.text)
+        return _parse_json(text)
 
     async def generate_followup_questions(self, goal_prompt: str) -> dict:
         """Generate 2-3 clarifying follow-up questions for the user's goal.
