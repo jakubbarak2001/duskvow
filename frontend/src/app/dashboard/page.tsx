@@ -11,7 +11,7 @@ import { api } from "@/lib/api";
 import { HeroNamingModal } from "@/components/ui/HeroNamingModal";
 import { StreakFlame } from "@/components/ui/StreakFlame";
 import { ResumeStrip } from "@/components/ui/ResumeStrip";
-import type { DungeonRun, TalentTree, DailyQuest } from "@/types";
+import type { TalentTree, DailyQuest } from "@/types";
 
 // Dashboard mobile menu links. Mirrors the shared Navbar's authed links so
 // users get the same navigation surface from either entry point. "Hub" is
@@ -32,7 +32,6 @@ export default function DashboardPage() {
   const setProfile = useUserStore((s) => s.setProfile);
   const router = useRouter();
 
-  const [activeDungeon, setActiveDungeon] = useState<DungeonRun | null>(null);
   const [primaryTree, setPrimaryTree] = useState<TalentTree | null>(null);
   const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -80,12 +79,8 @@ export default function DashboardPage() {
     const token = session.access_token;
     Promise.allSettled([
       api.listTrees(token),
-      api.getActiveDungeon(token),
       api.getTodayQuests(token),
-    ]).then(async ([treesResult, dungeonResult, questsResult]) => {
-      if (dungeonResult.status === "fulfilled" && dungeonResult.value.data) {
-        setActiveDungeon(dungeonResult.value.data);
-      }
+    ]).then(async ([treesResult, questsResult]) => {
       if (questsResult.status === "fulfilled" && questsResult.value.data) {
         setDailyQuests(questsResult.value.data);
       }
@@ -505,16 +500,23 @@ export default function DashboardPage() {
 
           </Link>
 
-          {/* ── Door 2: The Dungeon (UNLOCKED) ── */}
-          <Link href="/dungeon" className="hub-door hub-door-unlocked">
-            {/* Dungeon image — bottom-aligned and oversized so the subject lines up with the anvil / brazier */}
+          {/* ── Door 2: The Dungeon (LOCKED — temporarily hidden from early
+              testers to reduce scope. Feature is fully built and routes still
+              work; this is purely a Hub-level visibility gate. Mirror Hearth's
+              locked treatment exactly so flipping back is a one-line revert. */}
+          <div
+            className={`hub-door hub-door-locked${shakingDoor === "dungeon" ? " hub-door-shake" : ""}`}
+            onClick={() => handleLockedClick("dungeon")}
+          >
+            {/* Dungeon image — same layout as before, but muted with opacity 0.5
+                to match Hearth's brazier treatment. */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", height: "320px", paddingTop: "9rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/dungeon.webp"
                 alt="Dungeon"
                 loading="lazy"
-                style={{ height: "175%", width: "auto", maxWidth: "175%", objectFit: "contain" }}
+                style={{ height: "175%", width: "auto", maxWidth: "175%", objectFit: "contain", opacity: 0.5 }}
               />
             </div>
 
@@ -523,17 +525,11 @@ export default function DashboardPage() {
               <h2 className="hub-door-title">The Dungeon</h2>
               <p className="hub-door-subtitle">Face the darkness. Master your focus.</p>
 
-              <div className="hub-door-status hub-door-status-unlocked">
-                {activeDungeon ? (
-                  <span className="dungeon-pulse" style={{ color: "var(--accent-ember)" }}>
-                    In progress — Floor {Math.min(activeDungeon.events?.length ?? 0, activeDungeon.total_floors)} of {activeDungeon.total_floors}
-                  </span>
-                ) : (
-                  "Descend"
-                )}
+              <div className="hub-door-status hub-door-status-locked">
+                Locked
               </div>
             </div>
-          </Link>
+          </div>
 
           {/* ── Door 3: The Hearth (LOCKED) ── */}
           <div
