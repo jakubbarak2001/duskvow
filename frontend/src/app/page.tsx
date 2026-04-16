@@ -68,17 +68,11 @@ export default function LandingPage() {
           <div className="lp-gold-line" aria-hidden="true" />
           <p className="lp-section-mark">◆ &nbsp; A Different Oath &nbsp; ◆</p>
           <h2>
-            A blade that fits your hand.<br />
-            Lore that speaks to your goal.<br />
-            A bonfire when you rest.<br /><br />
             We built the path. You walk it. We walk it with you.
           </h2>
           <p className="lp-anti-text">
-            You didn&apos;t beat Malenia by toughing it out. You had a flask, a map,{" "}
-            and a grace to return to. You didn&apos;t clear the Spire by grit alone —{" "}
-            you had a deck, a map, and a fire to camp by. Your real-life goals{" "}
-            deserve the same:{" "}
-            <strong>tools to use, a path to read, and a place to rest.</strong>
+            Games you love respect you by giving you what you need.{" "}
+            We tried to build the self-improvement app that <strong>does the same.</strong>
           </p>
         </section>
 
