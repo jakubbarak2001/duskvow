@@ -47,38 +47,38 @@ export default function LandingPage() {
           <div className="lp-hero-content">
             <p className="lp-hero-dagger">Self-Improvement, Reforged</p>
             <h1>
-              Your Goals Deserve<br />
-              Better Than <em>Pixel Art</em>
+              Speak Your Goal.<br />
+              We&apos;ll Forge the Path.
             </h1>
             <p className="lp-hero-sub">
-              Duskvow turns your ambitions into dark fantasy talent trees —{" "}
-              AI-generated, interconnected skill paths you complete node by node.{" "}
-              No cute mascots. No hand-holding. Just you and the climb.
+              Your goal becomes a tree. The tree becomes a path.{" "}
+              You walk it at your own pace — and you don&apos;t walk it alone.
             </p>
             <div className="lp-hero-cta-group">
               <Link href="/auth" className="lp-btn-primary">
                 <span>Make Your Vow — Free</span>
               </Link>
-              <p className="lp-hero-note">No credit card. No pixel penguins. Just purpose.</p>
+              <p className="lp-hero-note">No credit card. Start in 60 seconds.</p>
             </div>
           </div>
         </section>
 
-        {/* Anti-Section */}
+        {/* Manifesto */}
         <section className="lp-anti">
           <div className="lp-gold-line" aria-hidden="true" />
           <p className="lp-section-mark">◆ &nbsp; A Different Oath &nbsp; ◆</p>
           <h2>
-            <span className="lp-strike">Cute companions.</span><br />
-            <span className="lp-strike">8-bit sprites.</span><br />
-            <span className="lp-strike">Gentle reminders.</span><br /><br />
-            We built for the rest of you.
+            A blade that fits your hand.<br />
+            Lore that speaks to your goal.<br />
+            A bonfire when you rest.<br /><br />
+            We built the path. You walk it. We walk it with you.
           </h2>
           <p className="lp-anti-text">
-            You didn&apos;t beat Malenia by getting a pat on the back. You didn&apos;t{" "}
-            clear the Spire by hoping for the best. Your real-life goals deserve{" "}
-            the same respect —{" "}
-            <strong>a system built for people who don&apos;t need to be coddled.</strong>
+            You didn&apos;t beat Malenia by toughing it out. You had a flask, a map,{" "}
+            and a grace to return to. You didn&apos;t clear the Spire by grit alone —{" "}
+            you had a deck, a map, and a fire to camp by. Your real-life goals{" "}
+            deserve the same:{" "}
+            <strong>tools to use, a path to read, and a place to rest.</strong>
           </p>
         </section>
 
@@ -90,21 +90,21 @@ export default function LandingPage() {
               <div className="lp-step-num">I</div>
               <div>
                 <h3>Speak Your Goal</h3>
-                <p>Enter any ambition. The AI listens.</p>
+                <p>Say what you&apos;re chasing. We read every word before we build.</p>
               </div>
             </div>
             <div className="lp-step">
               <div className="lp-step-num">II</div>
               <div>
                 <h3>Receive Your Tree</h3>
-                <p>A branching talent tree, forged from your goal.</p>
+                <p>A branching talent tree, shaped from the words you spoke.</p>
               </div>
             </div>
             <div className="lp-step">
               <div className="lp-step-num">III</div>
               <div>
                 <h3>Walk the Path</h3>
-                <p>Complete nodes. Earn XP. Watch your tree ignite.</p>
+                <p>Walk it at your pace. Earn XP as you go. The path lights behind you.</p>
               </div>
             </div>
           </div>
@@ -119,7 +119,7 @@ export default function LandingPage() {
             <span>Make Your Vow — Free</span>
           </Link>
           <p className="lp-vow-terms">
-            Free forever. No tricks. No trials. Just the path.
+            Start in a minute. Stay as long as it serves you.
           </p>
         </section>
 
@@ -130,7 +130,7 @@ export default function LandingPage() {
             {" "}&nbsp;·&nbsp;{" "}
             <a href="https://x.com/jacobduskvow" target="_blank" rel="noopener noreferrer">X</a>
           </p>
-          <p className="lp-footer-tagline">Forged in solitude. Tempered by ambition.</p>
+          <p className="lp-footer-tagline">Tempered by ambition. Tended by hand.</p>
         </footer>
       </div>
     </>
