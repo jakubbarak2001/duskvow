@@ -5,18 +5,28 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { getSupabase } from "@/lib/supabase";
+import { isMvpMode } from "@/lib/flags";
 
-const AUTHED_LINKS = [
+const AUTHED_LINKS_FULL = [
   { href: "/dashboard", label: "Hub" },
   { href: "/vows", label: "Vow Chamber" },
   { href: "/tree/new", label: "New Vow" },
   { href: "/leaderboard", label: "Leaderboard" },
 ] as const;
 
+// MVP mode drops Leaderboard — it's social/progression chrome that competes
+// with the tree loop during H2/H3 validation.
+const AUTHED_LINKS_MVP = [
+  { href: "/dashboard", label: "Hub" },
+  { href: "/vows", label: "Vow Chamber" },
+  { href: "/tree/new", label: "New Vow" },
+] as const;
+
 export function Navbar() {
   const { user, loading } = useUser();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const authedLinks = isMvpMode() ? AUTHED_LINKS_MVP : AUTHED_LINKS_FULL;
 
   const handleSignOut = async () => {
     setMenuOpen(false);
@@ -72,7 +82,7 @@ export function Navbar() {
       {/* Authed desktop links — hidden below md via .navbar-desktop-links rule */}
       {!loading && user && (
         <div className="navbar-desktop-links flex items-center gap-4">
-          {AUTHED_LINKS.map((link) => (
+          {authedLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -140,7 +150,7 @@ export function Navbar() {
             onClick={(e) => e.stopPropagation()}
             role="menu"
           >
-            {AUTHED_LINKS.map((link) => (
+            {authedLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

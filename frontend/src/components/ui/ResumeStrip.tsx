@@ -100,11 +100,8 @@ function ResumeStripEmpty() {
 
 function ResumeStripSkeleton() {
   return (
-    <div className="resume-strip resume-strip-skeleton">
-      <div className="resume-strip-skel-bar resume-strip-skel-eyebrow" />
-      <div className="resume-strip-skel-bar resume-strip-skel-title" />
-      <div className="resume-strip-skel-bar resume-strip-skel-next" />
-      <div className="resume-strip-skel-bar resume-strip-skel-cta" />
+    <div className="resume-strip-loading" role="status" aria-live="polite">
+      <p className="resume-strip-loading-line">The embers gather&hellip;</p>
     </div>
   );
 }

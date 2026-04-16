@@ -13,6 +13,7 @@ import { LevelUpModal } from "@/components/ui/LevelUpModal";
 import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import { titleForLevel } from "@/lib/levels";
 import { StatsBarSkeleton, TreeCardSkeleton } from "@/components/ui/Skeleton";
+import { isMvpMode } from "@/lib/flags";
 import type { TalentTree, GenerationStatus, DailyQuest } from "@/types";
 
 const PARTICLES = [
@@ -90,6 +91,8 @@ export default function VowChamberPage() {
   };
 
 
+  const mvpMode = isMvpMode();
+
   if (loading || (!user && loading)) {
     return (
       <div style={{ backgroundColor: "var(--bg-abyss)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
@@ -107,9 +110,11 @@ export default function VowChamberPage() {
         <div style={{ position: "relative", zIndex: 1 }}>
           <Navbar />
           <main className="max-w-6xl mx-auto px-4 py-10">
-            <div className="mb-10">
-              <StatsBarSkeleton />
-            </div>
+            {!mvpMode && (
+              <div className="mb-10">
+                <StatsBarSkeleton />
+              </div>
+            )}
             <div className="grid gap-4">
               <TreeCardSkeleton />
               <TreeCardSkeleton />
@@ -350,7 +355,7 @@ export default function VowChamberPage() {
                   /{genStatus.active_tree_cap} active trees
                 </p>
               )}
-              {genStatus?.next_unlock_level && (
+              {!mvpMode && genStatus?.next_unlock_level && (
                 <p className="text-xs" style={{ color: "var(--text-muted)", marginTop: "0.15rem" }}>
                   Next generation slot unlocks at{" "}
                   <span style={{ color: "var(--accent-gold)", fontWeight: 600 }}>
@@ -361,21 +366,28 @@ export default function VowChamberPage() {
             </div>
           </div>
 
-          {/* Stats bar */}
-          <div className="mb-10">
-            {profile ? (
-              <StatsBar
-                totalXp={profile.total_xp}
-                currentStreak={profile.current_streak}
-                heroLevel={profile.hero_level}
-                heroTitle={profile.hero_title}
-                streakMultiplier={profile.streak_multiplier}
-                lastActivityDate={profile.last_activity_date}
-              />
-            ) : (
-              <StatsBarSkeleton />
-            )}
-          </div>
+          {/* Stats bar — level, streak (with multiplier), XP pop.
+              Hidden in MVP mode: streak multiplier is a documented quit
+              trigger (signals 07, 11, 12) and the level + XP progression
+              chrome scaffolds features that the tree mechanic hasn't
+              earned yet. Flipping NEXT_PUBLIC_MVP_MODE=false brings it
+              back. */}
+          {!mvpMode && (
+            <div className="mb-10">
+              {profile ? (
+                <StatsBar
+                  totalXp={profile.total_xp}
+                  currentStreak={profile.current_streak}
+                  heroLevel={profile.hero_level}
+                  heroTitle={profile.hero_title}
+                  streakMultiplier={profile.streak_multiplier}
+                  lastActivityDate={profile.last_activity_date}
+                />
+              ) : (
+                <StatsBarSkeleton />
+              )}
+            </div>
+          )}
 
 
           {dataLoading ? (

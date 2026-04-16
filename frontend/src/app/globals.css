@@ -1220,38 +1220,66 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
 }
 
-/* Empty state */
+/* Empty state — tightened from the full-width active shell into a plaque.
+   Active state is two-column (tree + quests) so it wants the 1200px span;
+   empty state has one centered stack and reads better at plaque proportions.
+   The radial ember layer gives the Firekeeper's "flame waits" a visible
+   heart — the CTA now rises from warmth instead of floating on cold stone. */
 .resume-strip-empty {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 2.4rem 1.8rem;
+  padding: 3.4rem 2.4rem;
+  max-width: 38rem;
+  margin: 0 auto;
+  background-image:
+    radial-gradient(ellipse at center, rgba(200,75,17,0.12) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(10,10,18,0.55) 0%, rgba(18,18,26,0.35) 100%),
+    url('/images/card_texture.webp');
+}
+/* Empty-state CTA always centers. Base rule uses align-self: flex-start for
+   the two-column active state, which wins over the container's align-items
+   on desktop — hence the historical mobile-only override. This rule makes
+   centering the rule, not the exception. */
+.resume-strip-empty .resume-strip-cta {
+  align-self: center;
 }
 .resume-strip-empty-copy {
   font-family: var(--font-crimson);
   font-style: italic;
   color: var(--text-secondary);
-  margin: 0.4rem 0 1.3rem;
+  margin: 0.4rem 0 1.6rem;
   max-width: 420px;
   line-height: 1.6;
 }
 
-/* Skeleton shimmer placeholders */
-.resume-strip-skeleton {
-  flex-direction: column;
-  gap: 0.6rem;
-  min-height: 180px;
+/* Atmospheric loading state — single italic line over the corridor bg,
+   no card chrome. Sized roughly to the empty-state plaque so the swap
+   to ResumeStripEmpty doesn't jolt the layout. */
+.resume-strip-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 2.4rem 2rem;
 }
-.resume-strip-skel-bar {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
-  border-radius: 3px;
+.resume-strip-loading-line {
+  margin: 0;
+  font-family: var(--font-crimson), 'Crimson Pro', Georgia, serif;
+  font-size: 1rem;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-align: center;
+  animation: firekeeper-pulse 2.4s ease-in-out infinite;
 }
-.resume-strip-skel-eyebrow { width: 30%; height: 0.6rem; }
-.resume-strip-skel-title   { width: 55%; height: 1.6rem; }
-.resume-strip-skel-next    { width: 70%; height: 0.9rem; }
-.resume-strip-skel-cta     { width: 8rem; height: 2.2rem; margin-top: 0.6rem; }
+@keyframes firekeeper-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
 
 /* Responsive — stack columns below 720px */
 @media (max-width: 720px) {
@@ -2195,14 +2223,6 @@ h1, h2, h3, h4, h5, h6 {
   }
   .dash-header-desktop {
     display: none !important;
-  }
-
-  /* ── Resume strip empty state: center the "Forge a Vow" CTA ──
-     Parent (.resume-strip-empty) already centers via align-items, but
-     .resume-strip-cta has align-self: flex-start which wins on desktop.
-     Override here so the empty-state CTA centers below 768px only. */
-  .resume-strip-empty .resume-strip-cta {
-    align-self: center;
   }
 
   /* ── Tree wizard step indicator: stack vertically with breathing room ──

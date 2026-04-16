@@ -11,18 +11,27 @@ import { api } from "@/lib/api";
 import { HeroNamingModal } from "@/components/ui/HeroNamingModal";
 import { StreakFlame } from "@/components/ui/StreakFlame";
 import { ResumeStrip } from "@/components/ui/ResumeStrip";
+import { isMvpMode } from "@/lib/flags";
 import type { TalentTree, DailyQuest } from "@/types";
 
 // Dashboard mobile menu links. Mirrors the shared Navbar's authed links so
 // users get the same navigation surface from either entry point. "Hub" is
 // included even though the user is already here — it's a no-op tap, but
 // consistency beats cleverness.
-const DASH_NAV_LINKS = [
+const DASH_NAV_LINKS_FULL = [
   { href: "/dashboard", label: "Hub" },
   { href: "/vows", label: "Vow Chamber" },
   { href: "/tree/new", label: "New Vow" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/profile", label: "Profile" },
+] as const;
+
+// In MVP mode the nav collapses to the tree loop: Hub, Vow Chamber, New Vow.
+// Leaderboard and Profile stay routable, just unpromoted.
+const DASH_NAV_LINKS_MVP = [
+  { href: "/dashboard", label: "Hub" },
+  { href: "/vows", label: "Vow Chamber" },
+  { href: "/tree/new", label: "New Vow" },
 ] as const;
 
 
@@ -138,6 +147,8 @@ export default function DashboardPage() {
   if (loading) return null;
   if (!user) return null;
 
+  const mvpMode = isMvpMode();
+
   // Gate: show naming modal on a clean background before rendering the hub
   if (showNaming) {
     return (
@@ -225,7 +236,10 @@ export default function DashboardPage() {
           <span style={{ color: "var(--logo-ember)" }}>vow</span>
         </Link>
 
-        {/* Hero Level + Streak — desktop cluster, hidden below 768px via .dash-header-desktop */}
+        {/* Hero Level + Streak — desktop cluster, hidden below 768px via .dash-header-desktop.
+            In MVP mode, suppress the level + streak cells entirely — progression
+            chrome is a confound during H2/H3 validation. Keep only the hero-name
+            link (identity, not gamification) so the header doesn't feel empty. */}
         {profile && (
           <div
             className="dash-header-desktop"
@@ -274,6 +288,49 @@ export default function DashboardPage() {
                   </span>
                 </Link>
 
+                {!mvpMode && (
+                  <div
+                    style={{
+                      width: "1px",
+                      height: "2rem",
+                      backgroundColor: "rgba(224,216,200,0.1)",
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {!mvpMode && (
+              <>
+                {/* Level */}
+                <div style={{ textAlign: "center" }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      fontSize: "1.1rem",
+                      fontWeight: 700,
+                      color: "var(--accent-gold)",
+                      letterSpacing: "0.05em",
+                      textShadow: "0 0 12px rgba(255,215,0,0.4)",
+                      display: "block",
+                      lineHeight: 1,
+                    }}
+                  >
+                    Lv.{profile.hero_level}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      fontSize: "0.55rem",
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    Level
+                  </span>
+                </div>
+
                 <div
                   style={{
                     width: "1px",
@@ -281,52 +338,15 @@ export default function DashboardPage() {
                     backgroundColor: "rgba(224,216,200,0.1)",
                   }}
                 />
+
+                {/* Streak — Duolingo-style number + flame */}
+                <StreakFlame
+                  currentStreak={profile.current_streak}
+                  lastActivityDate={profile.last_activity_date}
+                  streakMultiplier={profile.streak_multiplier}
+                />
               </>
             )}
-
-            {/* Level */}
-            <div style={{ textAlign: "center" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "1.1rem",
-                  fontWeight: 700,
-                  color: "var(--accent-gold)",
-                  letterSpacing: "0.05em",
-                  textShadow: "0 0 12px rgba(255,215,0,0.4)",
-                  display: "block",
-                  lineHeight: 1,
-                }}
-              >
-                Lv.{profile.hero_level}
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "0.55rem",
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Level
-              </span>
-            </div>
-
-            <div
-              style={{
-                width: "1px",
-                height: "2rem",
-                backgroundColor: "rgba(224,216,200,0.1)",
-              }}
-            />
-
-            {/* Streak — Duolingo-style number + flame */}
-            <StreakFlame
-              currentStreak={profile.current_streak}
-              lastActivityDate={profile.last_activity_date}
-              streakMultiplier={profile.streak_multiplier}
-            />
           </div>
         )}
 
@@ -402,19 +422,21 @@ export default function DashboardPage() {
                     )}
                   </div>
                 )}
-                <div className="dash-mobile-hero-stats">
-                  <span className="dash-mobile-hero-level">Lv.{profile.hero_level}</span>
-                  <span className="dash-mobile-hero-sep" aria-hidden="true">◆</span>
-                  <StreakFlame
-                    currentStreak={profile.current_streak}
-                    lastActivityDate={profile.last_activity_date}
-                    streakMultiplier={profile.streak_multiplier}
-                  />
-                </div>
+                {!mvpMode && (
+                  <div className="dash-mobile-hero-stats">
+                    <span className="dash-mobile-hero-level">Lv.{profile.hero_level}</span>
+                    <span className="dash-mobile-hero-sep" aria-hidden="true">◆</span>
+                    <StreakFlame
+                      currentStreak={profile.current_streak}
+                      lastActivityDate={profile.last_activity_date}
+                      streakMultiplier={profile.streak_multiplier}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
-            {DASH_NAV_LINKS.map((link) => (
+            {(mvpMode ? DASH_NAV_LINKS_MVP : DASH_NAV_LINKS_FULL).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -453,6 +475,17 @@ export default function DashboardPage() {
           gap: "2rem",
         }}
       >
+        {/* Firekeeper line — one warm, state-aware greeting above the primary
+            CTA. Only rendered in MVP mode, where it replaces the gamification
+            chrome (level, streak) with a single line of voice. */}
+        {mvpMode && (
+          <FirekeeperLine
+            primaryTree={primaryTree}
+            dailyQuests={dailyQuests}
+            loading={dataLoading}
+          />
+        )}
+
         {/* Resume strip — primary CTA */}
         <ResumeStrip
           primaryTree={primaryTree}
@@ -460,22 +493,28 @@ export default function DashboardPage() {
           loading={dataLoading}
         />
 
-        {/* Downgraded eyebrow: frames doors as alternatives to the resume strip */}
-        <div
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "0.6rem",
-            letterSpacing: "0.4em",
-            textTransform: "uppercase",
-            color: "var(--text-muted)",
-            textAlign: "center",
-          }}
-        >
-          ◆&nbsp;&nbsp;Or Explore&nbsp;&nbsp;◆
-        </div>
+        {/* Doors grid — full hub only. In MVP mode we hide this entirely so
+            the dashboard has exactly one answer to "what do I do?": the
+            ResumeStrip above. Locked doors ("Dungeon", "Hearth") are
+            progression scaffolding on an unvalidated core — they go. */}
+        {!mvpMode && (
+          <>
+            {/* Downgraded eyebrow: frames doors as alternatives to the resume strip */}
+            <div
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontSize: "0.6rem",
+                letterSpacing: "0.4em",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+                textAlign: "center",
+              }}
+            >
+              ◆&nbsp;&nbsp;Or Explore&nbsp;&nbsp;◆
+            </div>
 
-        {/* Three Doors */}
-        <div className="hub-doors-grid">
+            {/* Three Doors */}
+            <div className="hub-doors-grid">
           {/* ── Door 1: The Vow Chamber (UNLOCKED) ── */}
           <Link href="/vows" className="hub-door hub-door-unlocked">
             {/* Anvil: video on desktop, static image on mobile */}
@@ -552,9 +591,60 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
+            </div>
+          </>
+        )}
       </main>
 
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FirekeeperLine — single warm greeting above ResumeStrip (MVP mode only).
+// Keeps the tone Firekeeper-like: presence, not pressure. Replaces what would
+// otherwise be "level/streak/quests scattered across the top bar" with one
+// line of voice. States are intentionally minimal so future copy tweaks land
+// in one place.
+// ---------------------------------------------------------------------------
+
+function FirekeeperLine({
+  primaryTree,
+  dailyQuests,
+  loading,
+}: {
+  primaryTree: TalentTree | null;
+  dailyQuests: DailyQuest[];
+  loading: boolean;
+}) {
+  if (loading) return null;
+
+  let message: string;
+  if (!primaryTree) {
+    message = "The flame waits. Name your vow.";
+  } else {
+    const questsForTree = dailyQuests.filter((q) => q.tree_id === primaryTree.id);
+    const hasOpenWork = questsForTree.length === 0 || questsForTree.some((q) => !q.completed_today);
+    message = hasOpenWork
+      ? "The path waits. The flame remembers you."
+      : "The embers hold. Rest if you need to.";
+  }
+
+  return (
+    <p
+      style={{
+        fontFamily: "var(--font-crimson)",
+        fontSize: "1rem",
+        fontStyle: "italic",
+        letterSpacing: "0.04em",
+        color: "var(--text-secondary)",
+        textAlign: "center",
+        margin: 0,
+        maxWidth: "34rem",
+        lineHeight: 1.5,
+      }}
+    >
+      {message}
+    </p>
   );
 }
