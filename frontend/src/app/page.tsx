@@ -66,9 +66,9 @@ export default function LandingPage() {
         {/* Manifesto */}
         <section className="lp-anti">
           <div className="lp-gold-line" aria-hidden="true" />
-          <p className="lp-section-mark">◆ &nbsp; A Different Oath &nbsp; ◆</p>
+          <p className="lp-section-mark">◆ &nbsp; The Vow &nbsp; ◆</p>
           <h2>
-            We built the path. You walk it. We walk it with you.
+            The vow is simple.
           </h2>
           <p className="lp-anti-text">
             Games you love respect you by giving you what you need.{" "}
