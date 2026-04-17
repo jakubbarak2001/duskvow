@@ -139,7 +139,7 @@ export default function LeaderboardPage() {
             The Hall of Flames
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-            Where heroes are forged in the crucible of discipline
+            Where heroes are tempered by the walk.
           </p>
         </div>
 

@@ -183,7 +183,7 @@ function DungeonPageInner() {
       notifiedRef.current = true;
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
         new Notification("The Dungeon Yields", {
-          body: "Your hero has returned. Collect your spoils.",
+          body: "Your hero is back. Come collect what you earned.",
         });
       }
     }
@@ -574,7 +574,7 @@ function DungeonPageInner() {
                     fontSize: "1.1rem",
                   }}
                 >
-                  Choose your descent. Steel your mind.
+                  Choose your depth. The walk will ask something of you.
                 </p>
               </div>
 
@@ -1442,7 +1442,7 @@ function ActiveRunView({
                   textAlign: "center",
                 }}
               >
-                Retreat now? Your hero will return wounded.
+                Turn back? The path you've walked still counts.
                 <br />
                 Partial XP, no loot.
               </p>
@@ -1466,7 +1466,7 @@ function ActiveRunView({
                     transition: "all 0.2s ease",
                   }}
                 >
-                  Confirm Retreat
+                  Turn Back
                 </button>
                 <button
                   onClick={() => setConfirmRetreat(false)}
@@ -1484,7 +1484,7 @@ function ActiveRunView({
                     transition: "all 0.2s ease",
                   }}
                 >
-                  Hold Position
+                  Keep Going
                 </button>
               </div>
             </div>

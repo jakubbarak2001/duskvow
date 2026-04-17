@@ -120,7 +120,7 @@ export function BattleReport({
         >
           {isCompleted
             ? "Your hero emerges victorious, bearing the spoils of the deep."
-            : "Your hero returns wounded. The darkness claims what was left behind."}
+            : "Your hero returns. What you walked, you keep — the rest stays in the dark."}
         </p>
       </div>
 
@@ -230,7 +230,7 @@ export function BattleReport({
             margin: "0 0 0.75rem 0",
           }}
         >
-          Spoils
+          Carried Out
         </h3>
 
         {result.loot.length === 0 ? (
@@ -243,7 +243,7 @@ export function BattleReport({
               margin: 0,
             }}
           >
-            No loot recovered.
+            Empty-handed this run. The walk still counts.
           </p>
         ) : (
           <div
@@ -513,7 +513,7 @@ export function BattleReport({
               : "1px solid rgba(224,216,200,0.1)",
           }}
         >
-          Return to Hub
+          Return from Below
         </button>
       </div>
     </div>
