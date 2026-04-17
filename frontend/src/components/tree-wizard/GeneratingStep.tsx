@@ -151,16 +151,16 @@ export function GeneratingStep() {
           zIndex: 1,
         }}
       >
-        Weaving Your Fate
+        Drawing Your Path
       </h2>
       <p style={{ color: "var(--text-muted)", position: "relative", zIndex: 1 }}>
-        The Oracle is crafting your personal talent tree…
+        We heard you. The path is taking form.
       </p>
       <p
         className="text-xs mt-2"
         style={{ color: "var(--text-muted)", fontStyle: "italic", position: "relative", zIndex: 1 }}
       >
-        This may take up to a minute
+        A minute, give or take.
       </p>
     </div>
   );

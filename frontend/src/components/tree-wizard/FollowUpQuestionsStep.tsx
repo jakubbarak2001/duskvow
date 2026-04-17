@@ -104,7 +104,8 @@ export function FollowUpQuestionsStep({
             fontStyle: "italic",
           }}
         >
-          Each answer shapes the branches of your tree. Choose wisely.
+          Each answer shapes a branch. Answer as you are — not as you think
+          we want.
         </p>
       </div>
 
@@ -204,7 +205,7 @@ export function FollowUpQuestionsStep({
             disabled={!allAnswered || loading}
             className="wiz-btn-primary"
           >
-            <span>{loading ? "Weaving your fate…" : "Generate My Tree →"}</span>
+            <span>{loading ? "Shaping the branches…" : "Generate My Tree →"}</span>
           </button>
         </div>
       </form>

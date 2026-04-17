@@ -62,8 +62,8 @@ export function GoalInputStep({ onSubmit, loading }: GoalInputStepProps) {
             maxWidth: 520,
           }}
         >
-          What do you want to achieve? Be specific — the more detail you give,
-          the more powerful your talent tree will be.
+          Tell us what you&apos;re reaching for. The more you tell us, the
+          truer the path we draw.
         </p>
       </div>
 
@@ -86,8 +86,8 @@ export function GoalInputStep({ onSubmit, loading }: GoalInputStepProps) {
             lineHeight: 1.7,
           }}
         >
-          Your vow becomes the seed from which your talent tree grows.
-          The Oracle reads intent — not just words.
+          Your vow is the seed. We read intent — not just the words on the
+          page.
         </p>
 
         <div className="flex items-center justify-between mt-1">
@@ -99,7 +99,7 @@ export function GoalInputStep({ onSubmit, loading }: GoalInputStepProps) {
             disabled={!canSubmit}
             className="wiz-btn-primary"
           >
-            <span>{loading ? "Consulting the Oracle…" : "Forge My Path →"}</span>
+            <span>{loading ? "Reading your vow…" : "Speak the Vow →"}</span>
           </button>
         </div>
       </form>
