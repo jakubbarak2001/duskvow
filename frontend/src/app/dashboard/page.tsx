@@ -530,7 +530,7 @@ export default function DashboardPage() {
             {/* Door content */}
             <div className="hub-door-content">
               <h2 className="hub-door-title">The Vow Chamber</h2>
-              <p className="hub-door-subtitle">Forge and walk your talent trees</p>
+              <p className="hub-door-subtitle">Speak, tend, and walk your talent trees</p>
 
               <div className="hub-door-status hub-door-status-unlocked">
                 Enter the chamber

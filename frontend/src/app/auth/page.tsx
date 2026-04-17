@@ -158,7 +158,7 @@ export default function AuthPage() {
             marginBottom: "2.5rem",
           }}
         >
-          Sign in to forge your path
+          Return to your path
         </p>
 
         <AuthForm />

@@ -77,7 +77,7 @@ export function TreeHeader({ tree }: TreeHeaderProps) {
 
           <div className="tree-header-pill">
             <span className="tree-header-pill-value">{pct}%</span>
-            <span className="tree-header-pill-label">Forged</span>
+            <span className="tree-header-pill-label">Walked</span>
           </div>
         </div>
       </div>

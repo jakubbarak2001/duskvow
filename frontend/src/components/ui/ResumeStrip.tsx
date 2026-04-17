@@ -91,7 +91,7 @@ function ResumeStripEmpty() {
         Speak your ambition and watch it take form.
       </p>
       <Link href="/tree/new" className="resume-strip-cta">
-        <span>Forge a Vow</span>
+        <span>Speak a Vow</span>
         <span className="resume-strip-cta-arrow">→</span>
       </Link>
     </div>
