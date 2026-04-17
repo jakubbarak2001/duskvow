@@ -114,6 +114,38 @@ async def start_run(
             detail=f"Hero level {hero_level} is too low. {tier_cfg['name']} requires level {tier_cfg['min_level']}.",
         )
 
+    # Verify linked node/quest ownership before committing to a run.
+    # Without this, a crafted linked_node_id / linked_quest_id would let an
+    # attacker credit their dungeon bonuses against another user's node/quest
+    # or auto-complete it in complete_run. The FK columns are ON DELETE SET
+    # NULL with no user scope, so only the API layer can enforce ownership.
+    if body.linked_node_id:
+        linked_node = await supa.get_node(body.linked_node_id)
+        if not linked_node:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Linked node not found.",
+            )
+        linked_tree = await supa.get_tree_by_id(linked_node["tree_id"])
+        if not linked_tree or linked_tree["user_id"] != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Linked node does not belong to you.",
+            )
+
+    if body.linked_quest_id:
+        linked_quest = await supa.get_daily_quest(body.linked_quest_id)
+        if not linked_quest:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Linked quest not found.",
+            )
+        if linked_quest["user_id"] != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Linked quest does not belong to you.",
+            )
+
     # Generate the dungeon run (no AI calls — pure random from pools)
     generated = generate_dungeon_run(body.tier, body.duration_minutes)
 

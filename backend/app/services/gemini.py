@@ -19,6 +19,31 @@ _PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 logger = logging.getLogger(__name__)
 
+# Canonical XP-per-tier map. Values mirror backend/app/prompts/generate_tree.txt
+# and the DB CHECK constraint added 2026-04-16. We clamp each AI-returned node
+# to the canonical value here so a prompt-injected or drifting generation can't
+# inflate XP rewards (SECURITY_AUDIT_2026-04-16.md §2.8).
+_TIER_XP: dict[str, int] = {
+    "common": 10,
+    "uncommon": 20,
+    "rare": 35,
+    "epic": 50,
+    "legendary": 75,
+    "mythic": 100,
+}
+
+# Generation-response bounds. Prompt requests 18-22 nodes; give ±3 headroom.
+# Free-text lengths cap a prompt-injection attempt that tries to bloat the
+# tree into a novella, without clipping normal creative output.
+_MIN_NODES = 15
+_MAX_NODES = 25
+_MAX_TITLE_LEN = 80
+_MAX_DESC_LEN = 500
+
+# Daily quests don't have a tier; prompt asks for 10-25 XP per quest.
+_QUEST_XP_MIN = 10
+_QUEST_XP_MAX = 25
+
 # ---------------------------------------------------------------------------
 # AI response validation schemas
 # ---------------------------------------------------------------------------
@@ -125,6 +150,44 @@ def _validate_tree(data: dict) -> dict:
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=f"AI returned {count} {tier} nodes (expected >=2 per tier).",
             )
+
+    # Length + count bounds. Runaway titles/descriptions are an injection
+    # signal; the retry path picks a cleaner generation. Node count window
+    # is prompt_target ± 3.
+    if len(validated["title"]) > _MAX_TITLE_LEN:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI returned oversized title ({len(validated['title'])} chars).",
+        )
+    if len(validated["description"]) > _MAX_DESC_LEN:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI returned oversized description ({len(validated['description'])} chars).",
+        )
+    node_count = len(validated["nodes"])
+    if node_count < _MIN_NODES or node_count > _MAX_NODES:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI returned {node_count} nodes (expected {_MIN_NODES}-{_MAX_NODES}).",
+        )
+
+    # Clamp each node's xp_reward to the canonical tier value. Unknown tiers
+    # already fail the Tier 2-5 cardinality check above, but guard explicitly
+    # so a KeyError here becomes a clean 502 instead of a 500.
+    for node in validated["nodes"]:
+        tier = node["tier"]
+        if tier not in _TIER_XP:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"AI returned unknown tier '{tier}'.",
+            )
+        node["xp_reward"] = _TIER_XP[tier]
+
+    # Clamp daily quest xp_reward to the advertised 10-25 window.
+    for quest in validated["daily_quests"]:
+        quest["xp_reward"] = max(
+            _QUEST_XP_MIN, min(_QUEST_XP_MAX, quest["xp_reward"])
+        )
 
     return validated
 
@@ -264,9 +327,12 @@ class GeminiService:
             except Exception:
                 pass
             _log("empty_response", finish_reason=finish_reason)
+            # finish_reason stays in the structured log above for server-side
+            # debugging; the client-facing detail is generic so internal
+            # model state doesn't leak to the browser.
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"AI returned empty response (finish_reason={finish_reason}).",
+                detail="AI returned empty response — please retry.",
             )
 
         _log("ok")

@@ -46,9 +46,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         exc_info=True,
         extra={"path": request.url.path, "method": request.method},
     )
+    # The exception class name stays in the server log (exc_info above);
+    # the client-facing response is generic so internal types don't leak.
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal server error: {type(exc).__name__}"},
+        content={"detail": "Internal server error"},
     )
 
 

@@ -3,7 +3,7 @@
 > **Purpose**: Decisions log + current state snapshot. Updated every session.
 > Coding standards, visual rules, and workflow are in CLAUDE.md (single source of truth).
 >
-> Last updated: 2026-04-14
+> Last updated: 2026-04-16
 
 ---
 
@@ -68,6 +68,10 @@
 [2026-04-14] DECISION: Created 4 custom slash commands in `.claude/commands/` (`/validate`, `/new-task`, `/close-sprint`, `/state-update`) and 2 specialized subagents in `.claude/agents/` (`duskvow-design-reviewer`, `supabase-migration-reviewer`) — REASON: Kills the "what command do I run for X" friction and stops the general-purpose agent from rediscovering Duskvow conventions (design tokens, RLS patterns, CHECK constraint style) on every invocation. Subagents are cached prompt files — zero runtime cost, big accuracy win on repeated review tasks.
 
 [2026-04-14] DECISION: Wired existing `ErrorBoundary` component into `TreeViewPage.tsx` around `TreeCanvas`; added Next.js App Router `app/error.tsx` (route-segment catch-all) and `app/global-error.tsx` (root-layout catch) — REASON: "No error boundaries" has been a Known Issue since 2026-03-30; `ErrorBoundary.tsx` existed in `components/ui/` but was imported in zero files. React Flow crashes in TreeCanvas were taking down the whole page. Three-layer approach (component-level for known-fragile React Flow + route-level Next.js convention file + root-layout fallback) covers every crash path without over-wrapping.
+
+[2026-04-16] CORRECTION: The 2026-03-30 entry about a hardcoded Supabase anon key in `next.config.ts` is stale — current `next.config.ts` only reads `process.env.NEXT_PUBLIC_*` with `|| ""` fallbacks, no literal key. The `write-env.mjs` prebuild script handles the Cloudflare Pages inlining. Keeping the historical decision for audit trail; no action needed.
+
+[2026-04-16] DECISION: Security hardening migration (`20260416_security_hardening.sql`) drops all user-writable RLS on progression tables (profiles, talent_trees, skill_nodes, dungeon_runs, dungeon_loot, hero_inventory, daily_activity, daily_quests, daily_quest_completions, embers) and REVOKEs EXECUTE from authenticated/anon/PUBLIC on all SECURITY DEFINER RPCs; service_role bypasses RLS and gets explicit EXECUTE — REASON: Audit (SECURITY_AUDIT_2026-04-16.md) found authenticated users could bypass FastAPI and rewrite progression state directly through PostgREST. Backend already uses SUPABASE_SERVICE_ROLE_KEY for every write path, so tightening `authenticated` to SELECT-only is transparent to existing flows. Invariant going forward: **all writes go through FastAPI. Direct Supabase PostgREST writes from the browser are DENIED.**
 
 ---
 
