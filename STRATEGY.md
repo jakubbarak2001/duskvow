@@ -59,4 +59,12 @@ Each sprint's detailed design is in `docs/strategy/octalysis-audit-2026-04-11.md
 
 ---
 
+## Post-Pivot Architecture (Follow-up Tasks)
+
+Low-priority architectural items identified during the in-app voice pivot (2026-04-17). Not part of the pivot itself — implement once the copy work lands and polish bandwidth permits.
+
+- **Extract `FirekeeperLine` into a shared component.** Currently inline in `app/dashboard/page.tsx:611–650`. It is the strongest on-brand mentor-voice pattern in the codebase (*"The flame waits. Name your vow." / "The path waits. The flame remembers you." / "The embers hold. Rest if you need to."*). Extracting it unlocks reuse on the tree page, the vows page, and empty-state moments across the app — surfaces that currently carry no atmospheric voice. Props to consider: `state: "no-tree" | "has-open-work" | "all-done"` + optional `treeTitle?: string` so the line can adapt per-surface.
+
+---
+
 > For the full audit — CD breakdown, SWOT, connection-flow diagram, sprint plans, and additional ideas — see `docs/strategy/octalysis-audit-2026-04-11.md`.
