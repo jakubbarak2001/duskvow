@@ -27,8 +27,8 @@ const crimsonPro = Crimson_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Duskvow — Forge Your Path",
-  description: "Dark fantasy self-improvement for adults who take their goals seriously. AI-generated talent trees, character arcs, and immersive progression — no cute mascots, no hand-holding.",
+  title: "Duskvow — Speak Your Vow",
+  description: "Dark-fantasy self-improvement. Speak the vow, we draw the path, you walk it at your pace.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
