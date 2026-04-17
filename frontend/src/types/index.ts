@@ -119,37 +119,6 @@ export interface Ember {
 }
 
 // ============================================================
-// Daily Quest Types
-// ============================================================
-
-export interface DailyQuest {
-  id: string;
-  tree_id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  xp_reward: number;
-  sort_order: number;
-  estimated_minutes: number | null;
-  created_at: string;
-  completed_today: boolean;
-}
-
-export interface DailyQuestCompletionResult {
-  quest_id: string;
-  xp_earned: number;
-  base_xp: number;
-  streak_bonus_xp: number;
-  total_xp: number;
-  leveled_up: boolean;
-  new_level: number;
-  previous_level: number;
-  new_title: string;
-  new_achievements: Achievement[];
-  streak_milestone: StreakMilestone | null;
-}
-
-// ============================================================
 // Dungeon Types
 // ============================================================
 
@@ -198,7 +167,6 @@ export interface DungeonRun {
   duration_minutes: number;
   xp_earned: number;
   linked_node_id: string | null;
-  linked_quest_id: string | null;
   created_at: string;
   completed_at: string | null;
   events: DungeonEvent[];
@@ -214,7 +182,6 @@ export interface DungeonStartResult {
   duration_minutes: number;
   xp_earned: number;
   linked_node_id: string | null;
-  linked_quest_id: string | null;
   created_at: string;
   completed_at: string | null;
   events: DungeonEvent[];
@@ -235,8 +202,6 @@ export interface DungeonCompleteResult {
   previous_level: number;
   new_title: string;
   loot: DungeonLootItem[];
-  quest_auto_completed?: boolean;
-  linked_quest_id?: string | null;
   new_achievements: Achievement[];
   streak_milestone: StreakMilestone | null;
 }
@@ -293,7 +258,6 @@ export interface ProfileStats {
   nodes_completed: number;
   dungeons_completed: number;
   total_dungeon_minutes: number;
-  quests_completed: number;
   total_loot_collected: number;
 }
 
@@ -314,7 +278,6 @@ export interface LootClaimResult {
 export interface LeaderboardEntry {
   id: string;
   hero_name: string | null;
-  display_name: string | null;
   hero_level: number;
   hero_title: string;
   total_xp: number;

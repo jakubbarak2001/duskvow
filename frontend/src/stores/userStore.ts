@@ -77,6 +77,19 @@ export const useUserStore = create<UserStore>((set, get) => ({
   updateFromCompletion: (result) =>
     set((store) => {
       if (!store.profile) return store;
+      const today = new Date().toISOString().slice(0, 10);
+      const prevActivity = store.profile.last_activity_date;
+      const prevStreak = store.profile.current_streak;
+
+      // Optimistically recompute the streak so the flame updates the same
+      // frame as the XP bar, even before the profile re-hydrates. If this
+      // disagrees with the server (very unlikely) the next full profile
+      // fetch reconciles.
+      let newStreak = prevStreak;
+      if (prevActivity !== today) {
+        newStreak = prevActivity === yesterdayIso(today) ? prevStreak + 1 : 1;
+      }
+
       return {
         profile: {
           ...store.profile,
@@ -84,6 +97,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
           hero_level: result.new_level,
           hero_title: result.new_title,
           streak_multiplier: result.streak_multiplier ?? store.profile.streak_multiplier,
+          current_streak: newStreak,
+          last_activity_date: today,
         },
       };
     }),
@@ -106,3 +121,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   markStreakAnimated: (date) => set({ streakAnimatedFor: date }),
 }));
+
+function yesterdayIso(todayIso: string): string {
+  const t = Date.parse(`${todayIso}T00:00:00Z`);
+  if (Number.isNaN(t)) return todayIso;
+  return new Date(t - 86_400_000).toISOString().slice(0, 10);
+}

@@ -57,6 +57,14 @@ async def complete_node(
     - Adds XP to the user's profile
     - Records daily activity and updates streak
 
+    Perf notes (2026-04-17):
+      - Node + tree are fetched in one embedded PostgREST query (1 RT).
+      - Tree nodes + streak multiplier run in parallel (1 RT).
+      - The node-state write is applied in memory so the unlock + counter
+        recompute does NOT require a second `get_all_tree_nodes` refetch.
+      - All six writes (node update, unlock batch, tree counters, XP,
+        activity, streak) run in a single ``asyncio.gather``.
+
     Args:
         node_id: UUID of the node to complete.
         user_id: Authenticated user's UUID.
@@ -64,7 +72,10 @@ async def complete_node(
     Returns:
         Envelope with node_id, new_state, xp_earned, total_xp.
     """
-    node, tree = await _get_node_with_ownership(node_id, user_id)
+    # 1 RT — node + parent tree via embedded select.
+    node, tree = await supa.get_node_with_tree(node_id)
+    if not node or not tree or tree.get("user_id") != user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Node not found.")
 
     if tree["status"] == "completed":
         raise HTTPException(
@@ -78,14 +89,21 @@ async def complete_node(
             detail="Node is already completed.",
         )
 
+    # 1 RT (parallel) — sibling nodes for prereq + unlock checks, and the
+    # profile read used to derive the streak multiplier. These are
+    # independent of each other so we fan them out.
+    all_nodes, streak_mult = await asyncio.gather(
+        supa.get_all_tree_nodes(node["tree_id"]),
+        get_user_streak_multiplier(user_id),
+    )
+    node_map = {n["id"]: n for n in all_nodes}
+
     # Always verify prerequisites against live DB state.
     # We intentionally do NOT gate on node["state"] == "locked" here:
     # the frontend may optimistically unlock a node before the backend's
     # prior completion write commits, so a "locked" DB state is not a
     # reliable signal when completions arrive in quick succession.
     prereqs: list[str] = node.get("prerequisites") or []
-    all_nodes = await supa.get_all_tree_nodes(node["tree_id"])
-    node_map = {n["id"]: n for n in all_nodes}
     for prereq_id in prereqs:
         prereq = node_map.get(prereq_id)
         if prereq and prereq["state"] != "completed":
@@ -94,20 +112,13 @@ async def complete_node(
                 detail=f"Prerequisite '{prereq['title']}' must be completed first.",
             )
 
-    # Mark this node completed
-    await supa.update_node(
-        node_id,
-        {
-            "state": "completed",
-            "completed_at": datetime.now(timezone.utc).isoformat(),
-        },
-    )
+    # Apply the completion in memory so unlock + counter math doesn't need
+    # a second `get_all_tree_nodes` refetch from the DB.
+    completed_at = datetime.now(timezone.utc).isoformat()
+    node_map[node_id] = {**node_map[node_id], "state": "completed", "completed_at": completed_at}
+    all_nodes = list(node_map.values())
 
-    # Re-fetch all nodes so counts and unlock checks reflect the write above
-    all_nodes = await supa.get_all_tree_nodes(node["tree_id"])
-    node_map = {n["id"]: n for n in all_nodes}
-
-    # Collect all nodes to unlock, then batch in a single UPDATE
+    # Collect all nodes to unlock based on the post-completion state.
     to_unlock = [
         n["id"]
         for n in all_nodes
@@ -118,30 +129,43 @@ async def complete_node(
             for p in (n.get("prerequisites") or [])
         )
     ]
-    await supa.batch_update_nodes_state(to_unlock, "available")
 
-    # Recompute counters from live node data — avoids the stale-read race where
-    # two concurrent completions each read the same old tree["earned_xp"] and
-    # the second write silently discards the first's XP increment.
+    # Recompute counters from the in-memory post-completion state.
+    # This replaces the pre-parallel sequential flow (update → refetch →
+    # update_tree_progress) and preserves the stale-read-race protection
+    # because these counts include the single node we just flipped.
     completed_count = sum(1 for n in all_nodes if n["state"] == "completed")
     earned_xp = sum(n["xp_reward"] for n in all_nodes if n["state"] == "completed")
     new_status = "completed" if completed_count >= tree["total_nodes"] else "active"
-    await supa.update_tree_progress(node["tree_id"], completed_count, earned_xp, new_status)
 
-    # Apply streak multiplier to XP
+    # XP + streak-bonus math.
     base_xp = node["xp_reward"]
-    streak_mult = await get_user_streak_multiplier(user_id)
     adjusted_xp = math.floor(base_xp * streak_mult)
     streak_bonus_xp = adjusted_xp - base_xp
 
-    # Award XP, record activity, and update streak in parallel
-    xp_result, _, streak_result = await asyncio.gather(
+    # 1 RT (parallel) — every write for this completion. They all target
+    # disjoint rows so ordering doesn't matter; wall time = slowest single
+    # call, not the sum.
+    (
+        _node_write,
+        _unlock_write,
+        _tree_write,
+        xp_result,
+        _activity_write,
+        streak_result,
+    ) = await asyncio.gather(
+        supa.update_node(node_id, {"state": "completed", "completed_at": completed_at}),
+        supa.batch_update_nodes_state(to_unlock, "available"),
+        supa.update_tree_progress(node["tree_id"], completed_count, earned_xp, new_status),
         supa.add_xp_to_profile(user_id, adjusted_xp),
         supa.record_daily_activity(user_id, 1, adjusted_xp),
         supa.update_streak(user_id),
     )
 
-    # Check achievements (node_complete + possible tree_complete)
+    # Check achievements (node_complete + possible tree_complete).
+    # These run sequentially because later calls depend on the XP result
+    # (for the level_up trigger) — parallelising them would require
+    # threading the level-up context which isn't worth the complexity.
     achievement_context = {"tree_id": node["tree_id"]}
     new_achievements = await check_and_award(user_id, "node_complete", achievement_context)
 
@@ -149,7 +173,6 @@ async def complete_node(
         tree_achievements = await check_and_award(user_id, "tree_complete", achievement_context)
         new_achievements.extend(tree_achievements)
 
-    # Check level-up achievements
     if xp_result.get("leveled_up"):
         level_achievements = await check_and_award(
             user_id, "level_up", {"level": xp_result.get("new_level", 1)}

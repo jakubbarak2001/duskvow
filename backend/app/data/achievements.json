@@ -58,14 +58,14 @@
   "consistent": {
     "name": "Consistent",
     "description": "Maintain a 7-day activity streak.",
-    "category": "quest",
+    "category": "meta",
     "icon": "flame",
     "condition": { "type": "streak_reached", "days": 7 }
   },
   "relentless": {
     "name": "Relentless",
     "description": "Maintain a 30-day activity streak.",
-    "category": "quest",
+    "category": "meta",
     "icon": "flame",
     "condition": { "type": "streak_reached", "days": 30 }
   },
@@ -82,12 +82,5 @@
     "category": "meta",
     "icon": "crown",
     "condition": { "type": "level_reached", "level": 50 }
-  },
-  "well_rounded": {
-    "name": "Well Rounded",
-    "description": "Complete a tree node, a dungeon, and all daily quests in one day.",
-    "category": "meta",
-    "icon": "star",
-    "condition": { "type": "daily_trifecta" }
   }
 }

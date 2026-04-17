@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 interface GoalInputStepProps {
@@ -88,6 +89,33 @@ export function GoalInputStep({ onSubmit, loading }: GoalInputStepProps) {
         >
           Your vow is the seed. We read intent — not just the words on the
           page.
+        </p>
+
+        {/* Gemini data-handling disclosure — complies with GDPR layered-consent
+            best practice. Signup has the one-time agreement; this is the point-
+            of-use reminder. */}
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--text-muted)",
+            lineHeight: 1.6,
+            margin: 0,
+          }}
+        >
+          Your goal text is processed by Google Gemini to generate your tree;
+          it is not used for AI training.{" "}
+          <Link
+            href="/privacy#ai"
+            target="_blank"
+            style={{
+              color: "var(--accent-gold)",
+              textDecoration: "underline",
+              textDecorationColor: "rgba(255,215,0,0.3)",
+            }}
+          >
+            Details
+          </Link>
+          .
         </p>
 
         <div className="flex items-center justify-between mt-1">

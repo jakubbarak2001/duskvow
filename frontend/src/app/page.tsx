@@ -45,20 +45,22 @@ export default function LandingPage() {
           <div className="lp-hero-text-shadow" aria-hidden="true" />
           <div className="lp-hero-glow" aria-hidden="true" />
           <div className="lp-hero-content">
-            <p className="lp-hero-dagger">Self-Improvement, Reforged</p>
+            <p className="lp-hero-dagger">For the goal you keep putting off</p>
             <h1>
-              Speak Your Goal.<br />
-              We&apos;ll Forge the Path.
+              Speak the goal.<br />
+              Walk the steps.
             </h1>
             <p className="lp-hero-sub">
-              Your goal becomes a tree. The tree becomes a path.{" "}
-              You walk it at your own pace — and you don&apos;t walk it alone.
+              You know what you want. Most days, you don&apos;t know where to start.
+              Duskvow takes one ambition — learn AI, run a marathon, ship the
+              startup — and forges it into a lit path of small, concrete steps.
+              You walk it one bite at a time, at your pace.
             </p>
             <div className="lp-hero-cta-group">
               <Link href="/auth" className="lp-btn-primary">
                 <span>Make Your Vow — Free</span>
               </Link>
-              <p className="lp-hero-note">No credit card. Start in 60 seconds.</p>
+              <p className="lp-hero-note">No credit card. First step in 60 seconds.</p>
             </div>
           </div>
         </section>
@@ -98,7 +100,7 @@ export default function LandingPage() {
               <div className="lp-step-num">III</div>
               <div>
                 <h3>Walk the Path</h3>
-                <p>Walk it at your pace. Earn XP as you go. The path lights behind you.</p>
+                <p>Tap the first step. Then the next. The path lights behind you.</p>
               </div>
             </div>
           </div>
@@ -121,6 +123,10 @@ export default function LandingPage() {
         <footer className="lp-footer">
           <p className="lp-footer-brand">
             <Link href="https://duskvow.com">Duskvow</Link>
+            {" "}&nbsp;·&nbsp;{" "}
+            <Link href="/privacy">Privacy</Link>
+            {" "}&nbsp;·&nbsp;{" "}
+            <Link href="/terms">Terms</Link>
             {" "}&nbsp;·&nbsp;{" "}
             <a href="https://x.com/jacobduskvow" target="_blank" rel="noopener noreferrer">X</a>
           </p>

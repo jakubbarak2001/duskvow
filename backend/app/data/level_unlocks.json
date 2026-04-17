@@ -18,9 +18,7 @@
   },
   "feature_unlocks": {
     "hero_profile": 1,
-    "challenge_quests": 3,
     "fog_of_war_toggle": 8,
-    "custom_daily_quest": 15,
     "prestige": 30
   },
   "streak_bonuses": {

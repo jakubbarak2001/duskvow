@@ -7,8 +7,6 @@ import type {
   GenerationStatus,
   Ember,
   NodeCompletionResult,
-  DailyQuest,
-  DailyQuestCompletionResult,
   DungeonTier,
   DungeonRun,
   DungeonStartResult,
@@ -243,28 +241,6 @@ export const api = {
       headers: authHeader(token),
     }),
 
-  // Daily Quests
-  getTodayQuests: (token: string) =>
-    request<DailyQuest[]>("/api/v1/quests/today", {
-      headers: authHeader(token),
-    }),
-
-  completeQuest: (questId: string, token: string) => {
-    invalidate("profile", "profile-stats");
-    return request<DailyQuestCompletionResult>(`/api/v1/quests/${questId}/complete`, {
-      method: "POST",
-      headers: authHeader(token),
-    });
-  },
-
-  uncompleteQuest: (questId: string, token: string) => {
-    invalidate("profile", "profile-stats");
-    return request<{ quest_id: string; uncompleted: boolean }>(
-      `/api/v1/quests/${questId}/complete`,
-      { method: "DELETE", headers: authHeader(token) },
-    );
-  },
-
   // Dungeon
   getDungeonTiers: (token: string) =>
     cached("dungeon-tiers", () =>
@@ -282,7 +258,6 @@ export const api = {
     tier: string,
     durationMinutes: number,
     linkedNodeId: string | null,
-    linkedQuestId: string | null,
     token: string,
   ) =>
     request<DungeonStartResult>("/api/v1/dungeon/start", {
@@ -292,7 +267,6 @@ export const api = {
         tier,
         duration_minutes: durationMinutes,
         linked_node_id: linkedNodeId,
-        linked_quest_id: linkedQuestId,
       }),
     }),
 
@@ -389,4 +363,21 @@ export const api = {
       `/api/v1/leaderboard/me?metric=${metric}&period=${period}`,
       { headers: authHeader(token) },
     ),
+
+  // Account lifecycle — GDPR Art. 17 (erasure) + Art. 20 (portability)
+  deleteAccount: (confirm: string, token: string) =>
+    request<{ deleted: boolean }>("/api/v1/profile/me", {
+      method: "DELETE",
+      headers: authHeader(token),
+      body: JSON.stringify({ confirm }),
+    }),
+
+  // Returns the raw Response so the caller can stream it into a Blob and
+  // trigger a browser download. Using the shared `request()` helper would
+  // force JSON parsing, which defeats the file-download use case.
+  fetchDataExport: (token: string) =>
+    fetch(`${API_BASE}/api/v1/profile/me/export`, {
+      method: "GET",
+      headers: authHeader(token),
+    }),
 };

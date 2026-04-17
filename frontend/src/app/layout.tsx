@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Crimson_Pro } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AchievementProvider } from "@/components/ui/AchievementProvider";
+import { ConsentGate } from "@/components/consent/ConsentGate";
+import { ConsentBanner } from "@/components/consent/ConsentBanner";
 import "./globals.css";
 
 const inter = localFont({
@@ -61,8 +61,8 @@ export default function RootLayout({
         <AchievementProvider>
           {children}
         </AchievementProvider>
-        <Analytics />
-        <SpeedInsights />
+        <ConsentBanner />
+        <ConsentGate />
       </body>
     </html>
   );

@@ -7,11 +7,9 @@ User Context:
 - {{ question_id }}: {{ answer }}
 {% endfor %}
 
-Create a talent tree with 18-22 nodes organized into 6 horizontal tiers (rows). The JSON output schema is enforced — return `title`, `description`, `nodes`, and `daily_quests`.
+Create a talent tree with 18-22 nodes organized into 6 horizontal tiers (rows). The JSON output schema is enforced — return `title`, `description`, and `nodes`.
 
 Node fields: `id` (e.g. "node_1"), `title` (3-4 words), `description` (clear, specific action the user takes), `type` (one of: action | habit | choice | keystone), `tier` (one of: common | uncommon | rare | epic | legendary | mythic), `prerequisites` (list of node ids, max 2), `optional` (bool, usually false), `xp_reward` (int — see XP REWARDS below), `estimated_time` (e.g. "30 minutes"), `position` (always `{"x": 0, "y": 0}` — values are ignored).
-
-Daily quest fields: `id` (e.g. "dq_1"), `title`, `description`, `xp_reward`, and optionally `estimated_minutes` for timed activities.
 
 TREE STRUCTURE — FILL IN THIS TEMPLATE EXACTLY
 
@@ -56,13 +54,3 @@ TYPE MIX (across the whole tree, not per tier):
 
 XP REWARDS (must match tier exactly):
 - common=10, uncommon=20, rare=35, epic=50, legendary=75, mythic=100
-
-DAILY QUEST RULES:
-- Generate 3-5 daily recurring tasks that support the goal
-- These are habits the user should do EVERY DAY (e.g., "Practice for 20 minutes", "Review yesterday's notes")
-- They are separate from milestone nodes — do NOT duplicate node titles
-- XP rewards for dailies: 10-25 range (lower than milestone nodes)
-- Keep titles short (3-6 words) and descriptions actionable
-- If a quest involves a timed activity (practice, study, exercise, meditation, reading), include "estimated_minutes" (15-60). Otherwise omit it.
-  Examples with estimated_minutes: "Practice scales" (25), "Study flashcards" (20), "Morning run" (30)
-  Examples without: "Review progress", "Update journal", "Plan tomorrow"

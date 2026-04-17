@@ -188,36 +188,6 @@ export function BattleReport({
         </p>
       )}
 
-      {/* ── Quest Completion ── */}
-      {result.quest_auto_completed && result.linked_quest_id && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.6rem 1rem",
-            background: "rgba(255,215,0,0.06)",
-            border: "1px solid rgba(255,215,0,0.15)",
-            borderRadius: "4px",
-            width: "100%",
-          }}
-        >
-          <span style={{ color: "var(--accent-gold)", fontSize: "1rem" }}>
-            &#10003;
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-cinzel)",
-              fontSize: "0.7rem",
-              letterSpacing: "0.08em",
-              color: "var(--accent-gold)",
-            }}
-          >
-            Daily Quest Fulfilled
-          </span>
-        </div>
-      )}
-
       {/* ── Loot Section ── */}
       <div style={{ width: "100%", textAlign: "center" }}>
         <h3

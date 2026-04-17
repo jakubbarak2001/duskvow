@@ -11,15 +11,13 @@ import { Navbar } from "@/components/layout/Navbar";
 import { TreeCanvas } from "@/components/tree/TreeCanvas";
 import { TreeHeader } from "@/components/tree/TreeHeader";
 import { NodeDetailPanel } from "@/components/tree/NodeDetailPanel";
-import { QuestLogPanel } from "@/components/tree/QuestLogPanel";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { StatsBar } from "@/components/ui/StatsBar";
 import { api } from "@/lib/api";
 import type { LevelUpEvent } from "@/components/tree/NodeDetailPanel";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
-import { useAchievementToast } from "@/components/ui/AchievementProvider";
 import { titleForLevel } from "@/lib/levels";
-import type { SkillNode, TalentTree, DailyQuest } from "@/types";
+import type { SkillNode, TalentTree } from "@/types";
 
 export function TreeViewPage() {
   const params = useParams<{ id: string }>();
@@ -28,7 +26,6 @@ export function TreeViewPage() {
   const { user, session, loading: authLoading } = useUser();
   const { profile } = useProfile();
   const addXp = useUserStore((s) => s.addXp);
-  const updateFromCompletion = useUserStore((s) => s.updateFromCompletion);
   const storeSetLevel = useUserStore((s) => s.setLevel);
   const router = useRouter();
 
@@ -38,11 +35,8 @@ export function TreeViewPage() {
     updateNodeState, incrementCompleted, decrementCompleted,
   } = useTreeStore();
 
-  const { showAchievements, showStreakMilestone } = useAchievementToast();
-
   const [loadingTree, setLoadingTree] = useState(true);
   const [levelUpEvent, setLevelUpEvent] = useState<LevelUpEvent | null>(null);
-  const [treeQuests, setTreeQuests] = useState<DailyQuest[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Auth guard
@@ -50,26 +44,16 @@ export function TreeViewPage() {
     if (!authLoading && !user) router.replace("/auth");
   }, [user, authLoading, router]);
 
-  // Fetch tree + quests (profile comes from store via useProfile)
+  // Fetch tree (profile comes from store via useProfile)
   useEffect(() => {
     if (!session?.access_token || !treeId) return;
     const token = session.access_token;
 
-    Promise.allSettled([
-      api.getTree(treeId, token),
-      api.getTodayQuests(token),
-    ]).then(([treeResult, questsResult]) => {
-      if (treeResult.status === "fulfilled" && treeResult.value.data) {
-        setActiveTree(treeResult.value.data);
+    api.getTree(treeId, token).then((treeResult) => {
+      if (treeResult.data) {
+        setActiveTree(treeResult.data);
       } else {
-        setError(
-          treeResult.status === "fulfilled"
-            ? (treeResult.value.error?.message ?? "Tree not found.")
-            : "Failed to load tree.",
-        );
-      }
-      if (questsResult.status === "fulfilled" && questsResult.value.data) {
-        setTreeQuests(questsResult.value.data.filter((q) => q.tree_id === treeId));
+        setError(treeResult.error?.message ?? "Tree not found.");
       }
       setLoadingTree(false);
     });
@@ -130,59 +114,6 @@ export function TreeViewPage() {
     setLevelUpEvent(event);
     storeSetLevel(event.newLevel, event.newTitle);
   }, [storeSetLevel]);
-
-  // React Compiler auto-memoizes; no useCallback needed.
-  const handleQuestToggle = async (quest: DailyQuest) => {
-    if (!session?.access_token) return;
-    const token = session.access_token;
-
-    // Optimistic update
-    setTreeQuests((prev) =>
-      prev.map((q) =>
-        q.id === quest.id ? { ...q, completed_today: !q.completed_today } : q,
-      ),
-    );
-
-    if (!quest.completed_today) {
-      const res = await api.completeQuest(quest.id, token);
-      if (res.error) {
-        setTreeQuests((prev) =>
-          prev.map((q) =>
-            q.id === quest.id ? { ...q, completed_today: false } : q,
-          ),
-        );
-      } else if (res.data) {
-        updateFromCompletion({
-          total_xp: res.data.total_xp,
-          new_level: res.data.new_level,
-          new_title: res.data.new_title,
-        });
-        if (res.data.leveled_up) {
-          setLevelUpEvent({
-            newLevel: res.data.new_level,
-            previousLevel: res.data.previous_level,
-            newTitle: res.data.new_title,
-            xpEarned: res.data.xp_earned,
-          });
-        }
-        if (res.data.new_achievements?.length) {
-          showAchievements(res.data.new_achievements);
-        }
-        if (res.data.streak_milestone) {
-          showStreakMilestone(res.data.streak_milestone);
-        }
-      }
-    } else {
-      const res = await api.uncompleteQuest(quest.id, token);
-      if (res.error) {
-        setTreeQuests((prev) =>
-          prev.map((q) =>
-            q.id === quest.id ? { ...q, completed_today: true } : q,
-          ),
-        );
-      }
-    }
-  };
 
   if (authLoading || (!user && authLoading)) {
     return (
@@ -266,13 +197,6 @@ export function TreeViewPage() {
                 selectedNodeId={selectedNode?.id}
               />
             </ErrorBoundary>
-
-            {treeQuests.length > 0 && (
-              <QuestLogPanel
-                quests={treeQuests}
-                onToggle={handleQuestToggle}
-              />
-            )}
 
             {selectedNode && session?.access_token && (
               <NodeDetailPanel

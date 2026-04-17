@@ -185,9 +185,7 @@ def get_all_unlocks_for_display(hero_level: int) -> list[dict[str, Any]]:
     # Feature unlocks
     feature_descriptions = {
         "hero_profile": "Hero Profile page",
-        "challenge_quests": "Challenge quests (weekends)",
         "fog_of_war_toggle": "Tree fog-of-war toggle",
-        "custom_daily_quest": "Custom daily quest slot",
         "prestige": "Prestige (reset for permanent +10% XP)",
     }
     for key, req_level in cfg["feature_unlocks"].items():

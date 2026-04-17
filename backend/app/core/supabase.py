@@ -458,7 +458,7 @@ async def save_generated_tree(
     Args:
         user_id: Owner's UUID.
         goal_prompt: Original user goal text.
-        ai_result: Dict from Gemini with title, description, nodes[], and daily_quests[].
+        ai_result: Dict from Gemini with title, description, and nodes[].
 
     Returns:
         The saved tree dict with 'nodes' key.
@@ -512,32 +512,7 @@ async def save_generated_tree(
 
     nodes = await _bulk_insert("skill_nodes", node_rows)
 
-    # Save daily quests if the AI generated them
-    raw_quests: list[dict] = ai_result.get("daily_quests", [])
-    daily_quests: list[dict[str, Any]] = []
-    if raw_quests:
-        # PostgREST PGRST102: every row in a bulk insert must have the
-        # EXACT same set of keys. Previously we added `estimated_minutes`
-        # only when truthy, so a batch like [quest with minutes, quest
-        # without] would 400 the entire insert with "All object keys must
-        # match" — orphaning the tree + nodes that had already been
-        # written in the steps above. Always include the key; let NULL
-        # represent "no time estimate" (the column is INT NULL).
-        quest_rows = [
-            {
-                "tree_id": tree_id,
-                "user_id": user_id,
-                "title": q["title"],
-                "description": q["description"],
-                "xp_reward": q.get("xp_reward", 15),
-                "sort_order": i,
-                "estimated_minutes": q.get("estimated_minutes"),
-            }
-            for i, q in enumerate(raw_quests)
-        ]
-        daily_quests = await _bulk_insert("daily_quests", quest_rows)
-
-    return {**tree, "nodes": nodes, "daily_quests": daily_quests}
+    return {**tree, "nodes": nodes}
 
 
 async def delete_tree(tree_id: str, user_id: str) -> bool:
@@ -603,6 +578,38 @@ async def get_node(node_id: str) -> dict[str, Any] | None:
     """
     rows = await _get("skill_nodes", {"id": f"eq.{node_id}", "select": "*"})
     return rows[0] if rows else None
+
+
+async def get_node_with_tree(
+    node_id: str,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Fetch a node and its parent tree in ONE PostgREST round trip.
+
+    Uses PostgREST's embedded-resource select (`*,talent_trees(*)`) so the
+    node's tree comes back inline. Halves the RT count on the hot
+    ``complete_node`` path; the ownership check still runs in the caller.
+
+    Args:
+        node_id: Node UUID.
+
+    Returns:
+        Tuple of ``(node, tree)``; either can be None if the node is
+        missing or the tree has been soft-deleted.
+    """
+    rows = await _get(
+        "skill_nodes",
+        {"id": f"eq.{node_id}", "select": "*,talent_trees(*)"},
+    )
+    if not rows:
+        return None, None
+    node = dict(rows[0])
+    tree = node.pop("talent_trees", None)
+    # PostgREST returns an embedded dict (1:1 FK). Historic bug guard:
+    # if the embedded resource is returned as a list under some configs,
+    # peel the first element.
+    if isinstance(tree, list):
+        tree = tree[0] if tree else None
+    return node, tree
 
 
 async def get_all_tree_nodes(tree_id: str) -> list[dict[str, Any]]:
@@ -716,116 +723,6 @@ async def get_ember(ember_id: str) -> dict[str, Any] | None:
     """
     rows = await _get("embers", {"id": f"eq.{ember_id}", "select": "*"})
     return rows[0] if rows else None
-
-
-# ---------------------------------------------------------------------------
-# Daily Quests
-# ---------------------------------------------------------------------------
-
-
-async def list_daily_quests(user_id: str) -> list[dict[str, Any]]:
-    """List all daily quests for a user's active (non-deleted) trees.
-
-    Args:
-        user_id: Authenticated user's UUID.
-
-    Returns:
-        List of quest dicts ordered by sort_order.
-    """
-    # Get active tree IDs first
-    active_trees = await _get(
-        "talent_trees",
-        {
-            "user_id": f"eq.{user_id}",
-            "status": "eq.active",
-            "deleted_at": "is.null",
-            "select": "id",
-        },
-    )
-    if not active_trees:
-        return []
-
-    tree_ids = ",".join(t["id"] for t in active_trees)
-    return await _get(
-        "daily_quests",
-        {
-            "user_id": f"eq.{user_id}",
-            "tree_id": f"in.({tree_ids})",
-            "select": "*",
-            "order": "sort_order.asc",
-        },
-    )
-
-
-async def get_today_completions(user_id: str) -> list[dict[str, Any]]:
-    """Get today's quest completion records for a user.
-
-    Args:
-        user_id: Authenticated user's UUID.
-
-    Returns:
-        List of completion dicts for today.
-    """
-    today = date.today().isoformat()
-    return await _get(
-        "daily_quest_completions",
-        {
-            "user_id": f"eq.{user_id}",
-            "completed_date": f"eq.{today}",
-            "select": "*",
-        },
-    )
-
-
-async def get_daily_quest(quest_id: str) -> dict[str, Any] | None:
-    """Fetch a single daily quest by ID.
-
-    Args:
-        quest_id: Quest UUID.
-
-    Returns:
-        Quest dict or None.
-    """
-    rows = await _get("daily_quests", {"id": f"eq.{quest_id}", "select": "*"})
-    return rows[0] if rows else None
-
-
-async def complete_daily_quest(quest_id: str, user_id: str) -> dict[str, Any]:
-    """Record today's completion for a daily quest.
-
-    Args:
-        quest_id: Quest UUID.
-        user_id: Authenticated user's UUID.
-
-    Returns:
-        The inserted completion record.
-    """
-    return await _insert_one(
-        "daily_quest_completions",
-        {
-            "quest_id": quest_id,
-            "user_id": user_id,
-            "completed_date": date.today().isoformat(),
-        },
-    )
-
-
-async def uncomplete_daily_quest(quest_id: str, user_id: str) -> None:
-    """Remove today's completion for a daily quest.
-
-    Args:
-        quest_id: Quest UUID.
-        user_id: Authenticated user's UUID.
-    """
-    today = date.today().isoformat()
-    await _delete(
-        "daily_quest_completions",
-        {
-            "quest_id": f"eq.{quest_id}",
-            "user_id": f"eq.{user_id}",
-            "completed_date": f"eq.{today}",
-        },
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -965,7 +862,7 @@ async def get_dungeon_history(user_id: str, limit: int = 10) -> list[dict[str, A
 async def get_profile_stats(user_id: str) -> dict[str, Any]:
     """Return aggregated hero stats for the profile page.
 
-    Counts trees, nodes, dungeons, quests, and loot across all time.
+    Counts trees, nodes, dungeons, and loot across all time.
     Uses HEAD + Prefer: count=exact for all counts (no row transfer).
 
     Args:
@@ -973,8 +870,7 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
 
     Returns:
         Dict with trees_completed, trees_active, nodes_completed,
-        dungeons_completed, total_dungeon_minutes, quests_completed,
-        total_loot_collected.
+        dungeons_completed, total_dungeon_minutes, total_loot_collected.
     """
     import asyncio
 
@@ -1009,7 +905,6 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
         nodes_completed,
         dungeons_completed,
         total_dungeon_minutes,
-        quests_completed,
         total_loot,
     ) = await asyncio.gather(
         _count_fast("talent_trees", {"user_id": f"eq.{user_id}", "status": "eq.completed", "deleted_at": "is.null"}),
@@ -1017,7 +912,6 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
         _count_user_nodes_completed(),
         _count_fast("dungeon_runs", {"user_id": f"eq.{user_id}", "status": "eq.completed"}),
         _sum_minutes(),
-        _count_fast("daily_quest_completions", {"user_id": f"eq.{user_id}"}),
         _count_fast("hero_inventory", {"user_id": f"eq.{user_id}"}),
     )
 
@@ -1027,7 +921,6 @@ async def get_profile_stats(user_id: str) -> dict[str, Any]:
         "nodes_completed": nodes_completed,
         "dungeons_completed": dungeons_completed,
         "total_dungeon_minutes": total_dungeon_minutes,
-        "quests_completed": quests_completed,
         "total_loot_collected": total_loot,
     }
 
@@ -1061,7 +954,11 @@ async def get_leaderboard(
     else:
         order_col = "total_xp"
 
-    select = "id,hero_name,display_name,hero_level,hero_title,total_xp,weekly_xp,current_streak"
+    # display_name comes from OAuth `full_name` — exposing it on the
+    # leaderboard would leak real names (GDPR Art. 5 data minimisation).
+    # Only the chosen hero_name is returned; users without one are rendered
+    # as "Anonymous Wanderer" by the frontend.
+    select = "id,hero_name,hero_level,hero_title,total_xp,weekly_xp,current_streak"
     rows = await _get(
         "profiles",
         {
@@ -1357,3 +1254,124 @@ async def delete_ember(ember_id: str, user_id: str) -> bool:
         return False
     await _delete("embers", {"id": f"eq.{ember_id}"})
     return True
+
+
+# ---------------------------------------------------------------------------
+# Account deletion + export (GDPR Art. 17 + Art. 20)
+# ---------------------------------------------------------------------------
+
+
+async def delete_auth_user(user_id: str) -> None:
+    """Delete an auth.users row via the Supabase Auth Admin API.
+
+    Cascades to the public schema via FK ON DELETE CASCADE on
+    profiles.id, talent_trees.user_id, embers.user_id, and the rest
+    of the per-user tables defined across migrations.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Raises:
+        httpx.HTTPStatusError: if Supabase returns a non-2xx response.
+    """
+    res = await _client.delete(
+        f"{settings.supabase_url}/auth/v1/admin/users/{user_id}",
+        headers={
+            "apikey": settings.supabase_service_role_key,
+            "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        },
+    )
+    _check(res)
+
+
+async def build_user_export_bundle(user_id: str) -> dict[str, Any]:
+    """Assemble a full JSON export of the user's data (GDPR Art. 20).
+
+    Every list here is fetched via service-role so it bypasses RLS — the
+    caller is responsible for verifying that the JWT's user_id matches the
+    ``user_id`` argument. Nested tree nodes are inlined so the export is
+    self-contained and reimportable in principle.
+
+    Args:
+        user_id: Authenticated user's UUID.
+
+    Returns:
+        Plain dict serializable by ``json.dumps`` — profile + trees (with
+        nodes) + embers + achievements + inventory + dungeon history (with
+        events + loot) + daily activity.
+    """
+    import asyncio
+
+    async def _trees_with_nodes() -> list[dict[str, Any]]:
+        trees = await _get(
+            "talent_trees",
+            {"user_id": f"eq.{user_id}", "select": "*"},
+        )
+        if not trees:
+            return []
+        tree_ids = ",".join(t["id"] for t in trees)
+        nodes = await _get(
+            "skill_nodes",
+            {"tree_id": f"in.({tree_ids})", "select": "*", "order": "sort_order.asc"},
+        )
+        by_tree: dict[str, list[dict[str, Any]]] = {}
+        for n in nodes:
+            by_tree.setdefault(n["tree_id"], []).append(n)
+        return [{**t, "nodes": by_tree.get(t["id"], [])} for t in trees]
+
+    async def _dungeon_runs_full() -> list[dict[str, Any]]:
+        runs = await _get(
+            "dungeon_runs",
+            {"user_id": f"eq.{user_id}", "select": "*"},
+        )
+        if not runs:
+            return []
+        run_ids = ",".join(r["id"] for r in runs)
+        events, loot = await asyncio.gather(
+            _get("dungeon_events", {"run_id": f"in.({run_ids})", "select": "*"}),
+            _get("dungeon_loot", {"run_id": f"in.({run_ids})", "select": "*"}),
+        )
+        events_by_run: dict[str, list[dict[str, Any]]] = {}
+        loot_by_run: dict[str, list[dict[str, Any]]] = {}
+        for e in events:
+            events_by_run.setdefault(e["run_id"], []).append(e)
+        for item in loot:
+            loot_by_run.setdefault(item["run_id"], []).append(item)
+        return [
+            {
+                **r,
+                "events": events_by_run.get(r["id"], []),
+                "loot": loot_by_run.get(r["id"], []),
+            }
+            for r in runs
+        ]
+
+    (
+        profile,
+        trees,
+        embers,
+        achievements,
+        inventory,
+        dungeon_runs,
+        daily_activity,
+    ) = await asyncio.gather(
+        get_profile(user_id),
+        _trees_with_nodes(),
+        list_embers(user_id),
+        get_user_achievements(user_id),
+        get_user_inventory(user_id),
+        _dungeon_runs_full(),
+        _get("daily_activity", {"user_id": f"eq.{user_id}", "select": "*"}),
+    )
+
+    return {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "user_id": user_id,
+        "profile": profile,
+        "trees": trees,
+        "embers": embers,
+        "achievements": achievements,
+        "inventory": inventory,
+        "dungeon_runs": dungeon_runs,
+        "daily_activity": daily_activity,
+    }

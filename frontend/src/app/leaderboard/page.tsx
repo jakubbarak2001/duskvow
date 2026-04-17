@@ -26,7 +26,7 @@ function rankMedal(rank: number): string {
 }
 
 function displayName(entry: LeaderboardEntry): string {
-  return entry.hero_name || entry.display_name || "Unknown Hero";
+  return entry.hero_name ?? "Anonymous Wanderer";
 }
 
 function formatScore(score: number, metric: Metric): string {

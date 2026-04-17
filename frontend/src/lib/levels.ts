@@ -10,12 +10,29 @@ const TITLE_THRESHOLDS = [
   { level: 50, title: "Vow Eternal" },
 ] as const;
 
-/** XP required to reach a given level: 25 * level^2 */
+/** Minimum total XP required to reach a given level.
+ *
+ *  This is the INVERSE of the server's `compute_level_from_xp` formula
+ *  `level = floor(0.5 + sqrt(xp/25))`. Level 1 starts at 0 XP; for N >= 2
+ *  the entry threshold is `ceil(25 * (N - 0.5)^2)`.
+ *
+ *  Entry thresholds (for reference, match the server):
+ *    Lv  2 =      57 XP    Lv 10 =  2,257 XP
+ *    Lv  3 =     157 XP    Lv 20 =  9,507 XP
+ *    Lv  5 =     507 XP    Lv 50 = 61,257 XP
+ *
+ *  Before 2026-04-17 this returned `25 * N^2` which was the *midpoint* of
+ *  each level, not the floor. The XP bar treated it as a floor, which made
+ *  the progress percentage go negative at the start of a level and render
+ *  as a fully-filled bar due to invalid CSS width. Fixed now.
+ */
 export function xpForLevel(level: number): number {
-  return 25 * level * level;
+  if (level <= 1) return 0;
+  return Math.ceil(25 * (level - 0.5) * (level - 0.5));
 }
 
-/** Compute the level for a given total XP amount. */
+/** Compute the level for a given total XP amount. Matches the server's
+ *  `compute_level_from_xp` SQL function exactly. */
 export function levelForXp(totalXp: number): number {
   return Math.max(1, Math.floor(0.5 + Math.sqrt(totalXp / 25)));
 }

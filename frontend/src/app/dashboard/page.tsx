@@ -12,7 +12,7 @@ import { HeroNamingModal } from "@/components/ui/HeroNamingModal";
 import { StreakFlame } from "@/components/ui/StreakFlame";
 import { ResumeStrip } from "@/components/ui/ResumeStrip";
 import { isMvpMode } from "@/lib/flags";
-import type { TalentTree, DailyQuest } from "@/types";
+import type { TalentTree } from "@/types";
 
 // Dashboard mobile menu links. Mirrors the shared Navbar's authed links so
 // users get the same navigation surface from either entry point. "Hub" is
@@ -42,7 +42,6 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [primaryTree, setPrimaryTree] = useState<TalentTree | null>(null);
-  const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [shakingDoor, setShakingDoor] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -86,19 +85,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!session?.access_token) return;
     const token = session.access_token;
-    Promise.allSettled([
-      api.listTrees(token),
-      api.getTodayQuests(token),
-    ]).then(async ([treesResult, questsResult]) => {
-      if (questsResult.status === "fulfilled" && questsResult.value.data) {
-        setDailyQuests(questsResult.value.data);
-      }
 
+    api.listTrees(token).then(async (treesResult) => {
       // listTrees returns trees without nodes. To show the "next node" on
       // the resume strip we need the full tree detail for the most-recently
       // updated active tree — fetch it as a follow-up.
-      if (treesResult.status === "fulfilled" && treesResult.value.data) {
-        const list = treesResult.value.data;
+      if (treesResult.data) {
+        const list = treesResult.data;
         const mostRecentActive = list
           .filter((t) => t.status === "active")
           .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
@@ -461,7 +454,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Main Hub Arena ── */}
+      {/* ── Main Hub Arena ──
+          Card is vertically centered (firekeeper line + resume strip as a
+          single block) so the dungeon background frames it on both sides. */}
       <main
         style={{
           position: "relative",
@@ -472,7 +467,7 @@ export default function DashboardPage() {
           alignItems: "center",
           justifyContent: "center",
           padding: "3rem 1.5rem 4rem",
-          gap: "2rem",
+          gap: mvpMode ? "1.5rem" : "2rem",
         }}
       >
         {/* Firekeeper line — one warm, state-aware greeting above the primary
@@ -481,7 +476,6 @@ export default function DashboardPage() {
         {mvpMode && (
           <FirekeeperLine
             primaryTree={primaryTree}
-            dailyQuests={dailyQuests}
             loading={dataLoading}
           />
         )}
@@ -489,7 +483,6 @@ export default function DashboardPage() {
         {/* Resume strip — primary CTA */}
         <ResumeStrip
           primaryTree={primaryTree}
-          dailyQuests={dailyQuests}
           loading={dataLoading}
         />
 
@@ -610,25 +603,16 @@ export default function DashboardPage() {
 
 function FirekeeperLine({
   primaryTree,
-  dailyQuests,
   loading,
 }: {
   primaryTree: TalentTree | null;
-  dailyQuests: DailyQuest[];
   loading: boolean;
 }) {
   if (loading) return null;
 
-  let message: string;
-  if (!primaryTree) {
-    message = "The flame waits. Name your vow.";
-  } else {
-    const questsForTree = dailyQuests.filter((q) => q.tree_id === primaryTree.id);
-    const hasOpenWork = questsForTree.length === 0 || questsForTree.some((q) => !q.completed_today);
-    message = hasOpenWork
-      ? "The path waits. The flame remembers you."
-      : "The embers hold. Rest if you need to.";
-  }
+  const message = primaryTree
+    ? "The path waits. The flame remembers you."
+    : "The flame waits. Name your vow.";
 
   return (
     <p

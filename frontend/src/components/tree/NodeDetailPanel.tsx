@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { SkillNode } from "@/types";
 import { api } from "@/lib/api";
 import { useTreeStore } from "@/stores/treeStore";
+import { useUserStore } from "@/stores/userStore";
 import { useAchievementToast } from "@/components/ui/AchievementProvider";
 
 const TIER_COLOR: Record<string, string> = {
@@ -42,6 +43,7 @@ export function NodeDetailPanel({
   const [error, setError] = useState<string | null>(null);
   const [lastEarned, setLastEarned] = useState<{ base: number; bonus: number } | null>(null);
   const { completionPending, setCompletionPending } = useTreeStore();
+  const updateFromCompletion = useUserStore((s) => s.updateFromCompletion);
   const { showAchievements, showStreakMilestone } = useAchievementToast();
 
   if (!node) return null;
@@ -73,6 +75,17 @@ export function NodeDetailPanel({
     } else if (res.data) {
       onXpEarned(res.data.xp_earned, res.data.total_xp);
       setLastEarned({ base: res.data.base_xp, bonus: res.data.streak_bonus_xp });
+
+      // Reconcile profile-level fields (level/title, and — critically —
+      // streak + last_activity_date) so the StreakFlame flips from cold →
+      // burning the same frame. The store's optimistic streak math handles
+      // the value; no extra server data needed.
+      updateFromCompletion({
+        total_xp: res.data.total_xp,
+        new_level: res.data.new_level,
+        new_title: res.data.new_title,
+      });
+
       if (res.data.leveled_up && onLevelUp) {
         onLevelUp({
           newLevel: res.data.new_level,

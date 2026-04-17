@@ -233,7 +233,6 @@ def compute_xp_reward(
     total_floors: int,
     duration_minutes: int = 25,
     linked_node: bool = False,
-    linked_quest: bool = False,
 ) -> int:
     """Compute XP reward for a dungeon run.
 
@@ -243,7 +242,6 @@ def compute_xp_reward(
         total_floors: Total floors in the run.
         duration_minutes: How long the delve lasted (longer = more XP).
         linked_node: Whether a tree node was linked (+20% bonus).
-        linked_quest: Whether a daily quest was linked (+15% bonus).
 
     Returns:
         Integer XP reward (minimum 5).
@@ -258,10 +256,7 @@ def compute_xp_reward(
     # Duration multiplier — longer focus sessions earn more
     xp *= _duration_multiplier(duration_minutes)
 
-    # Bonuses
     if linked_node:
         xp *= 1.20
-    if linked_quest:
-        xp *= 1.15
 
     return max(5, math.floor(xp))

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import { useProfile } from "@/hooks/useProfile";
+import { getSupabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { xpForLevel, nextTitleInfo } from "@/lib/levels";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -32,7 +33,6 @@ const RARITY_COLORS: Record<string, string> = {
 const CATEGORY_LABELS: Record<string, string> = {
   tree: "Vow Mastery",
   dungeon: "Dungeon Trials",
-  quest: "Quest Pursuits",
   meta: "Legendary Feats",
 };
 
@@ -43,7 +43,6 @@ const STAT_ACCENTS: Record<string, string> = {
   "Nodes Completed": "var(--accent-gold)",
   "Dungeons Completed": "var(--accent-ember)",
   "Dungeon Time": "var(--accent-ember)",
-  "Quests Completed": "var(--state-available)",
   "Items Collected": "var(--rarity-rare)",
 };
 
@@ -57,6 +56,11 @@ export default function ProfilePage() {
   const [unlocks, setUnlocks] = useState<LevelUnlock[]>([]);
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [usingItem, setUsingItem] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletePhrase, setDeletePhrase] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/auth");
@@ -92,6 +96,45 @@ export default function ProfilePage() {
     }
   };
 
+  const handleExportData = async () => {
+    if (!session?.access_token || exporting) return;
+    setExporting(true);
+    try {
+      const res = await api.fetchDataExport(session.access_token);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      const date = new Date().toISOString().slice(0, 10);
+      anchor.download = `duskvow-export-${date}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!session?.access_token || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const res = await api.deleteAccount(deletePhrase, session.access_token);
+    if (res.error) {
+      setDeleteError(
+        res.error.message ??
+          "Something shifted in the dark. Try again in a moment.",
+      );
+      setDeleting(false);
+      return;
+    }
+    // Account is gone — sign out to clear the local session, then home.
+    await getSupabase().auth.signOut();
+    router.replace("/");
+  };
+
   if (loading) return null;
   if (!user) return null;
 
@@ -99,7 +142,13 @@ export default function ProfilePage() {
   const nextLevelXp = profile ? xpForLevel(profile.hero_level + 1) : 100;
   const xpProgress = profile ? profile.total_xp - currentLevelXp : 0;
   const xpNeeded = nextLevelXp - currentLevelXp;
-  const xpPercent = xpNeeded > 0 ? Math.min(100, (xpProgress / xpNeeded) * 100) : 100;
+  // Clamp to [0, 100]. Without the floor clamp, an edge case (e.g. stale
+  // hero_level > levelForXp(total_xp)) could push xpProgress negative; the
+  // resulting `width: "-33%"` is invalid CSS and browsers fall back to
+  // `auto`, painting the bar fully filled. Belt + suspenders.
+  const xpPercent = xpNeeded > 0
+    ? Math.min(100, Math.max(0, (xpProgress / xpNeeded) * 100))
+    : 100;
   const earnedCount = achievements.filter((a) => a.unlocked).length;
   const nextTitle = profile ? nextTitleInfo(profile.hero_level) : null;
   const streakPct = profile && profile.streak_multiplier > 1.0 ? Math.round((profile.streak_multiplier - 1.0) * 100) : 0;
@@ -119,7 +168,6 @@ export default function ProfilePage() {
     { label: "Nodes Completed", value: stats.nodes_completed },
     { label: "Dungeons Completed", value: stats.dungeons_completed },
     { label: "Dungeon Time", value: `${Math.floor(stats.total_dungeon_minutes / 60)}h ${stats.total_dungeon_minutes % 60}m` },
-    { label: "Quests Completed", value: stats.quests_completed },
     { label: "Items Collected", value: stats.total_loot_collected },
   ] : [];
 
@@ -422,12 +470,277 @@ export default function ProfilePage() {
             })}
           </div>
         </section>
+
+        {/* ── Danger Zone ── GDPR Art. 17 (erasure) + Art. 20 (portability) */}
+        <section style={{ marginTop: "4rem" }}>
+          <SectionTitle>Unbind Your Vow</SectionTitle>
+
+          <div
+            style={{
+              background: "var(--bg-shadow)",
+              border: "1px solid rgba(139, 0, 0, 0.3)",
+              padding: "1.75rem 1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "var(--font-crimson), Georgia, serif",
+                fontStyle: "italic",
+                fontSize: "0.95rem",
+                color: "var(--text-secondary)",
+                margin: 0,
+                lineHeight: 1.7,
+              }}
+            >
+              Take what is yours, or extinguish your flame. Either is your
+              right, and either is final.
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleExportData}
+                disabled={exporting}
+                style={{
+                  fontFamily: "var(--font-heading), 'Cinzel', serif",
+                  fontSize: "0.7rem",
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "var(--text-primary)",
+                  background: "var(--bg-elevated)",
+                  border: "1px solid rgba(224, 216, 200, 0.15)",
+                  padding: "0.65rem 1.4rem",
+                  cursor: exporting ? "wait" : "pointer",
+                  opacity: exporting ? 0.6 : 1,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {exporting ? "Gathering…" : "Export My Data"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmDelete(true);
+                  setDeletePhrase("");
+                  setDeleteError(null);
+                }}
+                style={{
+                  fontFamily: "var(--font-heading), 'Cinzel', serif",
+                  fontSize: "0.7rem",
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "var(--accent-blood)",
+                  background: "transparent",
+                  border: "1px solid var(--accent-blood)",
+                  padding: "0.65rem 1.4rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(139, 0, 0, 0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                Unbind Your Vow
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {confirmDelete && (
+          <DeleteAccountModal
+            phrase={deletePhrase}
+            onPhraseChange={setDeletePhrase}
+            deleting={deleting}
+            error={deleteError}
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={handleDeleteAccount}
+          />
+        )}
       </main>
     </div>
   );
 }
 
 // ── Sub-components ──
+
+function DeleteAccountModal({
+  phrase,
+  onPhraseChange,
+  deleting,
+  error,
+  onCancel,
+  onConfirm,
+}: {
+  phrase: string;
+  onPhraseChange: (v: string) => void;
+  deleting: boolean;
+  error: string | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const canConfirm = phrase.trim() === "DELETE MY VOW" && !deleting;
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 10001,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(10, 10, 18, 0.78)",
+        backdropFilter: "blur(6px)",
+        padding: "1.5rem",
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 520,
+          background: "var(--bg-shadow)",
+          border: "1px solid rgba(139, 0, 0, 0.4)",
+          boxShadow:
+            "0 0 40px rgba(139, 0, 0, 0.15), 0 20px 60px rgba(0, 0, 0, 0.6)",
+          padding: "2rem 1.75rem",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2
+          style={{
+            fontFamily: "var(--font-heading), 'Cinzel', serif",
+            fontSize: "1.25rem",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            color: "var(--accent-blood)",
+            margin: "0 0 0.75rem",
+          }}
+        >
+          Extinguish the flame?
+        </h2>
+        <p
+          style={{
+            fontFamily: "var(--font-crimson), Georgia, serif",
+            fontSize: "0.95rem",
+            color: "var(--text-secondary)",
+            lineHeight: 1.65,
+            margin: "0 0 1.25rem",
+          }}
+        >
+          This deletes your account and every vow, node, ember, dungeon run,
+          and achievement tied to it. It cannot be undone.
+        </p>
+        <p
+          style={{
+            fontFamily: "var(--font-crimson), Georgia, serif",
+            fontSize: "0.85rem",
+            color: "var(--text-muted)",
+            margin: "0 0 0.4rem",
+          }}
+        >
+          Type <code style={{ color: "var(--accent-blood)" }}>DELETE MY VOW</code>{" "}
+          to confirm.
+        </p>
+        <input
+          type="text"
+          value={phrase}
+          onChange={(e) => onPhraseChange(e.target.value)}
+          className="wiz-textarea"
+          autoFocus
+          style={{
+            width: "100%",
+            padding: "0.75rem 1rem",
+            fontSize: "0.9rem",
+            fontFamily: "ui-monospace, monospace",
+            color: "var(--text-primary)",
+            marginBottom: "1rem",
+          }}
+        />
+
+        {error && (
+          <p
+            role="alert"
+            style={{
+              margin: "0 0 1rem",
+              padding: "0.5rem 0.75rem",
+              fontSize: "0.8rem",
+              color: "var(--accent-blood)",
+              background: "rgba(139, 0, 0, 0.1)",
+              border: "1px solid rgba(139, 0, 0, 0.35)",
+            }}
+          >
+            {error}
+          </p>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            justifyContent: "flex-end",
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={deleting}
+            style={{
+              fontFamily: "var(--font-heading), 'Cinzel', serif",
+              fontSize: "0.7rem",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "var(--text-secondary)",
+              background: "transparent",
+              border: "1px solid rgba(224, 216, 200, 0.15)",
+              padding: "0.65rem 1.4rem",
+              cursor: deleting ? "not-allowed" : "pointer",
+              opacity: deleting ? 0.5 : 1,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!canConfirm}
+            style={{
+              fontFamily: "var(--font-heading), 'Cinzel', serif",
+              fontSize: "0.7rem",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "var(--text-primary)",
+              background: canConfirm ? "var(--accent-blood)" : "var(--bg-elevated)",
+              border: "none",
+              padding: "0.65rem 1.4rem",
+              cursor: canConfirm ? "pointer" : "not-allowed",
+              opacity: canConfirm ? 1 : 0.5,
+            }}
+          >
+            {deleting ? "Extinguishing…" : "Extinguish My Flame"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function StreakRune({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (

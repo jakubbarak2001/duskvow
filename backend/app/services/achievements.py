@@ -2,12 +2,11 @@
 
 Achievements are one-time accomplishments defined in ``app/data/achievements.json``.
 The ``check_and_award`` function is called after significant user actions (node
-complete, dungeon complete, quest complete, etc.) and returns any newly earned
-achievements so the frontend can show notification toasts.
+complete, dungeon complete, etc.) and returns any newly earned achievements so
+the frontend can show notification toasts.
 """
 
 import json
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -69,7 +68,7 @@ async def check_and_award(
         user_id: Authenticated user's UUID.
         trigger: Action that triggered the check. One of:
             node_complete, tree_complete, dungeon_complete, dungeon_retreat,
-            quest_complete, streak_update, level_up, loot_claimed.
+            streak_update, level_up, loot_claimed.
         context: Additional data for evaluation (e.g. level, streak, duration).
 
     Returns:
@@ -125,11 +124,10 @@ def _get_relevant_achievements(
         Dict of achievement key → definition for relevant, un-earned achievements.
     """
     trigger_to_condition_types: dict[str, set[str]] = {
-        "node_complete": {"tree_nodes_completed", "daily_trifecta"},
+        "node_complete": {"tree_nodes_completed"},
         "tree_complete": {"trees_completed", "tree_nodes_completed"},
-        "dungeon_complete": {"dungeons_completed", "dungeon_duration_completed", "daily_trifecta"},
+        "dungeon_complete": {"dungeons_completed", "dungeon_duration_completed"},
         "dungeon_retreat": set(),  # retreating doesn't earn achievements
-        "quest_complete": {"daily_trifecta"},
         "streak_update": {"streak_reached"},
         "level_up": {"level_reached"},
         "loot_claimed": {"total_loot_collected"},
@@ -217,60 +215,4 @@ async def _evaluate_condition(
         profile = await supa.get_profile(user_id)
         return (profile["hero_level"] if profile else 1) >= condition["level"]
 
-    if ctype == "daily_trifecta":
-        return await _check_daily_trifecta(user_id)
-
     return False
-
-
-async def _check_daily_trifecta(user_id: str) -> bool:
-    """Check if the user completed a node, a dungeon, and all quests today.
-
-    Args:
-        user_id: Authenticated user's UUID.
-
-    Returns:
-        True if all three conditions met today.
-    """
-    import asyncio
-
-    today = date.today().isoformat()
-
-    async def _has_node_completion_today() -> bool:
-        rows = await supa._get(
-            "daily_activity",
-            {
-                "user_id": f"eq.{user_id}",
-                "activity_date": f"eq.{today}",
-                "select": "nodes_completed",
-            },
-        )
-        return bool(rows and rows[0].get("nodes_completed", 0) > 0)
-
-    async def _has_dungeon_completion_today() -> bool:
-        rows = await supa._get(
-            "dungeon_runs",
-            {
-                "user_id": f"eq.{user_id}",
-                "status": "eq.completed",
-                "select": "completed_at",
-                "completed_at": f"gte.{today}T00:00:00",
-            },
-        )
-        return len(rows) > 0
-
-    async def _all_quests_completed_today() -> bool:
-        quests = await supa.list_daily_quests(user_id)
-        if not quests:
-            return False
-        completions = await supa.get_today_completions(user_id)
-        completed_ids = {c["quest_id"] for c in completions}
-        return all(q["id"] in completed_ids for q in quests)
-
-    node_done, dungeon_done, quests_done = await asyncio.gather(
-        _has_node_completion_today(),
-        _has_dungeon_completion_today(),
-        _all_quests_completed_today(),
-    )
-
-    return node_done and dungeon_done and quests_done

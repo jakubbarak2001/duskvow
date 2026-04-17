@@ -3,7 +3,6 @@
 import asyncio
 import math
 from datetime import datetime, timezone
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -80,7 +79,7 @@ async def start_run(
     dungeon events and loot, then persists everything.
 
     Args:
-        body: Tier, duration, optional linked node/quest.
+        body: Tier, duration, optional linked node.
         user_id: Authenticated user's UUID.
 
     Returns:
@@ -114,11 +113,10 @@ async def start_run(
             detail=f"Hero level {hero_level} is too low. {tier_cfg['name']} requires level {tier_cfg['min_level']}.",
         )
 
-    # Verify linked node/quest ownership before committing to a run.
-    # Without this, a crafted linked_node_id / linked_quest_id would let an
-    # attacker credit their dungeon bonuses against another user's node/quest
-    # or auto-complete it in complete_run. The FK columns are ON DELETE SET
-    # NULL with no user scope, so only the API layer can enforce ownership.
+    # Verify linked node ownership before committing to a run.
+    # Without this, a crafted linked_node_id would let an attacker credit
+    # their dungeon bonuses against another user's node. The FK is ON DELETE
+    # SET NULL with no user scope, so only the API layer can enforce this.
     if body.linked_node_id:
         linked_node = await supa.get_node(body.linked_node_id)
         if not linked_node:
@@ -133,19 +131,6 @@ async def start_run(
                 detail="Linked node does not belong to you.",
             )
 
-    if body.linked_quest_id:
-        linked_quest = await supa.get_daily_quest(body.linked_quest_id)
-        if not linked_quest:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Linked quest not found.",
-            )
-        if linked_quest["user_id"] != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Linked quest does not belong to you.",
-            )
-
     # Generate the dungeon run (no AI calls — pure random from pools)
     generated = generate_dungeon_run(body.tier, body.duration_minutes)
 
@@ -156,7 +141,6 @@ async def start_run(
         "total_floors": generated["total_floors"],
         "duration_minutes": body.duration_minutes,
         "linked_node_id": body.linked_node_id,
-        "linked_quest_id": body.linked_quest_id,
         "status": "active",
     })
     run_id = run["id"]
@@ -200,8 +184,7 @@ async def complete_run(
 ) -> dict:
     """Complete the user's active dungeon run.
 
-    Awards full XP (with bonuses for linked node/quest), grants loot,
-    and auto-completes any linked daily quest.
+    Awards full XP (with bonus for linked node) and grants loot.
 
     Args:
         user_id: Authenticated user's UUID.
@@ -223,7 +206,6 @@ async def complete_run(
         total_floors=total_floors,
         duration_minutes=run["duration_minutes"],
         linked_node=bool(run.get("linked_node_id")),
-        linked_quest=bool(run.get("linked_quest_id")),
     )
 
     # Apply streak multiplier
@@ -234,7 +216,7 @@ async def complete_run(
     now = datetime.now(timezone.utc).isoformat()
 
     # Update run status and award XP/activity/streak in parallel
-    completion_ops: list[Any] = [
+    _updated_run, xp_result, _, streak_result = await asyncio.gather(
         supa.complete_dungeon_run(run["id"], {
             "status": "completed",
             "cleared_floors": total_floors,
@@ -244,29 +226,7 @@ async def complete_run(
         supa.add_xp_to_profile(user_id, adjusted_xp),
         supa.record_daily_activity(user_id, 0, adjusted_xp),
         supa.update_streak(user_id),
-    ]
-
-    # Auto-complete linked quest if present and not already done today
-    linked_quest_id = run.get("linked_quest_id")
-    quest_auto_completed = False
-
-    results = await asyncio.gather(*completion_ops)
-    _updated_run, xp_result, _, streak_result = results
-
-    if linked_quest_id:
-        quest = await supa.get_daily_quest(linked_quest_id)
-        if quest and quest["user_id"] == user_id:
-            today_completions = await supa.get_today_completions(user_id)
-            already_done = any(c["quest_id"] == linked_quest_id for c in today_completions)
-            if not already_done:
-                quest_base_xp = quest["xp_reward"]
-                quest_adjusted_xp = math.floor(quest_base_xp * streak_mult)
-                await asyncio.gather(
-                    supa.complete_daily_quest(linked_quest_id, user_id),
-                    supa.add_xp_to_profile(user_id, quest_adjusted_xp),
-                    supa.record_daily_activity(user_id, 0, quest_adjusted_xp),
-                )
-                quest_auto_completed = True
+    )
 
     # Fetch loot for the response
     loot = await supa.get_dungeon_loot(run["id"])
@@ -297,8 +257,6 @@ async def complete_run(
             "previous_level": xp_result.get("previous_level", 1),
             "new_title": xp_result.get("new_title", "Wanderer"),
             "loot": loot,
-            "quest_auto_completed": quest_auto_completed,
-            "linked_quest_id": linked_quest_id,
             "new_achievements": new_achievements,
             "streak_milestone": streak_result.get("streak_milestone") if isinstance(streak_result, dict) else None,
         },
@@ -351,7 +309,6 @@ async def retreat_run(
         total_floors=total_floors,
         duration_minutes=run["duration_minutes"],
         linked_node=False,  # No bonuses on retreat
-        linked_quest=False,
     )
 
     # Apply streak multiplier even on retreat (you still worked)

@@ -40,10 +40,6 @@ _MAX_NODES = 25
 _MAX_TITLE_LEN = 80
 _MAX_DESC_LEN = 500
 
-# Daily quests don't have a tier; prompt asks for 10-25 XP per quest.
-_QUEST_XP_MIN = 10
-_QUEST_XP_MAX = 25
-
 # ---------------------------------------------------------------------------
 # AI response validation schemas
 # ---------------------------------------------------------------------------
@@ -56,6 +52,9 @@ class _AIFollowUpQuestion(BaseModel):
 
 class _AIFollowUpResponse(BaseModel):
     questions: list[_AIFollowUpQuestion]
+    # Populated by the prompt when the goal is gibberish / nonsense.
+    # Empty questions + non-empty rejection_reason → user-facing 400.
+    rejection_reason: str | None = None
 
 
 class _AINodePosition(BaseModel):
@@ -76,23 +75,10 @@ class _AINode(BaseModel):
     position: _AINodePosition = _AINodePosition()
 
 
-class _AIDailyQuest(BaseModel):
-    id: str
-    title: str
-    description: str
-    xp_reward: int = 15
-    # Optional minute estimate for timed activities (practice, study, etc).
-    # Was missing from the schema before — Pydantic was silently stripping it
-    # during validation, so supabase.py:507's `q.get("estimated_minutes")`
-    # check could never succeed. Restored 2026-04-13.
-    estimated_minutes: int | None = None
-
-
 class _AITreeResponse(BaseModel):
     title: str
     description: str
     nodes: list[_AINode]
-    daily_quests: list[_AIDailyQuest] = []
 
 
 def _validate_followup(data: dict) -> dict:
@@ -182,12 +168,6 @@ def _validate_tree(data: dict) -> dict:
                 detail=f"AI returned unknown tier '{tier}'.",
             )
         node["xp_reward"] = _TIER_XP[tier]
-
-    # Clamp daily quest xp_reward to the advertised 10-25 window.
-    for quest in validated["daily_quests"]:
-        quest["xp_reward"] = max(
-            _QUEST_XP_MIN, min(_QUEST_XP_MAX, quest["xp_reward"])
-        )
 
     return validated
 
@@ -341,16 +321,38 @@ class GeminiService:
     async def generate_followup_questions(self, goal_prompt: str) -> dict:
         """Generate 2-3 clarifying follow-up questions for the user's goal.
 
+        The prompt instructs Gemini to reject gibberish / empty-of-meaning
+        goals by returning ``questions: []`` plus a ``rejection_reason``.
+        When that happens we raise 400 with the reason so the wizard can
+        surface it to the user without proceeding to tree generation.
+
         Args:
             goal_prompt: The user's stated goal.
 
         Returns:
             Dict with a 'questions' list of {id, text, options}.
+
+        Raises:
+            HTTPException: 400 if Gemini rejects the goal as meaningless.
         """
         tmpl = _jinja.get_template("followup_questions.txt")
         prompt = tmpl.render(goal_prompt=goal_prompt)
         raw = await self._call(settings.gemini_model_fast, self._fast_config, prompt)
-        return _validate_followup(raw)
+        validated = _validate_followup(raw)
+
+        rejection = validated.get("rejection_reason")
+        if not validated["questions"] or rejection:
+            message = (
+                rejection
+                or "That doesn't look like a real goal — try describing "
+                "what you want to learn, build, or change in a sentence or two."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=message,
+            )
+
+        return validated
 
     async def generate_tree(
         self,
@@ -369,7 +371,7 @@ class GeminiService:
             answers: Map of question_id → selected option.
 
         Returns:
-            Dict with title, description, nodes[], and daily_quests[].
+            Dict with title, description, and nodes[].
         """
         tmpl = _jinja.get_template("generate_tree.txt")
         prompt = tmpl.render(goal_prompt=goal_prompt, answers=answers)

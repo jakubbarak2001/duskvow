@@ -18,7 +18,6 @@ import type {
   DungeonEvent,
   DungeonCompleteResult,
   TalentTree,
-  DailyQuest,
   SkillNode,
 } from "@/types";
 import { titleForLevel } from "@/lib/levels";
@@ -77,7 +76,6 @@ function DungeonPageInner() {
   const [tiers, setTiers] = useState<DungeonTier[]>([]);
   const [activeRun, setActiveRun] = useState<DungeonRun | null>(null);
   const [trees, setTrees] = useState<TalentTree[]>([]);
-  const [quests, setQuests] = useState<DailyQuest[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   // Selection state — lazy initializers pull from URL params at mount so
@@ -92,9 +90,6 @@ function DungeonPageInner() {
     return 45;
   });
   const [linkedNodeId, setLinkedNodeId] = useState<string | null>(null);
-  const [linkedQuestId, setLinkedQuestId] = useState<string | null>(
-    () => searchParams.get("quest"),
-  );
 
   // UI state
   const [starting, setStarting] = useState(false);
@@ -133,30 +128,17 @@ function DungeonPageInner() {
       api.getDungeonTiers(token),
       api.getActiveDungeon(token),
       api.listTrees(token),
-      api.getTodayQuests(token),
-    ]).then(([tiersRes, activeRes, treesRes, questsRes]) => {
+    ]).then(([tiersRes, activeRes, treesRes]) => {
       if (tiersRes.status === "fulfilled" && tiersRes.value.data) {
-        const loadedTiers = tiersRes.value.data;
-        setTiers(loadedTiers);
-        // Auto-select the highest unlocked tier when entering via a quest URL.
-        // Done here (inside the fetch callback) instead of a separate effect so
-        // the setState is not synchronous in an effect body.
-        if (searchParams.get("quest")) {
-          const unlocked = loadedTiers.filter((t) => t.unlocked);
-          if (unlocked.length > 0) {
-            setSelectedTier(unlocked[unlocked.length - 1].key);
-          }
-        }
+        setTiers(tiersRes.value.data);
       }
       if (activeRes.status === "fulfilled" && activeRes.value.data)
         setActiveRun(activeRes.value.data);
       if (treesRes.status === "fulfilled" && treesRes.value.data)
         setTrees(treesRes.value.data);
-      if (questsRes.status === "fulfilled" && questsRes.value.data)
-        setQuests(questsRes.value.data);
       setDataLoading(false);
     });
-  }, [session, searchParams]);
+  }, [session]);
 
   // Track whether we already fired a notification for this run
   const notifiedRef = useRef(false);
@@ -242,7 +224,6 @@ function DungeonPageInner() {
       selectedTier,
       durationMinutes,
       linkedNodeId,
-      linkedQuestId,
       session.access_token,
     );
 
@@ -265,7 +246,7 @@ function DungeonPageInner() {
         Notification.requestPermission();
       }
     }
-  }, [session, selectedTier, durationMinutes, linkedNodeId, linkedQuestId]);
+  }, [session, selectedTier, durationMinutes, linkedNodeId]);
 
   const handleComplete = useCallback(async () => {
     if (!session?.access_token || !activeRun) return;
@@ -397,13 +378,9 @@ function DungeonPageInner() {
     }
   }
 
-  // Uncompleted quests for today
-  const uncompletedQuests = quests.filter((q) => !q.completed_today);
-
   // XP bonus display
   const nodeBonus = linkedNodeId ? 20 : 0;
-  const questBonus = linkedQuestId ? 15 : 0;
-  const totalBonus = nodeBonus + questBonus;
+  const totalBonus = nodeBonus;
 
   // Selected tier info
   const selectedTierInfo = tiers.find((t) => t.key === selectedTier);
@@ -421,7 +398,6 @@ function DungeonPageInner() {
     }
     let xp = base * durMult;
     if (linkedNodeId) xp *= 1.20;
-    if (linkedQuestId) xp *= 1.15;
     return Math.floor(xp);
   })();
 
@@ -737,67 +713,6 @@ function DungeonPageInner() {
                           }}
                         >
                           +20% XP bonus
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── Link to Daily Quest (Optional) ── */}
-                  {selectedTier && uncompletedQuests.length > 0 && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.5rem",
-                        width: "100%",
-                        maxWidth: "400px",
-                      }}
-                    >
-                      <label
-                        style={{
-                          fontFamily: "var(--font-crimson)",
-                          fontStyle: "italic",
-                          color: "var(--text-secondary)",
-                          fontSize: "0.95rem",
-                        }}
-                      >
-                        Fulfill a quest?
-                      </label>
-                      <select
-                        value={linkedQuestId ?? ""}
-                        onChange={(e) =>
-                          setLinkedQuestId(e.target.value || null)
-                        }
-                        style={{
-                          background: "var(--bg-elevated)",
-                          color: "var(--text-primary)",
-                          border: "1px solid var(--border-default)",
-                          borderRadius: "2px",
-                          padding: "0.5rem 0.75rem",
-                          fontFamily: "var(--font-cinzel)",
-                          fontSize: "0.7rem",
-                          outline: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <option value="">None</option>
-                        {uncompletedQuests.map((q) => (
-                          <option key={q.id} value={q.id}>
-                            {q.title} (+{q.xp_reward} XP)
-                          </option>
-                        ))}
-                      </select>
-                      {linkedQuestId && (
-                        <span
-                          style={{
-                            fontSize: "0.7rem",
-                            color: "var(--accent-gold)",
-                            fontFamily: "var(--font-cinzel)",
-                            letterSpacing: "0.1em",
-                          }}
-                        >
-                          +15% XP bonus — auto-completes quest on dungeon
-                          completion
                         </span>
                       )}
                     </div>
@@ -1294,19 +1209,6 @@ function ActiveRunView({
             +20% XP — linked to tree node
           </p>
         )}
-        {run.linked_quest_id && (
-          <p
-            style={{
-              fontSize: "0.6rem",
-              color: "var(--text-muted)",
-              margin: "0.15rem 0 0 0",
-              fontFamily: "var(--font-cinzel)",
-              letterSpacing: "0.08em",
-            }}
-          >
-            +15% XP — fulfilling daily quest
-          </p>
-        )}
       </div>
 
       {/* Event log */}
@@ -1442,7 +1344,7 @@ function ActiveRunView({
                   textAlign: "center",
                 }}
               >
-                Turn back? The path you've walked still counts.
+                Turn back? The path you&apos;ve walked still counts.
                 <br />
                 Partial XP, no loot.
               </p>
