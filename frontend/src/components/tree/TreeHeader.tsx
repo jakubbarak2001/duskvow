@@ -61,7 +61,7 @@ export function TreeHeader({ tree }: TreeHeaderProps) {
               <span className="tree-header-pill-value-sep">/</span>
               {total}
             </span>
-            <span className="tree-header-pill-label">Nodes</span>
+            <span className="tree-header-pill-label">Steps</span>
           </div>
 
           <div className="tree-header-pill-sep" aria-hidden="true" />

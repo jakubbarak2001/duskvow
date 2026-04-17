@@ -195,7 +195,7 @@ export function NodeDetailPanel({
 
         {node.is_optional && (
           <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-            Optional — you can skip this node.
+            Optional — you can skip this step.
           </p>
         )}
 
@@ -239,7 +239,7 @@ export function NodeDetailPanel({
       >
         {node.state === "locked" && (
           <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
-            Complete prerequisites to unlock this node.
+            Complete the earlier steps to unlock this one.
           </p>
         )}
 
@@ -254,7 +254,7 @@ export function NodeDetailPanel({
               border: "1px solid var(--state-progress)",
             }}
           >
-            Start Node
+            Begin Step
           </button>
         )}
 
@@ -285,7 +285,7 @@ export function NodeDetailPanel({
               border: "1px solid var(--border-default)",
             }}
           >
-            Reset Node
+            Reset Step
           </button>
         )}
         </div>

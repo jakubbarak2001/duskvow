@@ -41,7 +41,7 @@ export function NodeTooltip({ node }: NodeTooltipProps) {
 
       {hasPrereqs && node.state === "locked" && (
         <div className="node-tooltip-prereqs">
-          Requires {node.prerequisites.length} prerequisite
+          Requires {node.prerequisites.length} earlier step
           {node.prerequisites.length > 1 ? "s" : ""}
         </div>
       )}

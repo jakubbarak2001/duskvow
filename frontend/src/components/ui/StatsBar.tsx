@@ -200,7 +200,7 @@ export function StatsBar({
                 className="text-xs uppercase"
                 style={{ color: "var(--text-muted)", letterSpacing: "0.25em" }}
               >
-                Nodes Done
+                Steps Walked
               </div>
             </div>
           </>

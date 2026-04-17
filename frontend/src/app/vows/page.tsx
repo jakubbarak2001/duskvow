@@ -635,7 +635,7 @@ function TreeCard({
             </p>
           )}
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {tree.completed_nodes}/{tree.total_nodes} nodes ·{" "}
+            {tree.completed_nodes}/{tree.total_nodes} steps ·{" "}
             {tree.earned_xp}/{tree.total_xp} XP
           </p>
         </Link>
