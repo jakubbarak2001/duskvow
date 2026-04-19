@@ -4,15 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { Node } from "@xyflow/react";
 import { useUser } from "@/hooks/useUser";
-import { useProfile } from "@/hooks/useProfile";
 import { useUserStore } from "@/stores/userStore";
 import { useTreeStore } from "@/stores/treeStore";
 import { Navbar } from "@/components/layout/Navbar";
 import { TreeCanvas } from "@/components/tree/TreeCanvas";
 import { TreeHeader } from "@/components/tree/TreeHeader";
 import { NodeDetailPanel } from "@/components/tree/NodeDetailPanel";
+import { ShareTreeModal } from "@/components/tree/ShareTreeModal";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
-import { StatsBar } from "@/components/ui/StatsBar";
 import { api } from "@/lib/api";
 import type { LevelUpEvent } from "@/components/tree/NodeDetailPanel";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
@@ -24,10 +23,11 @@ export function TreeViewPage() {
   const { id: treeId } = params;
 
   const { user, session, loading: authLoading } = useUser();
-  const { profile } = useProfile();
   const addXp = useUserStore((s) => s.addXp);
   const storeSetLevel = useUserStore((s) => s.setLevel);
   const router = useRouter();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const {
     activeTree, selectedNode,
@@ -43,6 +43,31 @@ export function TreeViewPage() {
   useEffect(() => {
     if (!authLoading && !user) router.replace("/auth");
   }, [user, authLoading, router]);
+
+  // F key toggles focus mode — ignored while typing in inputs.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "f" && e.key !== "F") return;
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || (e.target as HTMLElement | null)?.isContentEditable) {
+        return;
+      }
+      e.preventDefault();
+      setIsFullscreen((f) => !f);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Escape exits focus mode (only when nothing else is open).
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
 
   // Fetch tree (profile comes from store via useProfile)
   useEffect(() => {
@@ -87,10 +112,10 @@ export function TreeViewPage() {
 
       if (newState === "completed" && activeTree) {
         const updatedNodes = activeTree.nodes.map((n) =>
-          n.id === nodeId ? { ...n, state: "completed" as const } : n
+          n.id === nodeId ? { ...n, state: "completed" as const } : n,
         );
         const completedIds = new Set(
-          updatedNodes.filter((n) => n.state === "completed").map((n) => n.id)
+          updatedNodes.filter((n) => n.state === "completed").map((n) => n.id),
         );
         for (const n of updatedNodes) {
           if (
@@ -132,32 +157,49 @@ export function TreeViewPage() {
 
   return (
     <div
-      className="tree-view-shell flex flex-col"
+      className={`tree-view-shell flex flex-col${isFullscreen ? " tree-view-shell-focus" : ""}`}
       style={{ backgroundColor: "var(--bg-abyss)" }}
     >
-      <Navbar />
+      {!isFullscreen && <Navbar />}
 
-      {/* Tree header — manuscript-style artifact block */}
-      {tree && <TreeHeader tree={tree} />}
+      {tree && !isFullscreen && (
+        <TreeHeader
+          tree={tree}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={() => setIsFullscreen((f) => !f)}
+          onShareClick={() => setShareOpen(true)}
+        />
+      )}
 
-      {/* Profile stats row — level + streak (Nodes column omitted; TreeHeader owns that metric) */}
-      {tree && profile && (
-        <div
-          className="stats-bar-mobile-wrap px-5 pb-3 shrink-0"
-          style={{
-            backgroundColor: "var(--bg-shadow)",
-            borderBottom: "1px solid var(--border-default)",
+      {tree && shareOpen && session?.access_token && (
+        <ShareTreeModal
+          tree={tree}
+          token={session.access_token}
+          onClose={() => setShareOpen(false)}
+          onPublishChange={(isPublic, slug) => {
+            if (activeTree) {
+              setActiveTree({
+                ...activeTree,
+                is_public: isPublic,
+                share_slug: slug,
+              });
+            }
           }}
+        />
+      )}
+
+      {isFullscreen && (
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(false)}
+          className="tree-focus-exit"
+          aria-label="Exit focus mode (Esc)"
+          title="Exit focus mode (Esc)"
         >
-          <StatsBar
-            totalXp={profile.total_xp}
-            currentStreak={profile.current_streak}
-            heroLevel={profile.hero_level}
-            heroTitle={profile.hero_title}
-            streakMultiplier={profile.streak_multiplier}
-            lastActivityDate={profile.last_activity_date}
-          />
-        </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M8 3v4H4M16 3v4h4M8 21v-4H4M16 21v-4h4" />
+          </svg>
+        </button>
       )}
 
       {/* Canvas + detail panel */}

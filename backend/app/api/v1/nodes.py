@@ -244,39 +244,3 @@ async def start_node(
     }
 
 
-@router.patch("/{node_id}/reset", response_model=dict)
-async def reset_node(
-    node_id: str,
-    user_id: str = Depends(get_current_user_id),
-) -> dict:
-    """Reset a skill node back to available state.
-
-    Note: This does NOT remove XP that was already awarded.
-
-    Args:
-        node_id: UUID of the node to reset.
-        user_id: Authenticated user's UUID.
-
-    Returns:
-        Envelope with node_id and new_state.
-    """
-    node, tree = await _get_node_with_ownership(node_id, user_id)
-
-    if tree["status"] == "completed":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This tree is finished and can no longer be modified.",
-        )
-
-    if node["state"] == "locked":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Locked nodes cannot be reset.",
-        )
-
-    await supa.update_node(node_id, {"state": "available", "completed_at": None})
-
-    return {
-        "data": {"node_id": node_id, "new_state": "available"},
-        "error": None,
-    }

@@ -10,6 +10,7 @@ from app.api.v1.dungeon import router as dungeon_router
 from app.api.v1.achievements import router as achievements_router
 from app.api.v1.inventory import router as inventory_router
 from app.api.v1.leaderboard import router as leaderboard_router
+from app.api.v1.public import router as public_router
 
 router = APIRouter()
 router.include_router(trees_router, prefix="/trees", tags=["trees"])
@@ -20,3 +21,4 @@ router.include_router(dungeon_router, prefix="/dungeon", tags=["dungeon"])
 router.include_router(achievements_router, prefix="/achievements", tags=["achievements"])
 router.include_router(inventory_router, prefix="/inventory", tags=["inventory"])
 router.include_router(leaderboard_router, prefix="/leaderboard", tags=["leaderboard"])
+router.include_router(public_router, prefix="/public", tags=["public"])

@@ -11,7 +11,6 @@ import { xpForLevel, nextTitleInfo } from "@/lib/levels";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type {
   Achievement,
-  InventoryItem,
   LevelUnlock,
   ProfileStats,
 } from "@/types";
@@ -21,18 +20,8 @@ const ICON_MAP: Record<string, string> = {
   chest: "⬡", abyss: "◈", mountain: "▲", crown: "♔", star: "✦",
 };
 
-const RARITY_COLORS: Record<string, string> = {
-  scroll_of_clarity: "var(--rarity-uncommon)",
-  ember_shard: "var(--rarity-rare)",
-  shadowsteel_fragment: "var(--rarity-epic)",
-  heros_ration: "var(--rarity-common)",
-  rune_of_focus: "var(--rarity-legendary)",
-  ashen_token: "var(--rarity-uncommon)",
-};
-
 const CATEGORY_LABELS: Record<string, string> = {
   tree: "Vow Mastery",
-  dungeon: "Dungeon Trials",
   meta: "Legendary Feats",
 };
 
@@ -41,10 +30,16 @@ const STAT_ACCENTS: Record<string, string> = {
   "Trees Completed": "var(--accent-gold)",
   "Trees Active": "var(--accent-gold)",
   "Nodes Completed": "var(--accent-gold)",
-  "Dungeons Completed": "var(--accent-ember)",
-  "Dungeon Time": "var(--accent-ember)",
-  "Items Collected": "var(--rarity-rare)",
 };
+
+// MVP scope: hide dungeon + prestige features from the Path of Ascension
+// until those systems ship. Backend keeps serving them — we just don't
+// paint them in the UI.
+const MVP_HIDDEN_UNLOCK_PREFIXES = ["dungeon_", "prestige", "streak_"] as const;
+
+function isMvpUnlock(feature: string): boolean {
+  return !MVP_HIDDEN_UNLOCK_PREFIXES.some((p) => feature.startsWith(p));
+}
 
 export default function ProfilePage() {
   const { user, session, loading } = useUser();
@@ -52,10 +47,8 @@ export default function ProfilePage() {
   const router = useRouter();
 
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [unlocks, setUnlocks] = useState<LevelUnlock[]>([]);
   const [stats, setStats] = useState<ProfileStats | null>(null);
-  const [usingItem, setUsingItem] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletePhrase, setDeletePhrase] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -71,30 +64,17 @@ export default function ProfilePage() {
     const token = session.access_token;
     Promise.allSettled([
       api.getAchievements(token),
-      api.getInventory(token, false),
       api.getLevelUnlocks(token),
       api.getProfileStats(token),
-    ]).then(([achievementsRes, inventoryRes, unlocksRes, statsRes]) => {
+    ]).then(([achievementsRes, unlocksRes, statsRes]) => {
       if (achievementsRes.status === "fulfilled" && achievementsRes.value.data)
         setAchievements(achievementsRes.value.data);
-      if (inventoryRes.status === "fulfilled" && inventoryRes.value.data)
-        setInventory(inventoryRes.value.data);
       if (unlocksRes.status === "fulfilled" && unlocksRes.value.data)
         setUnlocks(unlocksRes.value.data);
       if (statsRes.status === "fulfilled" && statsRes.value.data)
         setStats(statsRes.value.data);
     });
   }, [session]);
-
-  const handleUseItem = async (itemId: string) => {
-    if (!session?.access_token || usingItem) return;
-    setUsingItem(itemId);
-    const res = await api.useItem(itemId, session.access_token);
-    setUsingItem(null);
-    if (!res.error) {
-      setInventory((prev) => prev.filter((i) => i.id !== itemId));
-    }
-  };
 
   const handleExportData = async () => {
     if (!session?.access_token || exporting) return;
@@ -149,13 +129,18 @@ export default function ProfilePage() {
   const xpPercent = xpNeeded > 0
     ? Math.min(100, Math.max(0, (xpProgress / xpNeeded) * 100))
     : 100;
-  const earnedCount = achievements.filter((a) => a.unlocked).length;
+  // MVP scope: tree-mastery + meta achievements only. Dungeon achievements
+  // are still earned server-side but hidden from the UI until dungeons ship.
+  const mvpAchievements = achievements.filter((a) => (a.category ?? "meta") !== "dungeon");
+  const earnedCount = mvpAchievements.filter((a) => a.unlocked).length;
   const nextTitle = profile ? nextTitleInfo(profile.hero_level) : null;
-  const streakPct = profile && profile.streak_multiplier > 1.0 ? Math.round((profile.streak_multiplier - 1.0) * 100) : 0;
-  const levelUnlocks = unlocks.filter((u) => !u.feature.startsWith("streak_"));
+  const streakPct = profile && profile.streak_multiplier > 1.0
+    ? Math.round((profile.streak_multiplier - 1.0) * 100)
+    : 0;
+  const levelUnlocks = unlocks.filter((u) => isMvpUnlock(u.feature));
 
-  // Group achievements by category
-  const achievementsByCategory = achievements.reduce<Record<string, Achievement[]>>((acc, a) => {
+  // Group achievements by category (post-filter)
+  const achievementsByCategory = mvpAchievements.reduce<Record<string, Achievement[]>>((acc, a) => {
     const cat = a.category ?? "meta";
     (acc[cat] ??= []).push(a);
     return acc;
@@ -166,9 +151,6 @@ export default function ProfilePage() {
     { label: "Trees Completed", value: stats.trees_completed },
     { label: "Trees Active", value: stats.trees_active },
     { label: "Nodes Completed", value: stats.nodes_completed },
-    { label: "Dungeons Completed", value: stats.dungeons_completed },
-    { label: "Dungeon Time", value: `${Math.floor(stats.total_dungeon_minutes / 60)}h ${stats.total_dungeon_minutes % 60}m` },
-    { label: "Items Collected", value: stats.total_loot_collected },
   ] : [];
 
   return (
@@ -300,7 +282,7 @@ export default function ProfilePage() {
           <section>
             <SectionTitle>Hero Stats</SectionTitle>
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="skeleton" style={{ height: "2.5rem", borderRadius: "0" }} />
               ))}
             </div>
@@ -312,7 +294,7 @@ export default function ProfilePage() {
 
         {/* ═══════════ ACHIEVEMENTS — grouped by category ═══════════ */}
         <section>
-          <SectionTitle>Achievements ({earnedCount} of {achievements.length})</SectionTitle>
+          <SectionTitle>Achievements ({earnedCount} of {mvpAchievements.length})</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {Object.entries(achievementsByCategory).map(([cat, achs]) => (
               <div key={cat}>
@@ -368,107 +350,13 @@ export default function ProfilePage() {
         {/* Ornamental divider */}
         <Divider />
 
-        {/* ═══════════ INVENTORY — grid cards with rarity ═══════════ */}
-        <section>
-          <SectionTitle>Inventory ({inventory.length})</SectionTitle>
-          {inventory.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "2rem 0" }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: "0.65rem", letterSpacing: "0.1em", color: "var(--text-muted)" }}>
-                Your pack is empty. Delve deeper.
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "0.75rem" }}>
-              {inventory.map((item) => {
-                const rColor = RARITY_COLORS[item.item_type] ?? "var(--rarity-common)";
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      padding: "0.75rem",
-                      backgroundColor: "rgba(224,216,200,0.025)",
-                      borderTop: `3px solid ${rColor}`,
-                      border: `1px solid rgba(224,216,200,0.06)`,
-                      borderTopWidth: "3px",
-                      borderTopColor: rColor,
-                      borderRadius: "4px",
-                      display: "flex", flexDirection: "column", gap: "0.4rem",
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: rColor, boxShadow: `0 0 6px ${rColor}`, flexShrink: 0 }} />
-                      <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.7rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.05em" }}>
-                        {item.item_name}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: "0.6rem", color: "var(--text-muted)", lineHeight: 1.4, flex: 1 }}>
-                      {item.effect}
-                    </div>
-                    <button
-                      onClick={() => handleUseItem(item.id)}
-                      disabled={usingItem === item.id}
-                      style={{
-                        fontFamily: "var(--font-heading)", fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase",
-                        padding: "0.35rem 0.6rem", borderRadius: "2px",
-                        border: `1px solid ${rColor}33`, backgroundColor: "transparent",
-                        color: rColor, cursor: usingItem === item.id ? "not-allowed" : "pointer",
-                        opacity: usingItem === item.id ? 0.5 : 1, transition: "all 0.2s", alignSelf: "flex-start",
-                      }}
-                    >
-                      {usingItem === item.id ? "..." : "Use"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Ornamental divider */}
-        <Divider />
-
-        {/* ═══════════ PATH OF ASCENSION — vertical timeline ═══════════ */}
+        {/* ═══════════ PATH OF ASCENSION — milestone waypoints ═══════════ */}
         <section>
           <SectionTitle>Path of Ascension</SectionTitle>
-          <div style={{ position: "relative", paddingLeft: "2rem" }}>
-            {/* Gold timeline line */}
-            <div style={{ position: "absolute", left: "0.5rem", top: "0.5rem", bottom: "0.5rem", width: "2px", background: "linear-gradient(180deg, var(--accent-gold), rgba(255,215,0,0.1))" }} />
-
-            {levelUnlocks.map((u, i) => {
-              const heroLevel = profile?.hero_level ?? 1;
-              const isCurrentLevel = heroLevel >= u.required_level &&
-                (i === levelUnlocks.length - 1 || heroLevel < (levelUnlocks[i + 1]?.required_level ?? Infinity));
-              return (
-                <div
-                  key={u.feature}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "0.75rem",
-                    padding: "0.5rem 0", position: "relative",
-                    opacity: u.unlocked ? 1 : 0.35 - (i * 0.02),
-                  }}
-                >
-                  {/* Timeline node */}
-                  <div
-                    className={isCurrentLevel ? "glow-breathe" : ""}
-                    style={{
-                      position: "absolute", left: "-1.65rem",
-                      width: "14px", height: "14px", borderRadius: "50%",
-                      border: `2px solid ${u.unlocked ? "var(--accent-gold)" : "rgba(224,216,200,0.2)"}`,
-                      backgroundColor: u.unlocked ? "var(--accent-gold)" : "transparent",
-                      boxShadow: isCurrentLevel ? "0 0 10px rgba(255,215,0,0.5)" : "none",
-                    }}
-                  />
-                  <span style={{ fontFamily: "var(--font-heading)", fontSize: "0.6rem", letterSpacing: "0.05em", color: u.unlocked ? "var(--accent-gold)" : "var(--text-muted)", width: "40px", flexShrink: 0 }}>
-                    Lv.{u.required_level}
-                  </span>
-                  <span style={{ fontSize: "0.7rem", color: u.unlocked ? "var(--text-primary)" : "var(--text-secondary)" }}>
-                    {u.description}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <AscensionPath
+            unlocks={levelUnlocks}
+            heroLevel={profile?.hero_level ?? 1}
+          />
         </section>
 
         {/* ── Danger Zone ── GDPR Art. 17 (erasure) + Art. 20 (portability) */}
@@ -778,5 +666,99 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function Divider() {
   return (
     <div style={{ width: "140px", height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent)", margin: "0 auto" }} />
+  );
+}
+
+// ── Path of Ascension ─────────────────────────────────────────────────
+
+const ROMAN_SMALL: [number, string][] = [
+  [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+  [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+];
+
+function toRoman(n: number): string {
+  let out = "";
+  let r = n;
+  for (const [v, s] of ROMAN_SMALL) {
+    while (r >= v) {
+      out += s;
+      r -= v;
+    }
+  }
+  return out;
+}
+
+// Tiny symbol per unlock type. Kept minimal so the copy reads as the hero
+// and the mark reads as a footnote — no icon font, just runes.
+function unlockSigil(feature: string): string {
+  if (feature.startsWith("gen_limit_")) return "✦"; // daily generation slot
+  if (feature.startsWith("tree_cap_")) return "◈";  // active tree capacity
+  return "⛊"; // discrete feature toggle (hero_profile, fog_of_war_toggle…)
+}
+
+interface AscensionPathProps {
+  unlocks: LevelUnlock[];
+  heroLevel: number;
+}
+
+function AscensionPath({ unlocks, heroLevel }: AscensionPathProps) {
+  // Group by required_level — kills the "Lv.1 × 3" stacked-pin redundancy.
+  const byLevel = new Map<number, LevelUnlock[]>();
+  for (const u of unlocks) {
+    const arr = byLevel.get(u.required_level) ?? [];
+    arr.push(u);
+    byLevel.set(u.required_level, arr);
+  }
+  const levels = [...byLevel.keys()].sort((a, b) => a - b);
+
+  // "Current" waypoint = highest level the hero has cleared. Lets us render
+  // exactly one ember-ring marker instead of gold-highlighting every past
+  // waypoint (which reads as "all of this is now") and dulls the sense of
+  // where the hero is standing.
+  const currentLevel = levels.reduce(
+    (acc, l) => (heroLevel >= l && l > acc ? l : acc),
+    0,
+  );
+
+  return (
+    <div className="ascension-path">
+      {levels.map((level, idx) => {
+        const entries = byLevel.get(level) ?? [];
+        const unlocked = heroLevel >= level;
+        const isCurrent = level === currentLevel;
+        const isLast = idx === levels.length - 1;
+        const state = isCurrent ? "current" : unlocked ? "past" : "future";
+        return (
+          <div
+            key={level}
+            className={`ascension-waypoint ascension-waypoint-${state}`}
+          >
+            <div className="ascension-rail" aria-hidden="true">
+              <span className="ascension-pin" />
+              {!isLast && <span className="ascension-line" />}
+            </div>
+            <div className="ascension-body">
+              <div className="ascension-rank">
+                <span className="ascension-rank-roman">{toRoman(level)}</span>
+                <span className="ascension-rank-label">Lv.{level}</span>
+                {isCurrent && (
+                  <span className="ascension-rank-badge">You are here</span>
+                )}
+              </div>
+              <ul className="ascension-unlocks">
+                {entries.map((u) => (
+                  <li key={u.feature} className="ascension-unlock">
+                    <span className="ascension-unlock-sigil" aria-hidden="true">
+                      {unlockSigil(u.feature)}
+                    </span>
+                    <span className="ascension-unlock-text">{u.description}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

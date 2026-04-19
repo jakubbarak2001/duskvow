@@ -209,36 +209,6 @@ async def test_start_locked_node_returns_400(client, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# reset_node
-# ---------------------------------------------------------------------------
-
-
-async def test_reset_node_success(client, monkeypatch):
-    node = make_node(state="in_progress")
-    tree = make_tree()
-
-    _patch_ownership(monkeypatch, node, tree)
-    monkeypatch.setattr("app.core.supabase.update_node", AsyncMock(return_value={}))
-
-    res = await client.patch("/api/v1/nodes/node-1/reset")
-
-    assert res.status_code == 200
-    assert res.json()["data"]["new_state"] == "available"
-
-
-async def test_reset_locked_node_returns_400(client, monkeypatch):
-    node = make_node(state="locked")
-    tree = make_tree()
-
-    _patch_ownership(monkeypatch, node, tree)
-
-    res = await client.patch("/api/v1/nodes/node-1/reset")
-
-    assert res.status_code == 400
-    assert "Locked" in res.json()["detail"]
-
-
-# ---------------------------------------------------------------------------
 # Ownership / not-found
 # ---------------------------------------------------------------------------
 

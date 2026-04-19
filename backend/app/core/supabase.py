@@ -424,6 +424,114 @@ async def get_tree_by_id(tree_id: str) -> dict[str, Any] | None:
     return rows[0] if rows else None
 
 
+async def get_public_tree_by_slug(slug: str) -> dict[str, Any] | None:
+    """Fetch a public tree + its nodes by share_slug. No ownership check.
+
+    Returns the tree dict (with ``nodes`` key) only when the row is
+    ``is_public = true`` and not soft-deleted. ``user_id`` is stripped
+    from the returned shape so the public route never leaks the owner's
+    auth identity. ``hero_name`` is attached (best-effort) so the public
+    view can render "by <hero_name>".
+
+    Args:
+        slug: The share slug.
+
+    Returns:
+        Tree dict with ``nodes`` and ``hero_name`` or None.
+    """
+    rows = await _get(
+        "talent_trees",
+        {
+            "share_slug": f"eq.{slug}",
+            "is_public": "eq.true",
+            "deleted_at": "is.null",
+            "select": "*",
+        },
+    )
+    if not rows:
+        return None
+    tree = rows[0]
+    owner_id = tree.get("user_id")
+    nodes = await get_all_tree_nodes(tree["id"])
+    hero_name: str | None = None
+    if owner_id:
+        owner = await get_profile(owner_id)
+        if owner:
+            hero_name = owner.get("hero_name")
+    # Strip owner identity from the response shape — the public route
+    # must not leak user_id to anonymous consumers.
+    safe_tree = {k: v for k, v in tree.items() if k != "user_id"}
+    return {**safe_tree, "nodes": nodes, "hero_name": hero_name}
+
+
+async def share_tree(
+    tree_id: str,
+    user_id: str,
+    slug: str,
+) -> dict[str, Any] | None:
+    """Stamp a slug on an owned tree and flip it public.
+
+    Ownership is enforced by filtering on user_id + tree_id in the same
+    PATCH so a non-owner's request no-ops (no row returned).
+
+    Args:
+        tree_id: Tree UUID.
+        user_id: Authenticated user's UUID (must own tree).
+        slug: Pre-generated share slug.
+
+    Returns:
+        Updated tree dict, or None if not owned / not found / deleted.
+    """
+    rows = await _patch(
+        "talent_trees",
+        {
+            "id": f"eq.{tree_id}",
+            "user_id": f"eq.{user_id}",
+            "deleted_at": "is.null",
+        },
+        {
+            "share_slug": slug,
+            "is_public": True,
+            "shared_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    return rows[0] if rows else None
+
+
+async def unshare_tree(tree_id: str, user_id: str) -> bool:
+    """Flip a tree back to private. Keeps the slug (so re-publish is stable).
+
+    Args:
+        tree_id: Tree UUID.
+        user_id: Authenticated user's UUID (must own tree).
+
+    Returns:
+        True if a row was updated, False otherwise.
+    """
+    rows = await _patch(
+        "talent_trees",
+        {
+            "id": f"eq.{tree_id}",
+            "user_id": f"eq.{user_id}",
+            "deleted_at": "is.null",
+        },
+        {"is_public": False},
+    )
+    return bool(rows)
+
+
+async def count_public_trees(user_id: str) -> int:
+    """Count currently-public (non-deleted) trees owned by a user."""
+    return await _count_fast(
+        "talent_trees",
+        {
+            "user_id": f"eq.{user_id}",
+            "is_public": "eq.true",
+            "deleted_at": "is.null",
+        },
+    )
+
+
 async def get_tree_with_nodes(
     tree_id: str,
     user_id: str,

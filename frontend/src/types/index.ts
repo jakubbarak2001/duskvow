@@ -37,6 +37,11 @@ export interface TalentTree {
   nodes: SkillNode[];
   created_at: string;
   updated_at: string;
+  // Sharing — absent on public responses (user_id + goal_prompt are
+  // stripped server-side for anon consumers).
+  share_slug?: string | null;
+  is_public?: boolean;
+  shared_at?: string | null;
 }
 
 export interface UserProfile {

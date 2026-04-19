@@ -195,6 +195,28 @@ export const api = {
     });
   },
 
+  shareTree: (treeId: string, token: string) => {
+    invalidate("trees");
+    return request<{ slug: string; is_public: boolean; already_public: boolean }>(
+      `/api/v1/trees/${treeId}/share`,
+      { method: "POST", headers: authHeader(token) },
+    );
+  },
+
+  unshareTree: (treeId: string, token: string) => {
+    invalidate("trees");
+    return request<{ is_public: boolean }>(
+      `/api/v1/trees/${treeId}/share`,
+      { method: "DELETE", headers: authHeader(token) },
+    );
+  },
+
+  // Public — no auth header
+  getPublicTree: (slug: string) =>
+    request<TalentTree & { hero_name: string | null }>(
+      `/api/v1/public/trees/${slug}`,
+    ),
+
   // Profile
   updateProfile: (heroName: string, token: string) =>
     request<UserProfile>("/api/v1/profile", {
@@ -218,11 +240,6 @@ export const api = {
       { method: "PATCH", headers: authHeader(token) },
     ),
 
-  resetNode: (nodeId: string, token: string) =>
-    request<{ node_id: string; new_state: string }>(
-      `/api/v1/nodes/${nodeId}/reset`,
-      { method: "PATCH", headers: authHeader(token) },
-    ),
 
   // Embers
   listEmbers: (token: string) =>

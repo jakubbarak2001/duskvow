@@ -50,7 +50,6 @@ export function NodeDetailPanel({
 
   const canStart = node.state === "available";
   const canComplete = node.state === "available" || node.state === "in_progress";
-  const canReset = node.state === "in_progress" || node.state === "completed";
 
   const handleStart = async () => {
     setError(null);
@@ -103,15 +102,6 @@ export function NodeDetailPanel({
     }
   };
 
-  const handleReset = async () => {
-    setError(null);
-    onNodeUpdate(node.id, "available");
-    const res = await api.resetNode(node.id, token);
-    if (res.error) {
-      onNodeUpdate(node.id, node.state);
-      setError(res.error.message);
-    }
-  };
 
   return (
     <>
@@ -125,7 +115,6 @@ export function NodeDetailPanel({
         className="node-detail-panel flex flex-col"
         style={{
           backgroundColor: "var(--bg-shadow)",
-          borderLeft: "1px solid var(--border-default)",
           zIndex: 20,
         }}
       >
@@ -287,20 +276,6 @@ export function NodeDetailPanel({
           </button>
         )}
 
-        {canReset && (
-          <button
-            onClick={handleReset}
-            disabled={false}
-            className="w-full py-2 rounded text-sm"
-            style={{
-              backgroundColor: "transparent",
-              color: "var(--text-muted)",
-              border: "1px solid var(--border-default)",
-            }}
-          >
-            Reset Step
-          </button>
-        )}
         </div>
       </div>
     </>

@@ -1,5 +1,7 @@
 """Tree API routes — generate, list, get, delete talent trees."""
 
+import secrets
+import string
 import time
 import uuid
 from typing import Any
@@ -17,6 +19,18 @@ from app.services.gemini import gemini_service
 from app.services.progression import get_active_tree_cap, get_generation_limit
 
 router = APIRouter()
+
+# Hard cap on simultaneous public trees per user — keeps abuse surface small.
+# 10 is plenty for a launch audience (most users will publish 0 or 1).
+MAX_PUBLIC_TREES_PER_USER = 10
+
+# URL-safe, easily-shareable slug alphabet (no ambiguous 0/O/1/l/I).
+_SLUG_ALPHABET = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+
+
+def _generate_slug(length: int = 10) -> str:
+    """Return a short, URL-safe slug. Collisions are caught by the DB index."""
+    return "".join(secrets.choice(_SLUG_ALPHABET) for _ in range(length))
 
 # ---------------------------------------------------------------------------
 # In-memory session store — holds goal_prompt between /generate and /followup.
@@ -209,6 +223,83 @@ async def get_tree(
             detail="Tree not found.",
         )
     return {"data": tree, "error": None}
+
+
+@router.post("/{tree_id}/share", response_model=dict)
+async def share_tree_endpoint(
+    tree_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Publish a tree — stamp a slug and flip it public.
+
+    Idempotent: if the tree is already public, returns the existing slug.
+    Enforces a per-user cap (``MAX_PUBLIC_TREES_PER_USER``) only when the
+    publish is new; re-publishing an already-public tree never trips the
+    cap.
+
+    Args:
+        tree_id: Tree UUID to publish.
+        user_id: Authenticated user's UUID (must own tree).
+
+    Returns:
+        Envelope with slug and is_public.
+    """
+    existing = await supa.get_tree_by_id(tree_id)
+    if not existing or existing.get("user_id") != user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tree not found.")
+
+    # Already public — return the existing slug unchanged.
+    if existing.get("is_public") and existing.get("share_slug"):
+        return {
+            "data": {
+                "slug": existing["share_slug"],
+                "is_public": True,
+                "already_public": True,
+            },
+            "error": None,
+        }
+
+    # New publish — enforce the cap.
+    public_count = await supa.count_public_trees(user_id)
+    if public_count >= MAX_PUBLIC_TREES_PER_USER:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"You have {MAX_PUBLIC_TREES_PER_USER} public trees — unshare "
+                "one before publishing another."
+            ),
+        )
+
+    # Reuse the prior slug if this tree was published+unpublished before.
+    slug = existing.get("share_slug") or _generate_slug()
+    updated = await supa.share_tree(tree_id, user_id, slug)
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tree not found.")
+
+    return {
+        "data": {"slug": slug, "is_public": True, "already_public": False},
+        "error": None,
+    }
+
+
+@router.delete("/{tree_id}/share", response_model=dict)
+async def unshare_tree_endpoint(
+    tree_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Un-publish a tree. Slug is retained so re-sharing yields the same URL.
+
+    Args:
+        tree_id: Tree UUID to un-publish.
+        user_id: Authenticated user's UUID (must own tree).
+
+    Returns:
+        Envelope confirming unshare.
+    """
+    ok = await supa.unshare_tree(tree_id, user_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tree not found.")
+    return {"data": {"is_public": False}, "error": None}
 
 
 @router.delete("/{tree_id}", response_model=dict)

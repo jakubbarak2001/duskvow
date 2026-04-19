@@ -44,6 +44,15 @@ export function SkillNodeComponent({ data, selected }: NodeProps) {
   const shape = SHAPE_BY_TYPE[node.node_type] ?? "square";
   const iconPath = `/images/nodes/${node.node_type}.webp`;
 
+  // Pin Handle anchors to the painted frame edges (not the 130px wrapper
+  // edges). Otherwise edges terminate in empty halo space 21px above/below
+  // the common-node border, producing the "line floats past the node" look.
+  // WRAPPER (130) = FRAME (88 or 120) + 2 × framePadY, so:
+  //   common  → framePadY = 21
+  //   keystone → framePadY = 5
+  const WRAPPER_SIZE = 130;
+  const framePadY = (WRAPPER_SIZE - frameSize) / 2;
+
   const glyph = (
     <>
       {!imgFailed && (
@@ -82,7 +91,7 @@ export function SkillNodeComponent({ data, selected }: NodeProps) {
       <Handle
         type="target"
         position={Position.Top}
-        style={{ opacity: 0, pointerEvents: "none" }}
+        style={{ top: `${framePadY}px`, opacity: 0, pointerEvents: "none" }}
       />
 
       <NodeFrame
@@ -107,7 +116,7 @@ export function SkillNodeComponent({ data, selected }: NodeProps) {
       <Handle
         type="source"
         position={Position.Bottom}
-        style={{ opacity: 0, pointerEvents: "none" }}
+        style={{ top: `calc(100% - ${framePadY}px)`, opacity: 0, pointerEvents: "none" }}
       />
     </div>
   );

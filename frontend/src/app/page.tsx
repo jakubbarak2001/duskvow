@@ -51,10 +51,9 @@ export default function LandingPage() {
               Walk the steps.
             </h1>
             <p className="lp-hero-sub">
-              You know what you want. Most days, you don&apos;t know where to start.
-              Duskvow takes one ambition — learn AI, run a marathon, ship the
-              startup — and forges it into a lit path of small, concrete steps.
-              You walk it one bite at a time, at your pace.
+              Name the goal you keep circling. Duskvow breaks it into a
+              sequence of small, specific steps — and you start tonight,
+              not someday.
             </p>
             <div className="lp-hero-cta-group">
               <Link href="/auth" className="lp-btn-primary">

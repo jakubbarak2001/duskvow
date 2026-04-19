@@ -245,18 +245,6 @@ function CanvasEmbers() {
   );
 }
 
-/** Four corner ornaments that frame the canvas like a manuscript page. */
-function CanvasCorners() {
-  return (
-    <div className="tree-canvas-corners" aria-hidden="true">
-      <span className="tree-canvas-corner tree-canvas-corner-tl">◆</span>
-      <span className="tree-canvas-corner tree-canvas-corner-tr">◆</span>
-      <span className="tree-canvas-corner tree-canvas-corner-bl">◆</span>
-      <span className="tree-canvas-corner tree-canvas-corner-br">◆</span>
-    </div>
-  );
-}
-
 export function TreeCanvas({ nodes, onNodeClick, selectedNodeId }: TreeCanvasProps) {
   // Memoize layout computation — Dagre is expensive and only needs to rerun
   // when node data changes, not on every render (e.g. selectedNodeId changes).
@@ -285,9 +273,10 @@ export function TreeCanvas({ nodes, onNodeClick, selectedNodeId }: TreeCanvasPro
         edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}
         fitView
-        // Bumped padding to 0.28 (from 0.2) so narrow viewports don't crop
-        // edge nodes. The tree-canvas-flow CSS enlarges Controls on mobile.
-        fitViewOptions={{ padding: 0.28, maxZoom: 1.1 }}
+        // Tight padding + higher maxZoom so small/medium trees fill the
+        // canvas instead of floating in the middle at 40–60% scale. The
+        // tree is the product; let it dominate the frame.
+        fitViewOptions={{ padding: 0.12, maxZoom: 1.5 }}
         minZoom={0.25}
         maxZoom={2}
         panOnDrag
@@ -307,7 +296,6 @@ export function TreeCanvas({ nodes, onNodeClick, selectedNodeId }: TreeCanvasPro
       </ReactFlow>
 
       <CanvasEmbers />
-      <CanvasCorners />
     </div>
   );
 }

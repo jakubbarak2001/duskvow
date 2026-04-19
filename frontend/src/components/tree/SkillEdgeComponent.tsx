@@ -27,6 +27,19 @@ export function SkillEdgeComponent({
 }: EdgeProps) {
   const isLit = (data as { completed?: boolean })?.completed;
 
+  // Edge routing — rectilinear subway style. Each edge descends
+  // vertically out of the source, makes ONE 90° turn at a y-level that
+  // always sits halfway between the two handle rows, travels sideways,
+  // turns a second time, and descends into the target.
+  //
+  // Key choices:
+  //   borderRadius: 0 — sharp corners. The prior `12` rounded off the
+  //     turns so heavily that short lateral offsets looked like a
+  //     continuous curve instead of a deliberate step.
+  //   centerY: halfway between the handles — forces every edge sharing
+  //     the same parent/child row to turn at the same y, so parallel
+  //     edges line up as horizontal rails instead of reading as jitter.
+  const centerY = sourceY + (targetY - sourceY) / 2;
   const [edgePath] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -34,7 +47,8 @@ export function SkillEdgeComponent({
     targetX,
     targetY,
     targetPosition,
-    borderRadius: 12,
+    borderRadius: 0,
+    centerY,
   });
 
   return (

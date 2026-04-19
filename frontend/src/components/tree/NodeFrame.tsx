@@ -9,6 +9,7 @@
  * wired to CSS custom properties so they respect the global design tokens.
  */
 
+import { useEffect, useRef, useState } from "react";
 import type { SkillNode } from "@/types";
 
 type Shape = "circle" | "square" | "diamond" | "hex";
@@ -99,6 +100,24 @@ export function NodeFrame({
   const isInProgress = state === "in_progress";
   const isCompleted = state === "completed";
 
+  // Transient burst — only fires on the non-completed → completed transition,
+  // never on first mount for already-completed nodes. Otherwise every page
+  // load would replay the burst on every completed node, which would look
+  // chaotic. Prev-state ref starts undefined; we only trigger when we've seen
+  // a previous non-completed state for *this* instance.
+  const prevStateRef = useRef<NodeState | undefined>(undefined);
+  const [showBurst, setShowBurst] = useState(false);
+  useEffect(() => {
+    const prev = prevStateRef.current;
+    if (prev !== undefined && prev !== "completed" && state === "completed") {
+      setShowBurst(true);
+      const t = setTimeout(() => setShowBurst(false), 950);
+      prevStateRef.current = state;
+      return () => clearTimeout(t);
+    }
+    prevStateRef.current = state;
+  }, [state]);
+
   const stateClass = isLocked
     ? "skill-frame-locked"
     : isCompleted
@@ -115,7 +134,7 @@ export function NodeFrame({
 
   return (
     <div
-      className={`skill-frame ${RARITY_CLASS[rarity]} ${stateClass}${selected ? " skill-frame-selected" : ""}`}
+      className={`skill-frame ${RARITY_CLASS[rarity]} ${stateClass}${selected ? " skill-frame-selected" : ""}${showBurst ? " skill-frame-just-completed" : ""}`}
       style={{ width: size, height: size }}
       data-shape={shape}
     >
