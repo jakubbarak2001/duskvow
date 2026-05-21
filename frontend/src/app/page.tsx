@@ -167,6 +167,33 @@ const landingStyles = `
     position: relative;
   }
 
+  /* === SCROLLBAR ===
+     Scoped to the landing page: this <style> only exists while
+     LandingPage is mounted. html-level rules use :root tokens
+     since the .lp-root vars don't reach the document element. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg-highlight) var(--bg-abyss);
+  }
+
+  html::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  html::-webkit-scrollbar-track {
+    background: var(--bg-abyss);
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background: var(--bg-highlight);
+    border-radius: 6px;
+    border: 2px solid var(--bg-abyss);
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-ember);
+  }
+
   /* === NOISE OVERLAY === */
   .lp-noise {
     position: fixed;
