@@ -13,7 +13,7 @@ export function mapAuthError(err: AuthError): string {
   const msg = (err.message ?? "").toLowerCase();
 
   if (msg.includes("invalid login credentials")) {
-    return "Those runes don't match. Try again.";
+    return "Incorrect email or password. Try again.";
   }
   if (msg.includes("email not confirmed")) {
     return "Check your email — the flame is still being lit.";

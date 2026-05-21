@@ -23,9 +23,8 @@ interface LoginFormProps {
  * `supabase.auth.signInWithPassword` and redirects to /dashboard on success.
  *
  * Errors from Supabase are mapped through `mapAuthError` so the user sees
- * in-character copy ("Those runes don't match...") rather than raw API
- * strings. The underlying error code is kept in memory only; no network
- * logging is wired up yet.
+ * friendly copy rather than raw API strings. The underlying error code is
+ * kept in memory only; no network logging is wired up yet.
  */
 export function LoginForm({ onForgot, onSwitchToSignUp }: LoginFormProps) {
   const router = useRouter();
