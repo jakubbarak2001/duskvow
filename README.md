@@ -4,15 +4,13 @@
 
 ![Duskvow landing page](docs/screenshots/landing.png)
 
-> ⚠️ **Project status — archived.** Duskvow is no longer maintained. The Supabase backend has been torn down, so the live app will not run end-to-end without standing up your own project. This repository is preserved as a portfolio artifact and reference implementation.
-
 ---
 
-## What it was
+## What it is
 
-Duskvow was a portfolio-scale, full-stack experiment in turning self-improvement into something that doesn't feel like a spreadsheet. Most habit apps look like Excel — Duskvow looked like Dark Souls.
+Duskvow is a full-stack experiment in making self-improvement feel like *Dark Souls*, not a spreadsheet. Most habit apps look like Excel. Duskvow looks like a grimoire.
 
-You typed a goal in plain English ("prepare for my ML interview", "learn to draw faces", "finish my thesis"). Google Gemini parsed it into a hierarchical **talent tree** of 15–25 skill nodes across six tiers, each with XP, estimated time, and a short flavored description. You then "walked" the tree — completing nodes unlocks downstream ones, earning XP, leveling your hero, and shifting your weekly leaderboard rank.
+You type a goal in plain English ("prepare for my ML interview", "learn to draw faces", "finish my thesis"). Google Gemini parses it into a hierarchical **talent tree** of 15–25 skill nodes across six tiers, each with XP, estimated time, and a short flavored description. You then "walk" the tree — completing nodes unlocks downstream ones, earning XP, leveling your hero, and shifting your weekly leaderboard rank.
 
 The vibe is intentional: a vow is heavier than a task, a path is more committal than a checklist, and a tree of glowing skill nodes is more motivating than a flat to-do list.
 
@@ -41,7 +39,7 @@ The vibe is intentional: a vow is heavier than a task, a path is more committal 
 
 ## Key features
 
-- **AI-forged talent trees** — Gemini 2.5 Pro, validated and rarity-clamped, with a fast 2.0-flash fallback path explored for shorter prompts.
+- **AI-forged talent trees** — Gemini 2.5 Pro, validated and rarity-clamped, with a fast 2.0-flash fallback path for shorter prompts.
 - **Six-tier dagre layout** — deterministic, no overlap, no AI position drift.
 - **Optimistic node completion** — Zustand store updates immediately, reverts on API failure.
 - **Hand-painted aesthetic** — Krita-painted node icons on a 12-color locked palette, Cinzel + Crimson Pro typography, no pure black/white anywhere.
@@ -84,15 +82,15 @@ supabase/migrations/  Versioned SQL with RLS policies + atomic RPCs
 
 ## Notable engineering decisions
 
-- **PostgREST is the threat surface, not FastAPI.** Because Supabase exposes the DB directly to authenticated browsers, the security model relies on RLS, not on FastAPI being a chokepoint. All progression tables had user-writable UPDATE policies *dropped*, and every `SECURITY DEFINER` RPC was REVOKE'd from `PUBLIC` / `authenticated` — the backend writes via `service_role` only. See `supabase/migrations/20260416_security_hardening.sql` and `SECURITY_AUDIT_2026-04-16.md`.
+- **PostgREST is the threat surface, not FastAPI.** Because Supabase exposes the DB directly to authenticated browsers, the security model relies on RLS, not on FastAPI being a chokepoint. All progression tables have their user-writable UPDATE policies *dropped*, and every `SECURITY DEFINER` RPC is REVOKE'd from `PUBLIC` / `authenticated` — the backend writes via `service_role` only. See `supabase/migrations/20260416_security_hardening.sql` and `SECURITY_AUDIT_2026-04-16.md`.
 - **AI output is never trusted.** Tier→XP mapping is canonical (prompt-injection can't inflate rewards), node counts are clamped to 15–25, title/description lengths are bounded, and the whole response is Pydantic-validated before it touches the database.
 - **Atomic Postgres RPCs for XP / streak / daily generation.** No read-modify-write from the backend — increments are RPCs so concurrent requests can't double-count.
-- **Layout is deterministic.** Dagre owns positions; the AI only owns content. This was a hard lesson — early versions let the AI place nodes and they overlapped constantly.
-- **The dungeon is template-based, not AI-generated.** Combat events, monster pools, and loot tables are curated JSON. Randomness is weighted selection, not generation. This means zero API cost per focus session and instant starts.
+- **Layout is deterministic.** Dagre owns positions; the AI only owns content. Early versions let the AI place nodes and they overlapped constantly.
+- **The dungeon is template-based, not AI-generated.** Combat events, monster pools, and loot tables are curated JSON. Randomness is weighted selection, not generation — zero API cost per focus session and instant starts.
 
 ## Running locally
 
-> The Supabase project this repo was built against has been deleted, so you'll need to provision your own.
+> You'll need your own Supabase project and a Google AI Studio key for Gemini. Both have free tiers that are plenty for local development.
 
 ```bash
 # 1. Frontend
@@ -112,24 +110,6 @@ uvicorn app.main:app --reload     # http://localhost:8000
 npx supabase db push              # applies all migrations to your project
 ```
 
-You'll need a Google AI Studio API key for Gemini and a fresh Supabase project (free tier is fine).
-
-## What I'd do differently — and what I learned
-
-The real problem was never the product. It was distribution. Everyone is shipping a SaaS right now, and I never found a real way to put Duskvow in front of enough of the right people to test my actual thesis. I assumed the dark-fantasy framing was the hook — it turned out most people just didn't care about the aesthetic one way or the other.
-
-The genuine product issue was retention. The new-tree moment was strong: people would generate a tree, say "damn, that looks cool," and then never come back. The gamification didn't have enough surface area beyond the first session to pull them in again.
-
-What did work — and this surprised me — was **short-horizon goals**. The app was great for things like "prepare for this ML interview in 3 days" or "ship this side project this weekend." The tree gave structure, the XP gave momentum, and the time pressure did the rest. Ironically, this is the opposite of what I built it for; I was aiming at long-term self-improvement, where the retention problem hit hardest.
-
-Next time I would:
-
-- **Talk to people directly, much earlier.** I built the gamification stack on a personal hunch rather than on conversations with the actual target users. For me, the app worked well — I used it, I liked it. That's a sample size of one, and one I can't trust.
-- **Pivot the positioning toward what's working.** Short-horizon, high-stakes prep (interviews, deadlines, exams, focused sprints) is where the loop already retained. Long-term life goals were always going to be a harder retention fight.
-- **Test the gamification hypothesis properly.** I still believe RPG framing is a powerful trope, especially for people with ADHD and for gamers. But "I believe it" is not a tested claim. With more feedback cycles and a tighter audience, this could be a real product.
-
-For now, I'm parking Duskvow to pursue other projects and to stop paying for hosting on something I'm not actively iterating on. The codebase is here, the lessons are real, and I may come back to it.
-
 ## License
 
 Code is MIT-licensed — see [LICENSE](LICENSE). Hand-painted node assets in `frontend/public/images/nodes/` and other original artwork are © Jakub Barak, all rights reserved.
@@ -139,3 +119,5 @@ Code is MIT-licensed — see [LICENSE](LICENSE). Hand-painted node assets in `fr
 - Built by [@jakubbarak2001](https://github.com/jakubbarak2001).
 - Node icons hand-painted in Krita on a locked 12-color palette.
 - Engineered with assistance from Claude Code.
+</content>
+</invoke>
